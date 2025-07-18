@@ -1,0 +1,33 @@
+﻿
+
+<div class="d-flex flex-row justify-content-end">
+    <div class="input-group mb-3" style="width:32rem">
+        <input type="text" class="form-control" placeholder="Enter User Info For Searching" @bind-value="usersFilter" @bind-value:event="oninput" />
+        <button type="button" class="btn btn-outline-primary" @onclick="HandleSearch">Search</button>
+        <a class="btn btn-primary" href="/user"> Add User </a>
+
+    </div>
+</div>
+
+
+
+@code {
+
+    // [Parameter(CaptureUnmatchedValues = true)]
+    // public Dictionary<string, object>? OtherAttributes { get; set; } // style="width:700px"
+
+    [Parameter]
+    public EventCallback<string> SearchUsersCallBack { get; set; }
+
+    public string? usersFilter = "";
+
+    private void HandleSearch()
+    {
+        SearchUsersCallBack.InvokeAsync(usersFilter);
+    }
+
+    public void ClearSearchBar()
+    {
+        this.usersFilter = string.Empty;
+    }
+}

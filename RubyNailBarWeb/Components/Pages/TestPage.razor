@@ -1,0 +1,72 @@
+﻿@page "/testpage"
+@rendermode InteractiveServer
+@inject NavigationManager NavigationManager
+@inject IUsersService UsersService
+<h3>TestPage</h3>
+
+
+    <EditForm Model="user" FormName="userForm" OnValidSubmit="SubmitFunc">
+        <DataAnnotationsValidator></DataAnnotationsValidator>
+        <ValidationSummary></ValidationSummary>
+        <div class="container mt-5">
+            <div class="d-flex">
+                <div class="flex-grow-1 bg-light border">
+
+                <FieldComponent Label="First Name">
+                    <Control>
+                        <InputText @bind-Value="user.FirstName"></InputText>
+                    </Control>
+
+                </FieldComponent>
+
+                <FieldComponent Label="First Name">
+                    <Control>
+                        <InputText @bind-Value="user.FirstName"></InputText>
+                    </Control>
+
+                </FieldComponent>
+
+
+                </div>
+                <div class="flex-grow-1 bg-light border">
+
+                <FieldComponent Label="First Name">
+                    <Control>
+                        <InputText @bind-Value="user.FirstName"></InputText>
+                    </Control>
+
+                </FieldComponent>
+                <FieldComponent Label="First Name">
+                    <Control>
+                        <InputText @bind-Value="user.FirstName"></InputText>
+                    </Control>
+
+                </FieldComponent>
+
+
+
+                </div>
+            </div>
+        </div>
+
+
+    </EditForm>
+@code {
+
+
+    public int Id = 1;
+
+    [SupplyParameterFromForm]
+    private User? user { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        user = UsersService.GetUserByIdService(this.Id);
+
+    }
+
+    private void SubmitFunc()
+    {
+        
+    }
+}

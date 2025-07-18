@@ -1,0 +1,158 @@
+﻿@page "/user/{id:int?}"
+
+@rendermode InteractiveServer
+@inject NavigationManager NavigationManager
+@inject IUsersService UsersService
+
+@if (Id.HasValue)
+{
+    <h3>Edit User</h3>
+}
+else
+{
+    <h3>Add User</h3>
+}
+
+@if(user is not null)
+{
+    <EditForm Model="user" FormName="userForm" OnValidSubmit="SubmitFunc">
+        <DataAnnotationsValidator></DataAnnotationsValidator>
+
+        <div class="container">
+            <form class="form-horizontal">
+                <div class="row">
+                    <div class="col-sm-12 col-sm-offset-1">
+                        <div class="row row-centered">
+                            <div class="col-xs-12 col-sm-6 col-centered">
+
+                                <FieldComponent Label="User Id">
+
+                                    <Control>
+                                        <InputNumber @bind-Value="user.UserId" disabled></InputNumber>
+                                    </Control>
+
+                                </FieldComponent>
+
+                                <FieldComponent Label="First Name">
+                                    <Control>
+                                        <InputText @bind-Value="user.FirstName"></InputText>
+                                    </Control>
+                                    <ValidationControl>
+                                        <ValidationMessage For="() => user.FirstName"></ValidationMessage>
+                                    </ValidationControl>
+                                </FieldComponent>
+
+                                <FieldComponent Label="Last Name">
+                                    <Control>
+                                        <InputText @bind-Value="user.LastName"></InputText>
+                                    </Control>
+
+                                </FieldComponent>
+
+                                <FieldComponent Label="Email">
+                                    <Control>
+                                        <InputText type="email" @bind-Value="user.Email"></InputText>
+                                    </Control>
+                                </FieldComponent>
+
+                            </div>
+
+                            <div class="col-xs-12 col-sm-6 col-centered">
+
+                                <FieldComponent Label="User Name">
+                                    <Control>
+                                        <InputText @bind-Value="user.Username"></InputText>
+                                    </Control>
+                                    <ValidationControl>
+                                        <ValidationMessage For="() => user.Username"></ValidationMessage>
+                                    </ValidationControl>
+                                </FieldComponent>
+
+                                <FieldComponent Label="Phone Number">
+                                    <Control>
+                                        <InputText type="tel" @bind-Value="user.PhoneNo"></InputText>
+                                    </Control>
+                                </FieldComponent>
+
+                                <FieldComponent Label="Password">
+                                    <Control>
+                                        <InputText type="password" @bind-Value="user.PasswordHash"></InputText>
+                                    </Control>
+                                    <ValidationControl>
+                                        <ValidationMessage For="() => user.PasswordHash"></ValidationMessage>
+                                    </ValidationControl>
+                                </FieldComponent>
+
+                                <FieldComponent Label="Is Active">
+                                    <Control>
+                                        <InputCheckbox @bind-Value="user.IsActive"></InputCheckbox>
+                                    </Control>
+                                </FieldComponent>
+
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </form>
+
+        </div>
+
+
+        @if (user.UserId > 0)
+        {
+            <button class="btn btn-primary" type="submit">Update</button>
+        }
+        else
+        {
+            <button class="btn btn-primary" type="submit">Save</button>
+        }
+        &nbsp;
+        <a class="btn btn-primary" href="/users"> BACK </a>
+
+    </EditForm>
+}
+
+
+
+
+@code {
+
+
+    [Parameter]
+    public int? Id { get; set; }
+
+    [SupplyParameterFromForm]
+    private User? user { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        if (this.Id.HasValue)
+        {
+            user ??= UsersService.GetUserByIdService(this.Id.Value);
+        }
+        else
+        {
+            user ??= new User() { IsActive = false };
+        }
+    }
+
+    private void SubmitFunc()
+    {
+        if (user is not null)
+        {
+            if (this.Id.HasValue)
+            {
+                UsersService.UpdateUserService(user.UserId, user);
+            }
+            else
+            {
+                UsersService.AddUserService(user);
+            }
+
+        }
+        NavigationManager.NavigateTo($"/users");
+    }
+
+
+}

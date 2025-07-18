@@ -1,0 +1,227 @@
+﻿@inject IUsersService UsersService
+
+@inject IStoresService StoresService
+
+@attribute [StreamRendering]
+<table class="table table-striped">
+
+
+    <thead>
+        <tr>
+            <th>
+                Index
+            </th>
+            <th>
+                Store
+            </th>
+            <th>
+                Full Name
+            </th>
+            <th> 
+                Username
+            </th>
+            <th>
+                Group
+            </th>
+            <th>
+                Role
+            </th>
+            <th>
+                Status
+            </th>
+            <th></th>
+            <th></th>
+            <th></th>
+        </tr>
+
+    </thead>
+    <tbody>
+        @if (listUsers != null && listUsers.Any())
+        {
+            int i = 0;
+            @foreach(var user in listUsers)
+            {
+                <tr>
+                    <td>
+                        @(++i)
+                    </td>
+                    <td>
+                        @if (user.UserGroups.Any())
+                        {
+                            var listStoreId = user.UserGroups
+                                                    .Select(ug => ug.StoreId)
+                                                    .OfType<int>()
+                                                    .Distinct().ToList();
+
+                            foreach(var storeId in listStoreId)
+                            {
+                                <span>@StoresService.GetStoreById(storeId).Name</span>
+                            }
+                        }
+                        else
+                        {
+                            <span>N/A</span>
+                        }
+                    </td>
+
+                    <td>
+                        @($"{user.FirstName} {@user.LastName}")
+                    </td>
+                    <td>
+                        @user.Username
+                    </td>
+
+                    <td>
+                        @if (user.UserGroups.Any())
+                        {
+                            foreach (var group in user.UserGroups)
+                            {
+                                <span class="badge border @(group.GroupName == "Manager" ? "text-primary border-primary" : "text-black border-dark")">@group.GroupName</span>
+                               <br />
+                            }
+                        }
+                        else
+                        {
+                           <text>N/A</text>
+                        }
+                    </td>
+
+                    <td>
+                        @if (user.UserGroups.Any())
+                        {
+                            foreach (var group in user.UserGroups)
+                            {
+                                <span class="badge border @(group.RoleName == "Admin" ? "text-primary border-primary" : "text-black border-dark")">@group.RoleName</span>
+                                <br />
+                            }
+                        }
+                        else
+                        {
+                            <text>N/A</text>
+                        }
+                    </td>
+                    <td>
+                        <span class="badge  border @(user.IsActive ? "text-success border-success" : "text-danger border-danger")">@(user.IsActive ? "Active" : "InActive")</span>
+
+                    </td>
+                    <td>
+                        @if (user.IsActive == true)
+                        {
+                            <button type="button" class="btn btn-outline-danger"
+                                    @onclick="@(() => {
+                                                        SetUserStatus(user.UserId,false);
+                                                                                             })">
+                              Turn Off
+                          </button>
+                    }
+                                else
+                    {
+                        <button type="button" class="btn btn-outline-success"
+                                    @onclick="@(() => { 
+                                                         SetUserStatus(user.UserId,true);
+                                                                                            })">
+                          Turn On
+                      </button>
+                    }
+                    &nbsp;
+                    </td>
+                    <td>
+                        <a class="btn btn-outline-primary" href=@($"/user/{user.UserId}")> Edit </a>
+                    </td>
+                    <td>
+                        <a class="btn btn-outline-danger" href=""> Delete </a>
+                    </td>
+                </tr>
+            }
+
+
+        }
+
+
+        else
+        {
+            <tr>
+                <td class="text-center text-black-50" colspan="9">
+                    Data is loading . . .
+                </td>
+            </tr>
+        }
+
+    </tbody>
+
+
+
+
+</table>
+
+
+
+
+
+
+
+@code {
+
+
+    [Parameter]
+    public string? FilteredUsersData { set; get; }
+
+    private List<User>? listUsers = new List<User>();
+
+    private bool isFirstRender = true;
+
+
+
+    protected override void OnParametersSet()
+    {
+        if (isFirstRender == false)
+        {
+            if (string.IsNullOrWhiteSpace(this.FilteredUsersData))
+            {
+                listUsers = UsersService.GetUsersService();
+            }
+            else
+            {
+                listUsers = UsersService.SearchUserService(FilteredUsersData);
+            }
+            StateHasChanged();
+        }
+    }
+
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            isFirstRender = false;
+            if (string.IsNullOrWhiteSpace(this.FilteredUsersData))
+            {
+                listUsers = UsersService.GetUsersService();
+            }
+            else
+            {
+                listUsers = UsersService.SearchUserService(FilteredUsersData);
+            }
+          
+            StateHasChanged();
+        }
+    }
+
+
+
+    private void SetUserStatus(int userId, bool status)
+    {
+        var userToUpdate = UsersService.GetUserByIdService(userId);
+        if (userToUpdate is not null && userToUpdate.IsActive != status)
+        {
+            userToUpdate.IsActive = status;
+            UsersService.UpdateUserService(userId, userToUpdate);
+            listUsers = UsersService.GetUsersService();
+            StateHasChanged();
+        }
+        else
+        {
+            return;
+        }
+    }
+}

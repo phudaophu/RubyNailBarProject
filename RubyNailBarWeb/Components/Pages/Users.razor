@@ -1,0 +1,34 @@
+﻿@page "/users"
+
+@inject IUsersService UsersService
+@rendermode InteractiveServer
+
+<h3>User</h3>
+
+<SearchBarComponent SearchUsersCallBack="HandleSearchUser"></SearchBarComponent>
+
+
+<UserListComponent FilteredUsersData="@filteredUsers"></UserListComponent>
+
+
+
+
+
+
+@code {
+
+
+    private string filteredUsers = "";
+
+    public void HandleSearchUser(string userFilterData)
+    {
+
+        filteredUsers = userFilterData;
+        //servers = ServersRepository.SearchServers(filterdServer);
+    }
+    
+
+
+
+
+}
