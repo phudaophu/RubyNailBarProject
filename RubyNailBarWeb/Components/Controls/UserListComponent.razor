@@ -129,7 +129,7 @@
                         <a class="btn btn-outline-primary" href=@($"/user/{user.UserId}")> Edit </a>
                     </td>
                     <td>
-                        <a class="btn btn-outline-danger" href=""> Delete </a>
+                        <a class="btn btn-outline-danger" href=@($"/usergroups/{user.UserId}")> Edit Group </a>
                     </td>
                 </tr>
             }
@@ -141,7 +141,7 @@
         else
         {
             <tr>
-                <td class="text-center text-black-50" colspan="9">
+                <td class="text-center text-black-50" colspan="10">
                     @statusUserListView
                 </td>
             </tr>

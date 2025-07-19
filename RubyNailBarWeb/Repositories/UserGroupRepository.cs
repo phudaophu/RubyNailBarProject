@@ -15,7 +15,13 @@ namespace RubyNailBarWeb.Repositories
         public List<UserGroup>? GetUserGroups()
         {
             using var db = this.contextFactory.CreateDbContext();
-            return db.UserGroups.ToList();
+            return db.UserGroups.Include(ug => ug.Store).Include(ug => ug.User).ToList();
+        }
+
+        public UserGroup? GetUserGroupById(int userGroupId)
+        {
+            using var db = this.contextFactory.CreateDbContext();
+            return db.UserGroups.Find(userGroupId);
         }
 
     }

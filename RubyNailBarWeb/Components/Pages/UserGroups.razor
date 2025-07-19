@@ -1,17 +1,131 @@
-﻿@page "/usergroups"
+﻿@page "/usergroups/{id:int?}"
+
+@inject IStoresService StoresService
+@inject IUserGroupService UserGroupService
+
 <h3>UserGroups</h3>
 
+ 
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>
+                Index
+            </th>
+            <th>
+                Store
+            </th>
+            <th>
+                Group
+            </th>
+            <th>
+                Role
+            </th>
+             <th>
+             </th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (userGroups != null && userGroups.Count >0) 
+        {
+            int i = 0;
+            @foreach (var userGroup in userGroups)
+            {
 
+                <tr>
+                    <td>
+                        @(++i)
+                    </td>
+                    <td>
+                        @if(userGroup.Store != null)
+                        {
+                            @userGroup.Store.Name
+                        }
+                        else
+                        {
+                            <span class="text-muted">No Store Data</span>
+                        }
+                    </td>
+                    <td>
+                        @userGroup.GroupName
+                    </td>
+                    <td>
+                        @userGroup.RoleName
+                    </td>
 
+                    <td>
+                        <button class="btn btn-danger">Delete</button>
+                    </td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td class="text-center text-black-50" colspan="4">
+                    @statusUserListView
+                </td>
+            </tr>
+        }
 
+    </tbody>
 
+</table>
 
+<a class="btn btn-primary"> Save </a>
+ &nbsp;
 
+@if (this.userGroups != null && userGroups.Count > 0)
+{
+    <a class="btn btn-primary" href=@($"/user/{Id}")> Back </a>
 
+}else
+{
+    <button class="btn btn-primary"> Add Group</button>
 
-
-
+}
 
 @code {
+    [Parameter]
+    public int? Id { get; set; }
+
+    private string statusUserListView = "Data Is Loading...";
+
+    private List<int> listStoreId = new List<int>();
+
+    private List<UserGroup>? userGroups = new List<UserGroup>();
+
+    private List<string> GroupName = new List<string>
+    {
+        "Manager",
+        "Staff"
+    };  
+
+    private List<string> RoleName = new List<string>
+    {
+        "Admin",
+        "Staff"
+    };
+
+
+    protected override void OnParametersSet()
+    {
+        if (this.Id.HasValue)
+        {
+            userGroups = UserGroupService.GetUserGroupsByUserId(this.Id.Value);
+            if(userGroups != null && userGroups.Count > 0)
+            {
+                statusUserListView = "Data Loaded Successfully";
+            }
+            else
+            {
+                statusUserListView = "No User Groups Found";
+            }
+        }
+        else
+        {
+            userGroups = new List<UserGroup>();
+        }
+    }
 
 }

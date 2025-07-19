@@ -114,16 +114,18 @@ else
 
         @if (user.UserId > 0)
         {
-            <button class="btn btn-primary" type="submit">Update</button>
+            <button class="btn btn-primary me-3" type="submit">Update</button>
+
+            <a class="btn btn-primary" href=@($"/usergroups/{user.UserId}")> Edit Group </a>
         }
         else
         {
-            <button class="btn btn-primary" type="submit">Save</button>
+            <a class="btn btn-primary" href=@($"/usergroups/{user.UserId}")> Next </a>
         }
+       
+
         &nbsp;
-        <a class="btn btn-primary" href="/usergroups"> Set Group </a>
-        &nbsp;
-        <a class="btn btn-primary" href="/users"> BACK </a>
+        <a class="btn btn-primary" href="/users"> Back </a>
     </EditForm>
 }
 

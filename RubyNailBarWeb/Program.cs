@@ -20,9 +20,10 @@ builder.Services.AddDbContextFactory<NailsDbContext>(options =>
 
 builder.Services.AddScoped<UsersRepository>();
 builder.Services.AddScoped<StoresRepository>();
+builder.Services.AddScoped<UserGroupRepository>();
 builder.Services.AddTransient<IUsersService, UsersService>();
 builder.Services.AddTransient<IStoresService, StoresService>();
-
+builder.Services.AddTransient<IUserGroupService, UserGroupService>();
 
 
 
