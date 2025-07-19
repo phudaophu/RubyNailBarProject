@@ -16,5 +16,15 @@ namespace RubyNailBarWeb.Services
         {
             return storesRepository.GetStoreById(storeId);
         }
+
+        public List<Store> GetStores()
+        {
+            var stores = storesRepository.GetStores();
+            if (stores is null)
+            {
+                return new List<Store>();
+            }
+            return stores;
+        }
     }
 }

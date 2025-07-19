@@ -5,7 +5,7 @@
 
 <h3>User</h3>
 
-<SearchBarComponent SearchUsersCallBack="HandleSearchUser"></SearchBarComponent>
+<SearchBarComponent SearchUsersCallBack="HandleSearchUser" @ref="searchBarComponent"></SearchBarComponent>
 
 
 <UserListComponent FilteredUsersData="@filteredUsers"></UserListComponent>
@@ -18,13 +18,15 @@
 @code {
 
 
-    private string filteredUsers = "";
+    private string? filteredUsers = "";
+
+    private SearchBarComponent? searchBarComponent;
 
     public void HandleSearchUser(string userFilterData)
     {
 
         filteredUsers = userFilterData;
-        //servers = ServersRepository.SearchServers(filterdServer);
+
     }
     
 

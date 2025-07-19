@@ -142,7 +142,7 @@
         {
             <tr>
                 <td class="text-center text-black-50" colspan="9">
-                    Data is loading . . .
+                    @statusUserListView
                 </td>
             </tr>
         }
@@ -170,7 +170,7 @@
 
     private bool isFirstRender = true;
 
-
+    private string? statusUserListView = "Data Is Loading...";
 
     protected override void OnParametersSet()
     {
@@ -183,6 +183,11 @@
             else
             {
                 listUsers = UsersService.SearchUserService(FilteredUsersData);
+                if (listUsers is null || listUsers.Count == 0)
+                {
+                    statusUserListView = "No User Found";
+                }
+
             }
             StateHasChanged();
         }
@@ -201,6 +206,11 @@
             else
             {
                 listUsers = UsersService.SearchUserService(FilteredUsersData);
+                if (listUsers is null || listUsers.Count ==0)
+                {
+                    statusUserListView = "No User Found";
+                }
+
             }
           
             StateHasChanged();
