@@ -55,7 +55,8 @@
 
                             foreach(var storeId in listStoreId)
                             {
-                                <span>@StoresService.GetStoreById(storeId).Name</span>
+                                <span class="badge text-dark border border-dark">@StoresService.GetStoreById(storeId).Name</span>
+                                <br>
                             }
                         }
                         else

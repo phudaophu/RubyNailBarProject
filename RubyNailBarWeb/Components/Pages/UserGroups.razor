@@ -2,6 +2,8 @@
 
 @inject IStoresService StoresService
 @inject IUserGroupService UserGroupService
+@inject NavigationManager NavigationManager
+@rendermode InteractiveServer
 
 <h3>UserGroups</h3>
 
@@ -21,15 +23,16 @@
             <th>
                 Role
             </th>
-             <th>
-             </th>
+            <th>
+            </th>
+
         </tr>
     </thead>
     <tbody>
-        @if (userGroups != null && userGroups.Count >0) 
+        @if (listUserGroup != null && listUserGroup.Count > 0)
         {
             int i = 0;
-            @foreach (var userGroup in userGroups)
+            @foreach (var userGroup in listUserGroup)
             {
 
                 <tr>
@@ -39,7 +42,13 @@
                     <td>
                         @if(userGroup.Store != null)
                         {
-                            @userGroup.Store.Name
+                            <InputSelect @bind-Value="userGroup.StoreId" class="form-select">
+
+                                @foreach (var store in listStores)
+                                {
+                                    <option value="@store.StoreId">@store.Name</option>
+                                }
+                            </InputSelect>
                         }
                         else
                         {
@@ -47,14 +56,27 @@
                         }
                     </td>
                     <td>
-                        @userGroup.GroupName
+                       
+                        <InputSelect @bind-Value="userGroup.GroupName" class="form-select">
+
+                            @foreach (var groupName in listGroupName)
+                            {
+                                <option value="@groupName">@groupName</option>
+                            }
+                        </InputSelect>
                     </td>
                     <td>
-                        @userGroup.RoleName
+                        <InputSelect @bind-Value="userGroup.RoleName" class="form-select">
+
+                            @foreach (var roleName in listRoleName)
+                            {
+                                <option value="@roleName">@roleName</option>
+                            }
+                        </InputSelect>
                     </td>
 
                     <td>
-                        <button class="btn btn-danger">Delete</button>
+                        <button type="button" class="btn btn-outline-danger">Delete</button>
                     </td>
                 </tr>
             }
@@ -72,18 +94,16 @@
 
 </table>
 
-<a class="btn btn-primary"> Save </a>
- &nbsp;
 
-@if (this.userGroups != null && userGroups.Count > 0)
+@if (this.listUserGroup != null && listUserGroup.Count > 0)
 {
     <a class="btn btn-primary" href=@($"/user/{Id}")> Back </a>
 
-}else
-{
-    <button class="btn btn-primary"> Add Group</button>
-
 }
+&nbsp
+<button type="button" class="btn btn-primary"> Add Group</button>
+&nbsp
+<button type="button" class="btn btn-primary" @onclick="() => SaveUserGroupChange()"> Save</button>
 
 @code {
     [Parameter]
@@ -91,17 +111,17 @@
 
     private string statusUserListView = "Data Is Loading...";
 
-    private List<int> listStoreId = new List<int>();
+    private List<Store> listStores = new List<Store>();
 
-    private List<UserGroup>? userGroups = new List<UserGroup>();
+    private List<UserGroup>? listUserGroup = new List<UserGroup>();
 
-    private List<string> GroupName = new List<string>
+    private List<string> listGroupName = new List<string>
     {
         "Manager",
         "Staff"
     };  
 
-    private List<string> RoleName = new List<string>
+    private List<string> listRoleName = new List<string>
     {
         "Admin",
         "Staff"
@@ -112,10 +132,12 @@
     {
         if (this.Id.HasValue)
         {
-            userGroups = UserGroupService.GetUserGroupsByUserId(this.Id.Value);
-            if(userGroups != null && userGroups.Count > 0)
+            listUserGroup = UserGroupService.GetUserGroupsByUserId(this.Id.Value);
+            if (listUserGroup != null && listUserGroup.Count > 0)
             {
                 statusUserListView = "Data Loaded Successfully";
+                listStores = StoresService.GetStores();
+                StateHasChanged();
             }
             else
             {
@@ -124,8 +146,28 @@
         }
         else
         {
-            userGroups = new List<UserGroup>();
+            listUserGroup = new List<UserGroup>();
         }
+    }
+
+
+    private void SaveUserGroupChange()
+    {
+        if(listUserGroup != null && listUserGroup.Count > 0)
+        {
+            foreach(var userGroup in listUserGroup)
+            {
+                UserGroupService.UpdateUserGroup(userGroup.UserGroupId,userGroup);
+            }
+            statusUserListView = "User Groups Updated Successfully";
+            StateHasChanged();
+
+        }
+        else
+        {
+            statusUserListView = "No User Groups to Update";
+        }
+        NavigationManager.NavigateTo("/users");
     }
 
 }

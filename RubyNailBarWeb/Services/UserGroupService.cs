@@ -1,4 +1,5 @@
 ﻿
+using Microsoft.Identity.Client;
 using RubyNailBarWeb.Models;
 using RubyNailBarWeb.Repositories;
 using RubyNailBarWeb.Services.Implements;
@@ -50,5 +51,48 @@ namespace RubyNailBarWeb.Services
 
         }
 
+        public void UpdateUserGroup(int userGroupId ,UserGroup userGroup)
+        {
+            if (userGroup is null)
+            {
+                throw new ArgumentNullException(nameof(userGroup), "User group cannot be null");
+            }
+            var existingUserGroup = userGroupRepository.GetUserGroupById(userGroupId);
+            if (existingUserGroup is null)
+            {
+                throw new KeyNotFoundException($"User group with ID {userGroupId} not found.");
+            }
+            else if ( userGroup.GroupName != existingUserGroup.GroupName || userGroup.RoleName != existingUserGroup.RoleName || userGroup.StoreId != existingUserGroup.StoreId )
+            {
+                userGroupRepository.UpdateUserGroup(userGroupId,userGroup);
+            }
+            else
+            {
+                 return;
+            }
+        }
+
+        public void AddUserGroup(UserGroup userGroup)
+        {
+            if (userGroup is null)
+            {
+                throw new ArgumentNullException(nameof(userGroup), "User group cannot be null");
+            }
+            var existingUserGroup = userGroupRepository.GetUserGroups();
+            if (existingUserGroup != null && existingUserGroup.Any(ug => ug.GroupName == userGroup.GroupName && ug.RoleName == userGroup.RoleName && ug.StoreId == userGroup.StoreId))
+            {
+                throw new InvalidOperationException("A user group with the same name, role, and store already exists.");
+            }
+            userGroupRepository.AddUserGroup(userGroup);
+        }
+
+        public void RemoveUserGroup(int userGroupId)
+        {
+            if (userGroupId <= 0)
+            {
+                throw new ArgumentException("Invalid user group ID.", nameof(userGroupId));
+            }
+            userGroupRepository.RemoveUserGroup(userGroupId);
+        }
     }
 }
