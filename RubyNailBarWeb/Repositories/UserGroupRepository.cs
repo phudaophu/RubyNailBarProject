@@ -24,7 +24,7 @@ namespace RubyNailBarWeb.Repositories
             return db.UserGroups.Find(userGroupId);
         }
 
-        public void UpdateUserGroup(int userGroupId,UserGroup userGroup)
+        public void UpdateUserGroup(int userGroupId, UserGroup userGroup)
         {
             using var db = this.contextFactory.CreateDbContext();
             var userGroupToUpdate = db.UserGroups.Find(userGroupId);
@@ -54,5 +54,7 @@ namespace RubyNailBarWeb.Repositories
             }
 
         }
+
+
     }
 }

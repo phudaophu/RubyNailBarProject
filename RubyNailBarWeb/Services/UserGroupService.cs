@@ -17,6 +17,15 @@ namespace RubyNailBarWeb.Services
             this.usersRepository = usersRepository;
         }
 
+        public int GetMaxUserGroupId()
+        {
+            var userGroups = userGroupRepository.GetUserGroups();
+            if (userGroups is null || !userGroups.Any())
+            {
+                return 1;
+            }
+            return userGroups.Max(ug => ug.UserGroupId);
+        }
 
         public List<UserGroup>? GetUserGroups()
         {
@@ -78,11 +87,11 @@ namespace RubyNailBarWeb.Services
             {
                 throw new ArgumentNullException(nameof(userGroup), "User group cannot be null");
             }
-            var existingUserGroup = userGroupRepository.GetUserGroups();
-            if (existingUserGroup != null && existingUserGroup.Any(ug => ug.GroupName == userGroup.GroupName && ug.RoleName == userGroup.RoleName && ug.StoreId == userGroup.StoreId))
-            {
-                throw new InvalidOperationException("A user group with the same name, role, and store already exists.");
-            }
+            //var existingUserGroup = userGroupRepository.GetUserGroups();
+            //if (existingUserGroup != null && existingUserGroup.Any(ug => ug.GroupName == userGroup.GroupName && ug.RoleName == userGroup.RoleName && ug.StoreId == userGroup.StoreId))
+            //{
+            //    throw new InvalidOperationException("A user group with the same name, role, and store already exists.");
+            //}
             userGroupRepository.AddUserGroup(userGroup);
         }
 

@@ -1,4 +1,4 @@
-﻿@* @page "/usergroups/{id:int?}" *@
+﻿@page "/usergroups/{id:int?}"
 
 @inject IStoresService StoresService
 @inject IUserGroupService UserGroupService
@@ -7,7 +7,7 @@
 @inject IJSRuntime JSRuntime
 
 
-<h3>UserGroups</h3>
+<h3>UserGroupsView</h3>
 
 
 <table class="table table-striped">
@@ -34,9 +34,7 @@
         @if (listUserGroup != null && listUserGroup.Count > 0)
         {
             int i = 0;
-            string ParamStoreId = "StoreId";
-            string paramGroupName = "GroupName";
-            string paramRoleName = "RoleName";
+
             @foreach (var userGroup in listUserGroup)
             {
                 <tr>
@@ -44,10 +42,10 @@
                         @(++i)
                     </td>
                     <td>
-                        @if(userGroup.Store != null)
+                        @if (userGroup.Store != null)
                         {
 
-                            <InputSelect @bind-Value="userGroup.StoreId" class="form-select" @onchange="(ChangeEventArgs e) => UpdateEachUserGroupNoCheckValid(e,ParamStoreId,userGroup)">
+                            <InputSelect @bind-Value="userGroup.StoreId" class="form-select">
 
                                 @foreach (var store in listStores)
                                 {
@@ -63,7 +61,7 @@
                     </td>
                     <td>
 
-                        <InputSelect @bind-Value="userGroup.GroupName" class="form-select" @onchange="(ChangeEventArgs e) => UpdateEachUserGroupNoCheckValid(e,paramGroupName,userGroup)">
+                        <InputSelect @bind-Value="userGroup.GroupName" class="form-select" >
 
                             <option value="" disabled selected>Select Group</option>
                             @foreach (var element in dictGroupRole)
@@ -73,7 +71,7 @@
                         </InputSelect>
                     </td>
                     <td>
-                        <InputSelect @bind-Value="userGroup.RoleName" class="form-select" @onchange="(ChangeEventArgs e) => UpdateEachUserGroupNoCheckValid(e, paramRoleName, userGroup)">
+                        <InputSelect @bind-Value="userGroup.RoleName" class="form-select">
 
                             <option value="" disabled selected>Select Role </option>
                             @if (!string.IsNullOrEmpty(userGroup.GroupName) && dictGroupRole.TryGetValue(userGroup.GroupName, out var listRole))
@@ -83,15 +81,15 @@
                                     <option value="@role">@role</option>
                                 }
                             }
-    
+
                         </InputSelect>
                     </td>
 
                     <td>
-                        <button type="button" class="btn btn-outline-danger" @onclick="()=>DeleteUserGroup(userGroup.UserGroupId)">Delete</button>
+                        <button type="button" class="btn btn-outline-danger" @onclick="() => DeleteUserGroup(userGroup.UserGroupId)">Delete</button>
                     </td>
                 </tr>
-                
+
             }
         }
         else
@@ -128,15 +126,17 @@
 
 @code {
     [Parameter]
-    public int? Id { get; set; } 
+    public int? Id { get; set; }
 
     private string statusUserListView = "Data Is Loading...";
+
+    private List<UserGroup> listNewUserGroup = new List<UserGroup>();
 
     private List<Store> listStores = new List<Store>();
 
     private List<UserGroup>? listUserGroup = new List<UserGroup>();
 
-    private Dictionary<string,List<string>> dictGroupRole = new Dictionary<string, List<string>>
+    private Dictionary<string, List<string>> dictGroupRole = new Dictionary<string, List<string>>
     {
         { "Manager", new List<string> { "Admin","Viewer" } },
         { "Staff", new List<string> { "Staff" } }
@@ -167,12 +167,12 @@
 
     private async Task SaveUserGroupChange()
     {
-        if(listUserGroup != null && listUserGroup.Count > 0)
+        if (listUserGroup != null && listUserGroup.Count > 0)
         {
             List<UserGroup> listValidUserGroup = new List<UserGroup>();
             List<UserGroup> listInValidUserGroup = new List<UserGroup>();
 
-            foreach(var userGroup in listUserGroup)
+            foreach (var userGroup in listUserGroup)
             {
 
                 if (CheckEmptyUserGroup(userGroup) && CheckDuplicateUserGroup(userGroup))
@@ -187,12 +187,29 @@
 
             }
 
-            if (listInValidUserGroup.Count == 0)
+            if (listInValidUserGroup.Count == 0 && listUserGroup.Count == listValidUserGroup.Count)
             {
-                foreach( var validUserGroup in listValidUserGroup)
+                int numberElementToAdd = listValidUserGroup.Count - listNewUserGroup.Count;
+                if(numberElementToAdd == 0)
                 {
-                    UserGroupService.UpdateUserGroup(validUserGroup.UserGroupId, validUserGroup);
+                    foreach (var validUserGroup in listValidUserGroup.Skip(numberElementToAdd).ToList())
+                    {
+                        validUserGroup.Store = null;
+                        UserGroupService.AddUserGroup(validUserGroup);
+                    }
+                }else if (numberElementToAdd > 0)
+                {
+                    foreach (var validUserGroup in listValidUserGroup.Take(numberElementToAdd).ToList())
+                    {
+                        UserGroupService.UpdateUserGroup(validUserGroup.UserGroupId, validUserGroup);
+                    }
+                    foreach (var validUserGroup in listValidUserGroup.Skip(numberElementToAdd).ToList())
+                    {
+                        validUserGroup.Store = null;
+                        UserGroupService.AddUserGroup(validUserGroup);
+                    }
                 }
+               
                 statusUserListView = "User Groups Updated Successfully";
                 StateHasChanged();
                 NavigationManager.NavigateTo("/users");
@@ -200,11 +217,13 @@
             else
             {
                 await JSRuntime.InvokeVoidAsync("alert", $"There Are {listInValidUserGroup.Count} Groups Is Invalid \n Do not let Group/ Role empty. \n Make Sure There Is No Duplicate Row !");
-                foreach(var invalidUserGroup in listInValidUserGroup)
+                foreach (var invalidUserGroup in listInValidUserGroup)
                 {
-                    UserGroupService.RemoveUserGroup(invalidUserGroup.UserGroupId);
+                    //UserGroupService.RemoveUserGroup(invalidUserGroup.UserGroupId);
+                    listUserGroup.Remove(invalidUserGroup);
+                    StateHasChanged();
                 }
-                NavigationManager.Refresh(true);
+                //NavigationManager.Refresh(true);
 
             }
 
@@ -222,7 +241,7 @@
     private bool CheckEmptyUserGroup(UserGroup userGroupToCheck)
     {
 
-        if (listUserGroup!=null && listUserGroup.Count > 0)
+        if (listUserGroup != null && listUserGroup.Count > 0)
         {
             foreach (var currentUserGroup in listUserGroup)
             {
@@ -252,7 +271,6 @@
                     currentUserGroup.RoleName == userGroupToCheck.RoleName &&
                     currentUserGroup.StoreId == userGroupToCheck.StoreId)
                 {
-                    // Duplicate found
                     return false;
                 }
             }
@@ -262,48 +280,40 @@
 
     private void DeleteUserGroup(int userGroupId)
     {
-        UserGroupService.RemoveUserGroup(userGroupId);
-        if (this.Id.HasValue)
+
+        if (listUserGroup != null && listUserGroup.Count > 0)
         {
-            listUserGroup = UserGroupService.GetUserGroupsByUserId(this.Id.Value);
+            listUserGroup.RemoveAll(ug => ug.UserGroupId == userGroupId);
+            StateHasChanged();
         }
 
-        StateHasChanged();
     }
 
     private void AddUserGroup(int userId)
     {
         Store? storeActiveDefault = StoresService.GetStores().Where(s => s.IsActive == true).FirstOrDefault();
-        // string groupNameDefault = this.dictGroupRole.ElementAt(1).Key;
-        // string roleNameDefault = this.dictGroupRole.ElementAt(1).Value[0];
-
-
-        if (storeActiveDefault != null && this.Id != null)
+        //int userGroupId = UserGroupService.GetMaxUserGroupId() + 1;
+        if (storeActiveDefault != null && this.Id.HasValue)
         {
             UserGroup newUserGroup = new UserGroup()
-                {
-                    StoreId = storeActiveDefault.StoreId,
-                    UserId = this.Id.Value
-                };
+            {
+                //UserGroupId = userGroupId,
+                StoreId = storeActiveDefault.StoreId,
+                Store = storeActiveDefault,
+                UserId = this.Id.Value
+            };
 
+            this.listUserGroup.Add(newUserGroup);
+            this.listNewUserGroup.Add(newUserGroup);
+            StateHasChanged();
+        }
+        return;
 
-            UserGroupService.AddUserGroup(newUserGroup);
-        }
-
-        if (this.Id.HasValue)
-        {
-            listUserGroup = UserGroupService.GetUserGroupsByUserId(this.Id.Value);
-        }
-        else
-        {
-            throw new InvalidOperationException("User ID is not set"); 
-        }
-        StateHasChanged();
     }
 
     private void UpdateEachUserGroupNoCheckValid(ChangeEventArgs e, string param, UserGroup userGroup)
     {
-        if (param.Equals("GroupName",StringComparison.OrdinalIgnoreCase))
+        if (param.Equals("GroupName", StringComparison.OrdinalIgnoreCase))
         {
             userGroup.GroupName = e.Value?.ToString() ?? "";
             UserGroupService.UpdateUserGroup(userGroup.UserGroupId, userGroup);

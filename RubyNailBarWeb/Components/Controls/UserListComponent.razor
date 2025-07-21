@@ -51,7 +51,7 @@
                             var listStoreId = user.UserGroups
                                                     .Select(ug => ug.StoreId)
                                                     .OfType<int>()
-                                                    .Distinct().ToList();
+                                                    .ToList();
 
                             foreach(var storeId in listStoreId)
                             {

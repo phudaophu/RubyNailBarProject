@@ -88,7 +88,10 @@ else
                                 {
                                     <FieldComponent Label="Modified Date">
                                         <Control>
-                                            <InputDate @bind-Value=user.ModifiedDatetime disabled></InputDate>
+                                            <input type="datetime"
+                                                   class="form-control"
+                                                   @bind="user.ModifiedDatetime"
+                                                   disabled>
                                         </Control>
                                     </FieldComponent>
                                 }
@@ -114,18 +117,18 @@ else
         
         <a class="btn btn-primary" href="/users"> Back </a>
         &nbsp;
+
         @if (user.UserId > 0)
         {
             <button class="btn btn-primary me-3" type="submit">Update</button>
 
             <a class="btn btn-primary" href=@($"/usergroups/{user.UserId}")> Edit Group </a>
+        
         }
         else
         {
-            <a class="btn btn-primary" href=@($"/usergroups/{user.UserId}")> Next </a>
+            <a class="btn btn-primary" href=@($"/usergroups/{this.Id.Value}")> Next </a>
         }
-       
-
 
     </EditForm>
 }
