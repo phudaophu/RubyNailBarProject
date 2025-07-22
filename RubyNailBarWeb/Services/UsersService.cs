@@ -12,9 +12,9 @@ namespace RubyNailBarWeb.Services
             this.usersRepository = _usersRepository;
         }
 
-        public void AddUserService(User user)
+        public int AddUserService(User user)
         {
-            usersRepository.AddUser(user);
+           return usersRepository.AddUser(user);
         }
 
         public void UpdateUserService(int userId, User user)

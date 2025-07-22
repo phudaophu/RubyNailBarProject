@@ -4,6 +4,7 @@
 @inject NavigationManager NavigationManager
 @inject IUsersService UsersService
 @inject IStoresService StoresService
+@inject IUserGroupService UserGroupService
 
 @if (Id.HasValue)
 {
@@ -117,20 +118,17 @@ else
         
         <a class="btn btn-primary" href="/users"> Back </a>
         &nbsp;
-
+        <button class="btn btn-primary" type="submit">Update</button>
+        &nbsp;
         @if (user.UserId > 0)
         {
-            <button class="btn btn-primary me-3" type="submit">Update</button>
-
             <a class="btn btn-primary" href=@($"/usergroups/{user.UserId}")> Edit Group </a>
-        
         }
-        else
-        {
-            <a class="btn btn-primary" href=@($"/usergroups/{this.Id.Value}")> Next </a>
-        }
+
 
     </EditForm>
+
+
 }
 
 
@@ -145,6 +143,8 @@ else
     [SupplyParameterFromForm]
     private User? user { get; set; }
 
+    private List<Store> listStore = new List<Store>();
+
     protected override void OnParametersSet()
     {
         if (this.Id.HasValue)
@@ -154,24 +154,36 @@ else
         else
         {
             user ??= new User() { IsActive = false };
+            listStore = StoresService.GetStores().Where(x => x.IsActive == true).ToList();    
         }
     }
 
     private void SubmitFunc()
     {
+
         if (user is not null)
         {
+
             if (this.Id.HasValue)
             {
                 UsersService.UpdateUserService(user.UserId, user);
+                NavigationManager.NavigateTo("/users");
             }
             else
             {
-                UsersService.AddUserService(user);
+                user.ModifiedDatetime = DateTime.Now;
+                int newUserId =  UsersService.AddUserService(user);
+                UserGroupService.AddUserGroup(new UserGroup()
+                {
+                    StoreId = listStore.FirstOrDefault()?.StoreId ?? 0,
+                    UserId = newUserId,
+                   
+                });
+                NavigationManager.NavigateTo($"/usergroups/{newUserId}");
             }
 
         }
-        NavigationManager.NavigateTo($"/users");
+       
     }
 
 

@@ -103,5 +103,6 @@ namespace RubyNailBarWeb.Services
             }
             userGroupRepository.RemoveUserGroup(userGroupId);
         }
+
     }
 }

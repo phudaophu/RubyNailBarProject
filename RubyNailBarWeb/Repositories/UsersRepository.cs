@@ -13,12 +13,12 @@ namespace RubyNailBarWeb.Repositories
         
         }
 
-        public void AddUser (User user) 
+        public int AddUser (User user) 
         { 
             using var db = this.contextFactory.CreateDbContext();
             db.Users.Add(user);
             db.SaveChanges();
-        
+            return user.UserId;
         }
         public List<User> GetUsers()
         {

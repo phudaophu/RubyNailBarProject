@@ -4,7 +4,7 @@ namespace RubyNailBarWeb.Services.Implements
 {
     public interface IUsersService
     {
-        void AddUserService(User user);
+        int AddUserService(User user);
         User? GetUserByIdService(int userId);
         List<User> GetUsersService();
         List<User>? SearchUserService(string keyString);
