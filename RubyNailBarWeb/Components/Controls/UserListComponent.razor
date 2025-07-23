@@ -3,31 +3,32 @@
 @inject IStoresService StoresService
 
 @attribute [StreamRendering]
+
 <table class="table table-striped">
 
 
     <thead>
         <tr>
             <th>
-                Index
+                <button class="btn border-0 btn-sm"> Index </button>
             </th>
             <th>
-                Store
+                <button type="button" class="btn border-0 btn-sm" @onclick="@(() => ToggleSort("Store"))">Store @GetSortIcon("Store")</button>
             </th>
             <th>
-                Full Name
+                <button type="button" class="btn border-0 btn-sm" @onclick="@(() => ToggleSort("Firstname"))">Fullname @GetSortIcon("Firstname")</button>
             </th>
             <th> 
-                Username
+                <button type="button" class="btn border-0 btn-sm" @onclick="@(() => ToggleSort("Username"))">Username @GetSortIcon("Username")</button>
             </th>
             <th>
-                Group
+                <button type="button" class="btn border-0 btn-sm" @onclick="@(() => ToggleSort("Group"))">Group @GetSortIcon("Group")</button>
             </th>
             <th>
-                Role
+                <button type="button" class="btn border-0 btn-sm" @onclick="@(() => ToggleSort("Role"))">Role @GetSortIcon("Role")</button>
             </th>
             <th>
-                Status
+                <button type="button" class="btn border-0 btn-sm" @onclick="@(() => ToggleSort("Status"))">Status @GetSortIcon("Status")</button>
             </th>
             <th></th>
             <th></th>
@@ -39,7 +40,7 @@
         @if (listUsers != null && listUsers.Any())
         {
             int i = 0;
-            @foreach(var user in listUsers)
+            @foreach (var user in pagedUsers)
             {
                 <tr>
                     <td>
@@ -151,18 +152,36 @@
     </tbody>
 
 
-
-
 </table>
 
 
-
-
-
-
+<div class="d-flex justify-content-end align-items-center mt-3">
+    <button class="@(currentPage == 1 ? "btn btn-sm btn-light" : "btn btn-sm btn-secondary")" @onclick="PrevPage" disabled="@(currentPage == 1)">←</button>
+    &nbsp;
+    <span>Page @currentPage of @totalPages</span>
+    &nbsp; 
+    <button class="@(currentPage == totalPages ? "btn btn-sm btn-light" : "btn btn-sm btn-secondary")" @onclick="NextPage" disabled="@(currentPage == totalPages)">→</button>
+</div>
 
 @code {
 
+    private List<User> pagedUsers = new List<User>();
+
+    private int currentPage = 1;
+
+    private int pageSize = 5;
+
+    private int totalPages
+    {
+        get
+        {
+            if(listUsers is null || !listUsers.Any())
+            {
+                return 1;
+            }
+            return (int)Math.Ceiling((double)listUsers.Count / pageSize);
+        }
+    }
 
     [Parameter]
     public string? FilteredUsersData { set; get; }
@@ -172,6 +191,139 @@
     private bool isFirstRender = true;
 
     private string? statusUserListView = "Data Is Loading...";
+
+
+    private Dictionary<string, int> sortStates = new()
+    {
+        { "Store",     0 },
+        { "Firstname", 0 },
+        { "Username",  0 },
+        { "Group",     0 },
+        { "Status",    0 },
+        { "Role",      0 }
+    };
+
+    private void PrevPage()
+    {
+        if (currentPage > 1)
+        {
+            currentPage--;
+            UpdatePagedUsers();
+        }
+    }
+
+    private void NextPage()
+    {
+        if (currentPage < totalPages)
+        {
+            currentPage++;
+            UpdatePagedUsers();
+        }
+    }
+
+    private void UpdatePagedUsers()
+    {
+        if (listUsers is not null || listUsers.Any())
+        {
+            pagedUsers = listUsers
+                        .Skip((currentPage - 1) * pageSize)
+                        .Take(pageSize)
+                        .ToList();
+        }
+
+    }
+
+    private void ToggleSort(string column)
+    {
+        if (listUsers is null || !listUsers.Any())
+            return;
+
+        // reset other columns
+        foreach (var key in sortStates.Keys.ToList())
+        {
+            if (key != column)
+            {
+                sortStates[key] = 0;
+            }
+        }
+
+        // advance state
+        sortStates[column]++;
+
+        if (sortStates[column] > 2)
+        {
+            sortStates[column] = 0;
+        }
+
+        switch (column)
+        {
+            case "Firstname":
+                ApplyLogicSort(u => u.FirstName, column);
+                break;
+
+            case "Store":
+                ApplyLogicSort(u => u.UserGroups.Count, column);
+                break;
+
+            case "Username":
+                ApplyLogicSort(u => u.Username, column);
+                break;
+
+            case "Group":
+                ApplyLogicSort(u => u.UserGroups.Count, column);
+                break;
+
+            case "Role":
+                ApplyLogicSort(u => u.UserGroups.Count, column);
+                break;
+
+            case "Status":
+                ApplyLogicSort(u => u.IsActive, column);
+                break;
+        }
+
+        StateHasChanged();
+    }
+
+
+    private RenderFragment GetSortIcon(string column) => builder =>
+    {
+        string icon = sortStates[column] switch
+        {
+            1 => "▲", // ascending
+            2 => "▼", // descending
+            _ => ""
+        };
+        builder.AddContent(0, icon);
+    };
+
+
+    private void ApplyLogicSort<TKey>(Func<User,TKey> selector, string column)
+    {
+        switch (this.sortStates[column])
+        {
+            case 0:
+                listUsers = UsersService.GetUsersService();
+                UpdatePagedUsers();
+                break;
+
+            case 1:
+                if(listUsers != null)
+                {
+                    listUsers = listUsers.OrderBy(selector).ToList();
+                    UpdatePagedUsers();
+                }
+                break;
+
+            case 2:
+                if(listUsers != null)
+                {
+                    listUsers = listUsers.OrderByDescending(selector).ToList();
+                    UpdatePagedUsers();
+                }
+                break;
+        }
+    }
 
     protected override void OnParametersSet()
     {
@@ -190,10 +342,10 @@
                 }
 
             }
+            UpdatePagedUsers();
             StateHasChanged();
         }
     }
-
 
     protected override void OnAfterRender(bool firstRender)
     {
@@ -213,13 +365,12 @@
                 }
 
             }
-          
+            UpdatePagedUsers();
             StateHasChanged();
         }
     }
 
-
-
+    
     private void SetUserStatus(int userId, bool status)
     {
         var userToUpdate = UsersService.GetUserByIdService(userId);

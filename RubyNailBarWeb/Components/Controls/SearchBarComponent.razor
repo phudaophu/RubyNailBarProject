@@ -5,6 +5,7 @@
         <input type="text" class="form-control" placeholder="Enter User Info" @bind-value="usersFilter" @bind-value:event="oninput" />
         <button type="button" class="btn btn-outline-secondary" @onclick="HandleSearch">Search</button>
         <button type="button" class="btn btn-outline-secondary" @onclick="ClearSearchBar">Clear</button>
+        
         <a class="btn btn-outline-secondary" href="/user"> Add User </a>
 
     </div>
@@ -19,6 +20,10 @@
 
     [Parameter]
     public EventCallback<string> SearchUsersCallBack { get; set; }
+
+    [Parameter]
+    public RenderFragment? NavControl { get; set; }
+
 
     public string? usersFilter;
 
