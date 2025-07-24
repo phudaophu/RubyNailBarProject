@@ -5,7 +5,11 @@
 
 <h3>User</h3>
 
-<SearchBarComponent SearchUsersCallBack="HandleSearchUser" @ref="searchBarComponent"></SearchBarComponent>
+<SearchBarComponent SearchUsersCallBack="HandleSearchUser" @ref="searchBarComponent">
+    <ElementControl>
+        <a class="btn btn-outline-secondary" href="/user"> Add User </a>
+    </ElementControl>
+</SearchBarComponent>
 
 
 <UserListComponent FilteredUsersData="@filteredUsers"></UserListComponent>

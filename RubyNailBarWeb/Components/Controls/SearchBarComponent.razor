@@ -6,8 +6,8 @@
         <button type="button" class="btn btn-outline-secondary" @onclick="HandleSearch">Search</button>
         <button type="button" class="btn btn-outline-secondary" @onclick="ClearSearchBar">Clear</button>
         
-        <a class="btn btn-outline-secondary" href="/user"> Add User </a>
-
+        @* <a class="btn btn-outline-secondary" href="/user"> Add User </a> *@
+        @ElementControl
     </div>
 </div>
 
@@ -22,7 +22,7 @@
     public EventCallback<string> SearchUsersCallBack { get; set; }
 
     [Parameter]
-    public RenderFragment? NavControl { get; set; }
+    public RenderFragment? ElementControl { get; set; }
 
 
     public string? usersFilter;
