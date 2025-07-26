@@ -1,10 +1,11 @@
-﻿
+﻿@inject ContainerStorage ContainerStorage   
+
 <div class="d-flex justify-content-between align-items-center mt-3">
 
     <!-- Page Size Dropdown -->
     <div class="d-flex align-items-center">
         <label class="me-2">Rows per page:</label>
-        <InputSelect class="form-select form-select-sm w-auto" @bind-Value="@pageSize">
+        <InputSelect class="form-select form-select-sm w-auto" @bind-Value="PageSize">
             <option value="5">5</option>
             <option value="10">10</option>
             <option value="15">15</option>
@@ -13,93 +14,110 @@
 
     </div>
 
-    <!-- Pagination Controls -->
-    <div class="d-flex align-items-center">
-        <button class="@(currentPage == 1 ? "btn btn-sm btn-light" : "btn btn-sm btn-secondary")" @onclick="PrevPage" disabled="@(currentPage == 1)"> ←</button>
-        &nbsp;
-        <span>Page @currentPage of @totalPages</span>
-        &nbsp;
-        <button class="@(currentPage == totalPages ? "btn btn-sm btn-light" : "btn btn-sm btn-secondary")" @onclick="NextPage" disabled="@(currentPage == totalPages)">→ </button>
+        <!-- Pagination Controls -->
+        <div class="d-flex align-items-center">
+            <button class="@(CurrentPage == 1 ? "btn btn-sm btn-light" : "btn btn-sm btn-secondary")" @onclick="PrevPage" disabled="@(CurrentPage == 1)"> ←</button>
+            &nbsp;
+            <span>Page @CurrentPage of @TotalPages</span>
+            &nbsp;
+            <button class="@(CurrentPage == TotalPages ? "btn btn-sm btn-light" : "btn btn-sm btn-secondary")" @onclick="NextPage" disabled="@(CurrentPage == TotalPages)">→ </button>
+        </div>
     </div>
-</div>
 
 
 
 
 @code {
+    // parameter output is pageSize, currentPage, totalPages
+
+    // parameter input is ListUsers.Count => cal totalPages
+    // private int currentPage = 1; 
+
+    private bool isFirstRender = true;
 
     [Parameter]
-    public List<User> ListUsers { get; set; } = new List<User>();   
+    public int CurrentPage { get; set; }
 
-    public EventCallback<List<User>> listPagedUsersCalBack { get; set; }
+    [Parameter]
+    public int TotalPages { get; set; }
 
-    private int currentPage = 1;
+    int _pageSize = 5; // default page size
 
-    private int _pageSize = 5;
-
-    private int pageSize
-    {
-        get => _pageSize;
+    [Parameter]
+    public int PageSize 
+    {   get => _pageSize; 
         set
         {
-            if (value > 0 && value != _pageSize)
+            if(value > 0 && value != _pageSize)
             {
                 _pageSize = value;
-                currentPage = 1; // Optional: reset page
-                UpdatePagedUsers(); // Refresh your paged list
+                CurrentPage  = 1;
+                ContainerStorage.setPaginationData(CurrentPage, 0, value);
+                PageSizeCallBack.InvokeAsync(value);
             }
         }
     }
 
-    private int totalPages
-    {
-        get
-        {
-            if (ListUsers is null || !ListUsers.Any())
-            {
-                return 1;
-            }
-            return (int)Math.Ceiling((double)ListUsers.Count / _pageSize);
-        }
-    }
 
 
-    private void OnPageSizeChanged()
-    {
-        currentPage = 1;
-        UpdatePagedUsers();
+    [Parameter]
+    public EventCallback<int> CurrentPageCallBack { get; set; }
 
-    }
+    [Parameter]
+    public EventCallback<int> PageSizeCallBack { get; set; }
 
     private void PrevPage()
     {
-        if (currentPage > 1)
+        if (this.CurrentPage > 1)
         {
-            currentPage--;
-            UpdatePagedUsers();
+
+            this.CurrentPage--;
+            ContainerStorage.setPaginationData(CurrentPage, TotalPages, PageSize);
+            CurrentPageCallBack.InvokeAsync(CurrentPage);
+            //UpdatePagedUsers();
         }
     }
 
     private void NextPage()
     {
-        if (currentPage < totalPages)
+        if (this.CurrentPage < this.TotalPages)
         {
-            currentPage++;
-            UpdatePagedUsers();
+            CurrentPage++;
+            ContainerStorage.setPaginationData(CurrentPage, TotalPages, PageSize);
+            CurrentPageCallBack.InvokeAsync(CurrentPage);
+            //UpdatePagedUsers();
         }
     }
 
-    private void UpdatePagedUsers()
+    protected override void OnParametersSet()
     {
-        if (ListUsers is not null && ListUsers.Any())
+        if(!isFirstRender)
         {
-            listPagedUsersCalBack.InvokeAsync(ListUsers
-                                                .Skip((currentPage - 1) * _pageSize)
-                                                .Take(_pageSize)
-                                                .ToList());
+            // Ensure that the parameters are set correctly after the first render
+            
+            this._pageSize = ContainerStorage.getLastPageSize();
+            CurrentPage = ContainerStorage.getLastCurrentPage();
+            TotalPages = ContainerStorage.getLastTotalPage();
+            //ContainerStorage.setPaginationData(CurrentPage, TotalPages, PageSize);
+            StateHasChanged();
         }
-
     }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            isFirstRender = false;
+            
+            //PageSize = ContainerStorage.getLastPageSize();
+            this._pageSize = ContainerStorage.getLastPageSize();
+            CurrentPage = ContainerStorage.getLastCurrentPage();
+            TotalPages = ContainerStorage.getLastTotalPage();
+            
+            StateHasChanged(); 
+        }
+    }
+
 
 
 }

@@ -12,12 +12,20 @@
 </SearchBarComponent>
 
 
-<UserListComponent FilteredUsersData="@filteredUsers"></UserListComponent>
+<UserListComponent FilteredUsersData="@filteredUsers" PageSize="@pageSize" CurrentPage="@currentPage" TotalPagesCallBack="HandleTotalPage"></UserListComponent>
 
+<PaginationComponent TotalPages="@totalPages" PageSizeCallBack="HandlePageSize" CurrentPageCallBack="HandleCurrentPage"></PaginationComponent>
 
 
 @code {
 
+    private int totalPages;
+
+    private int pageSize;
+
+    private int currentPage;
+
+    private List<User> listUsers = new List<User>();    
 
     private string? filteredUsers = "";
 
@@ -30,8 +38,23 @@
 
     }
     
+    private void HandleTotalPage(int totalPages)
+    {
+        this.totalPages = totalPages;
+        StateHasChanged();
+    }
 
+    private void HandlePageSize(int pageSize)
+    {
+        this.pageSize = pageSize;
+        //totalPages = (int)Math.Ceiling((double)listUsers.Count / pageSize);
+        //currentPage = 1; // Reset to first page when page size changes
+        StateHasChanged();
+    }
 
-
-
+    private void HandleCurrentPage(int currentPage)
+    {
+        this.currentPage = currentPage;
+        StateHasChanged();
+    }
 }

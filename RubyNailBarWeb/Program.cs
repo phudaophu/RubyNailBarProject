@@ -2,8 +2,9 @@ using Microsoft.EntityFrameworkCore;
 using RubyNailBarWeb.Components;
 using RubyNailBarWeb.Models;
 using RubyNailBarWeb.Repositories;
-using RubyNailBarWeb.Services.Implements;
 using RubyNailBarWeb.Services;
+using RubyNailBarWeb.Services.Implements;
+using RubyNailBarWeb.StateStorage;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,9 +19,12 @@ builder.Services.AddDbContextFactory<NailsDbContext>(options =>
 
 });
 
+builder.Services.AddScoped<ContainerStorage>();
+
 builder.Services.AddScoped<UsersRepository>();
 builder.Services.AddScoped<StoresRepository>();
 builder.Services.AddScoped<UserGroupRepository>();
+
 builder.Services.AddTransient<IUsersService, UsersService>();
 builder.Services.AddTransient<IStoresService, StoresService>();
 builder.Services.AddTransient<IUserGroupService, UserGroupService>();

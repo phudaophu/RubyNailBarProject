@@ -1,6 +1,10 @@
-﻿@inject IUsersService UsersService
+﻿@inject ContainerStorage ContainerStorage
+
+@inject IUsersService UsersService
 
 @inject IStoresService StoresService
+
+@inject ContainerStorage ContainerStorage
 
 @attribute [StreamRendering]
 
@@ -13,22 +17,22 @@
                 <button class="btn border-0 btn-sm"> Index </button>
             </th>
             <th>
-                <button type="button" class="btn border-0 btn-sm" @onclick="@(() => ToggleSort("Store"))">Store @GetSortIcon("Store")</button>
+                <button type="button" class="btn border-0 btn-sm text-nowrap px-3" @onclick="@(() => ToggleSort("Store"))">Store @GetSortIcon("Store")</button>
             </th>
             <th>
-                <button type="button" class="btn border-0 btn-sm" @onclick="@(() => ToggleSort("Firstname"))">Fullname @GetSortIcon("Firstname")</button>
+                <button type="button" class="btn border-0 btn-sm text-nowrap px-3" @onclick="@(() => ToggleSort("Firstname"))">Fullname @GetSortIcon("Firstname")</button>
             </th>
             <th> 
-                <button type="button" class="btn border-0 btn-sm" @onclick="@(() => ToggleSort("Username"))">Username @GetSortIcon("Username")</button>
+                <button type="button" class="btn border-0 btn-sm text-nowrap px-3" @onclick="@(() => ToggleSort("Username"))">Username @GetSortIcon("Username")</button>
             </th>
             <th>
-                <button type="button" class="btn border-0 btn-sm" @onclick="@(() => ToggleSort("Group"))">Group @GetSortIcon("Group")</button>
+                <button type="button" class="btn border-0 btn-sm text-nowrap px-3" @onclick="@(() => ToggleSort("Group"))">Group @GetSortIcon("Group")</button>
             </th>
             <th>
-                <button type="button" class="btn border-0 btn-sm" @onclick="@(() => ToggleSort("Role"))">Role @GetSortIcon("Role")</button>
+                <button type="button" class="btn border-0 btn-sm text-nowrap px-3" @onclick="@(() => ToggleSort("Role"))">Role @GetSortIcon("Role")</button>
             </th>
             <th>
-                <button type="button" class="btn border-0 btn-sm" @onclick="@(() => ToggleSort("Status"))">Status @GetSortIcon("Status")</button>
+                <button type="button" class="btn border-0 btn-sm text-nowrap px-3" @onclick="@(() => ToggleSort("Status"))">Status @GetSortIcon("Status")</button>
             </th>
             <th></th>
             <th></th>
@@ -37,10 +41,10 @@
 
     </thead>
     <tbody>
-        @if (listUsers != null && listUsers.Any())
+        @if (listUsers != null && listUsers.Any() && PagedUsers != null)
         {
             int i = 0;
-            @foreach (var user in pagedUsers)
+            @foreach (var user in PagedUsers)
             {
                 <tr >
                     <td>
@@ -109,7 +113,7 @@
                     <td>
                         @if (user.IsActive == true)
                         {
-                            <button type="button" class="btn btn-outline-danger"
+                            <button type="button" class="btn btn-outline-danger btn-sm px-2 py-0 text-nowrap"
                                     @onclick="@(() => {
                                                         SetUserStatus(user.UserId,false);
                                                                                              })">
@@ -118,7 +122,7 @@
                     }
                                 else
                     {
-                        <button type="button" class="btn btn-outline-success"
+                        <button type="button" class="btn btn-outline-success btn-sm px-2 py-0 text-nowrap"
                                     @onclick="@(() => { 
                                                          SetUserStatus(user.UserId,true);
                                                                                             })">
@@ -128,14 +132,13 @@
                     &nbsp;
                     </td>
                     <td>
-                        <a class="btn btn-outline-primary" href=@($"/user/{user.UserId}")> Edit </a>
+                <a class="btn btn-outline-primary btn-sm px-2 py-0 text-nowrap" href=@($"/user/{user.UserId}")> Edit </a>
                     </td>
                     <td>
-                        <a class="btn btn-outline-danger" href=@($"/usergroups/{user.UserId}")> Edit Group </a>
+                <a class="btn btn-outline-primary btn-sm px-2 py-0 text-nowrap" href=@($"/usergroups/{user.UserId}")> Edit Group </a>
                     </td>
                 </tr>
             }
-
 
         }
 
@@ -156,62 +159,46 @@
 
 
 
-<div class="d-flex justify-content-between align-items-center mt-3">
 
-    <!-- Page Size Dropdown -->
-    <div class="d-flex align-items-center">
-        <label class="me-2">Rows per page:</label>
-        <InputSelect class="form-select form-select-sm w-auto" @bind-Value="pageSize">
-            <option value="5">5</option>
-            <option value="10">10</option>
-            <option value="15">15</option>
-            <option value="20">20</option>
-        </InputSelect>
-
-    </div>
-
-    <!-- Pagination Controls -->
-    <div class="d-flex align-items-center">
-        <button class="@(currentPage == 1 ? "btn btn-sm btn-light" : "btn btn-sm btn-secondary")" @onclick="PrevPage" disabled="@(currentPage == 1)"> ←</button>
-        &nbsp;
-        <span>Page @currentPage of @totalPages</span>
-        &nbsp;
-        <button class="@(currentPage == totalPages ? "btn btn-sm btn-light" : "btn btn-sm btn-secondary")" @onclick="NextPage" disabled="@(currentPage == totalPages)">→ </button>
-    </div>
-</div>
-
-<br>
 @code {
 
-    private List<User> pagedUsers = new List<User>();
 
-    private int currentPage = 1;
-    private int _pageSize = 5;
+    private List<User>? PagedUsers { get; set; }
 
-    private int pageSize
+    [Parameter]
+    public int CurrentPage { get; set; }
+
+    [Parameter]
+    public int PageSize { get; set; }
+
+    [Parameter]
+    public EventCallback<int> TotalPagesCallBack { get; set; }
+
+    private int previousTotalPage = -1;
+
+    private void UpdatePagedUsers()
     {
-        get => _pageSize;
-        set
+        if (listUsers is not null && listUsers.Any())
         {
-            if (value > 0 && value != _pageSize)
-            {
-                _pageSize = value;
-                currentPage = 1; // Optional: reset page
-                UpdatePagedUsers(); // Refresh your paged list
-            }
-        }
-    }
+            PagedUsers = listUsers.Skip((CurrentPage - 1) * PageSize)
+                                   .Take(PageSize)
+                                    .ToList();
+            int _totalPage = (int)Math.Ceiling((double)listUsers.Count / PageSize);
 
-    private int totalPages
-    {
-        get
-        {
-            if(listUsers is null || !listUsers.Any())
+            if (previousTotalPage != _totalPage)
             {
-                return 1;
+                previousTotalPage = _totalPage; 
+                TotalPagesCallBack.InvokeAsync(_totalPage);
+                ContainerStorage.setTotalPages(_totalPage);
             }
-            return (int)Math.Ceiling((double)listUsers.Count / _pageSize);
+            else
+            {
+                ContainerStorage.setTotalPages(_totalPage);
+
+            }
+
         }
+
     }
 
     [Parameter]
@@ -234,42 +221,7 @@
         { "Role",      0 }
     };
 
-    private void OnPageSizeChanged()
-    {
-        currentPage = 1;
-        UpdatePagedUsers();
-      
-    }
 
-    private void PrevPage()
-    {
-        if (currentPage > 1)
-        {
-            currentPage--;
-            UpdatePagedUsers();
-        }
-    }
-
-    private void NextPage()
-    {
-        if (currentPage < totalPages)
-        {
-            currentPage++;
-            UpdatePagedUsers();
-        }
-    }
-
-    private void UpdatePagedUsers()
-    {
-        if (listUsers is not null && listUsers.Any())
-        {
-            pagedUsers = listUsers
-                        .Skip((currentPage - 1) * _pageSize)
-                        .Take(_pageSize)
-                        .ToList();
-        }
-
-    }
 
     private void ToggleSort(string column)
     {
@@ -285,7 +237,7 @@
             }
         }
 
-        // advance state
+        // advance states
         sortStates[column]++;
 
         if (sortStates[column] > 2)
@@ -370,6 +322,7 @@
             if (string.IsNullOrWhiteSpace(this.FilteredUsersData))
             {
                 listUsers = UsersService.GetUsersService();
+
             }
             else
             {
@@ -380,6 +333,10 @@
                 }
 
             }
+            this.PageSize = ContainerStorage.getLastPageSize();
+            this.CurrentPage = ContainerStorage.getLastCurrentPage();
+  
+            
             
             UpdatePagedUsers();
             StateHasChanged();
@@ -394,7 +351,7 @@
             if (string.IsNullOrWhiteSpace(this.FilteredUsersData))
             {
                 listUsers = UsersService.GetUsersService();
-                
+
             }
             else
             {
@@ -405,6 +362,14 @@
                 }
 
             }
+            // if (ContainerStorage.hasPaginationDataChanged())
+            // {
+            //     this.CurrentPage = ContainerStorage.getLastPaginationData()["currentPage"];
+            //     this.PageSize = ContainerStorage.getLastPaginationData()["pageSize"];
+            //     this.previousTotalPage = ContainerStorage.getLastPaginationData()["totalPages"];
+            // }
+            this.CurrentPage = ContainerStorage.getLastCurrentPage();
+            this.PageSize = ContainerStorage.getLastPageSize();
             UpdatePagedUsers();
             StateHasChanged();
         }
@@ -427,4 +392,70 @@
             return;
         }
     }
+
+    // private int currentPage = 1;
+    // private int _pageSize = 5;
+
+    // private int pageSize
+    // {
+    //     get => _pageSize;
+    //     set
+    //     {
+    //         if (value > 0 && value != _pageSize)
+    //         {
+    //             _pageSize = value;
+    //             currentPage = 1; // Optional: reset page
+    //             UpdatePagedUsers(); // Refresh your paged list
+    //         }
+    //     }
+    // }
+
+    // private int totalPages
+    // {
+    //     get
+    //     {
+    //         if(listUsers is null || !listUsers.Any())
+    //         {
+    //             return 1;
+    //         }
+    //         return (int)Math.Ceiling((double)listUsers.Count / _pageSize);
+    //     }
+    // }
+
+    // private void OnPageSizeChanged()
+    // {
+    //     currentPage = 1;
+    //     UpdatePagedUsers();
+
+    // }
+
+    // private void PrevPage()
+    // {
+    //     if (currentPage > 1)
+    //     {
+    //         currentPage--;
+    //         UpdatePagedUsers();
+    //     }
+    // }
+
+    // private void NextPage()
+    // {
+    //     if (currentPage < totalPages)
+    //     {
+    //         currentPage++;
+    //         UpdatePagedUsers();
+    //     }
+    // }
+
+    // private void UpdatePagedUsers()
+    // {
+    //     if (listUsers is not null && listUsers.Any())
+    //     {
+    //         pagedUsers = listUsers
+    //                     .Skip((currentPage - 1) * _pageSize)
+    //                     .Take(_pageSize)
+    //                     .ToList();
+    //     }
+
+    // }
 }
