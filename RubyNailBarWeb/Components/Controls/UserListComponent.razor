@@ -245,23 +245,10 @@
 
 @code {
 
+    [Parameter]
+    public PaginationComponent? PaginationComponentRef { get; set; }
+
     private User? selectedUser;
-
-
-    // private async Task OnRowClick(MouseEventArgs e, User user)
-    // {
-    //     // Prevent popup if the clicked element is a button or link
-    //     var targetElement = e.Type?.ToLower(); // Use 'Type' property instead of 'Target'
-    //     if (targetElement != null &&
-    //         (targetElement.Contains("button") || targetElement.Contains("a") || targetElement.Contains("svg") || targetElement.Contains("path") || targetElement.Contains("i") || targetElement.Contains("span")))
-    //     {
-    //         Console.WriteLine($"Phu check click element {targetElement.ToString()}");
-    //         return;
-    //     }
-
-    //     await ShowUserModal(user);
-    // }
-    
 
     private async Task ShowUserDetails(User user)
     {
@@ -273,7 +260,6 @@
         // Call JS to show modal
         await JSRuntime.InvokeVoidAsync("bootstrapInterop.showModal", "#userDetailModal");
 
-     
     }
 
 
@@ -284,6 +270,9 @@
 
     [Parameter]
     public int PageSize { get; set; }
+
+    [Parameter]
+    public EventCallback OnSortingCallBack { get; set; }
 
     [Parameter]
     public EventCallback<int> TotalPagesCallBack { get; set; }
@@ -297,6 +286,7 @@
             PagedUsers = listUsers.Skip((CurrentPage - 1) * PageSize)
                                    .Take(PageSize)
                                     .ToList();
+
             int _totalPage = (int)Math.Ceiling((double)listUsers.Count / PageSize);
 
             if (previousTotalPage != _totalPage)
@@ -335,7 +325,14 @@
         { "Role",      0 }
     };
 
-
+    public void ClearSorting()
+    {
+        foreach (var key in sortStates.Keys.ToList())
+        {
+            sortStates[key] = 0;
+        }
+        
+    }
 
     private void ToggleSort(string column)
     {
@@ -349,10 +346,17 @@
             {
                 sortStates[key] = 0;
             }
+         
         }
+
 
         // advance states
         sortStates[column]++;
+
+        this.CurrentPage = 1;
+        ContainerStorage.setCurrentPage(1);
+        OnSortingCallBack.InvokeAsync();
+
 
         if (sortStates[column] > 2)
         {
@@ -386,7 +390,7 @@
                 break;
         }
 
-        StateHasChanged();
+        //StateHasChanged();
     }
 
 
@@ -407,51 +411,73 @@
         switch (this.sortStates[column])
         {
             case 0:
-                listUsers = UsersService.GetUsersService();
-                UpdatePagedUsers();
+
+                this.listUsers = UsersService.GetUsersService();
+              
                 break;
 
             case 1:
                 if(listUsers != null)
                 {
-                    listUsers = listUsers.OrderBy(selector).ToList();
-                    UpdatePagedUsers();
+                    this.listUsers = listUsers.OrderBy(selector).ToList();
+                    
                 }
                 break;
 
             case 2:
                 if(listUsers != null)
                 {
-                    listUsers = listUsers.OrderByDescending(selector).ToList();
-                    UpdatePagedUsers();
+                    this.listUsers = listUsers.OrderByDescending(selector).ToList();
+                    
                 }
                 break;
         }
+
     }
 
     protected override void OnParametersSet()
     {
         if (isFirstRender == false)
         {
-            if (string.IsNullOrWhiteSpace(this.FilteredUsersData))
+
+            if (listUsers is null || listUsers.Count == 0)
             {
                 listUsers = UsersService.GetUsersService();
+                statusUserListView = "Data Is Loading...";
+            }
+
+            else if (string.IsNullOrWhiteSpace(this.FilteredUsersData))
+            {
+
+                if (!OnSortingCallBack.HasDelegate)
+                {
+                    listUsers = UsersService.GetUsersService();
+                    statusUserListView = "Data Is Loading...";
+                }
+                else
+                {
+                    statusUserListView = "Data Is Loading...";
+                }
 
             }
-            else
+
+            else if (!string.IsNullOrWhiteSpace(this.FilteredUsersData))
             {
                 listUsers = UsersService.SearchUserService(FilteredUsersData);
+
                 if (listUsers is null || listUsers.Count == 0)
                 {
                     statusUserListView = "No User Found";
                 }
+  
 
             }
+
+
             this.PageSize = ContainerStorage.getLastPageSize();
             this.CurrentPage = ContainerStorage.getLastCurrentPage();
-  
             
-            
+
             UpdatePagedUsers();
             StateHasChanged();
         }
@@ -476,12 +502,7 @@
                 }
 
             }
-            // if (ContainerStorage.hasPaginationDataChanged())
-            // {
-            //     this.CurrentPage = ContainerStorage.getLastPaginationData()["currentPage"];
-            //     this.PageSize = ContainerStorage.getLastPaginationData()["pageSize"];
-            //     this.previousTotalPage = ContainerStorage.getLastPaginationData()["totalPages"];
-            // }
+
             this.CurrentPage = ContainerStorage.getLastCurrentPage();
             this.PageSize = ContainerStorage.getLastPageSize();
             UpdatePagedUsers();

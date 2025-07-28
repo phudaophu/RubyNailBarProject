@@ -17,9 +17,12 @@ namespace RubyNailBarWeb.StateStorage
 
         public void setTotalPages(int totalPages)
         {
-
              paginationData.TotalPages = totalPages;
-            
+        }
+
+        public void setCurrentPage(int currentPage)
+        {
+            paginationData.CurrentPage = currentPage;
         }
 
         public int getLastCurrentPage()

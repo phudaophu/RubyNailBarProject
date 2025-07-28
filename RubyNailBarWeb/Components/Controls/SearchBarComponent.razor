@@ -32,7 +32,7 @@
         SearchUsersCallBack.InvokeAsync(usersFilter);
     }
 
-    private void ClearSearchBar()
+    public void ClearSearchBar()
     {
         this.usersFilter = string.Empty;
         SearchUsersCallBack.InvokeAsync(usersFilter);

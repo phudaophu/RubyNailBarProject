@@ -1,5 +1,6 @@
 ﻿@page "/users"
 
+@inject ContainerStorage ContainerStorage
 @inject IUsersService UsersService
 @rendermode InteractiveServer
 
@@ -12,9 +13,9 @@
 </SearchBarComponent>
 
 
-<UserListComponent FilteredUsersData="@filteredUsers" PageSize="@pageSize" CurrentPage="@currentPage" TotalPagesCallBack="HandleTotalPage"></UserListComponent>
+<UserListComponent FilteredUsersData="@filteredUsers" PageSize="@pageSize" CurrentPage="@currentPage" TotalPagesCallBack="HandleTotalPage" OnSortingCallBack="HandleSorting" @ref="userListComponent"></UserListComponent>
 
-<PaginationComponent TotalPages="@totalPages" PageSizeCallBack="HandlePageSize" CurrentPageCallBack="HandleCurrentPage"></PaginationComponent>
+<PaginationComponent TotalPages="@totalPages" PageSizeCallBack="HandlePageSize" CurrentPageCallBack="HandleCurrentPage" @ref = "paginationComponent"></PaginationComponent>
 
 
 @code {
@@ -31,30 +32,46 @@
 
     private SearchBarComponent? searchBarComponent;
 
+    private UserListComponent? userListComponent;
+
+    // new addition
+    private PaginationComponent? paginationComponent;
+    //private UserListComponent? userListComponent;
+
+    // private void OnSortingHandle()
+    // {
+    //     paginationComponent?.getPaginationFromContainer();
+    // }
+    // new addition
+
+    public void HandleSorting()
+    {
+        paginationComponent?.setCurrentPage(1);
+    }
+
     public void HandleSearchUser(string userFilterData)
     {
-
         filteredUsers = userFilterData;
-
     }
-    
+
     private void HandleTotalPage(int totalPages)
     {
         this.totalPages = totalPages;
-        StateHasChanged();
+        //StateHasChanged();
     }
 
     private void HandlePageSize(int pageSize)
     {
         this.pageSize = pageSize;
-        //totalPages = (int)Math.Ceiling((double)listUsers.Count / pageSize);
-        //currentPage = 1; // Reset to first page when page size changes
-        StateHasChanged();
+
+        searchBarComponent?.ClearSearchBar();
+        userListComponent?.ClearSorting();
+        //StateHasChanged();
     }
 
     private void HandleCurrentPage(int currentPage)
     {
         this.currentPage = currentPage;
-        StateHasChanged();
+        //StateHasChanged();
     }
 }

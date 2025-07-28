@@ -59,12 +59,28 @@
     }
 
 
-
     [Parameter]
     public EventCallback<int> CurrentPageCallBack { get; set; }
 
     [Parameter]
     public EventCallback<int> PageSizeCallBack { get; set; }
+
+
+    public void setCurrentPage(int currentPage)
+    {
+        if (currentPage > 0 && currentPage != this.CurrentPage)
+        {
+            this.CurrentPage = currentPage;
+        }
+
+    }
+
+    public void getPaginationFromContainer()
+    {
+        this._pageSize = ContainerStorage.getLastPageSize();
+        CurrentPage = ContainerStorage.getLastCurrentPage();
+        TotalPages = ContainerStorage.getLastTotalPage();
+    }
 
     private void PrevPage()
     {
@@ -74,7 +90,7 @@
             this.CurrentPage--;
             ContainerStorage.setPaginationData(CurrentPage, TotalPages, PageSize);
             CurrentPageCallBack.InvokeAsync(CurrentPage);
-            //UpdatePagedUsers();
+            
         }
     }
 
@@ -85,7 +101,7 @@
             CurrentPage++;
             ContainerStorage.setPaginationData(CurrentPage, TotalPages, PageSize);
             CurrentPageCallBack.InvokeAsync(CurrentPage);
-            //UpdatePagedUsers();
+           
         }
     }
 
@@ -94,11 +110,8 @@
         if(!isFirstRender)
         {
             // Ensure that the parameters are set correctly after the first render
-            
-            this._pageSize = ContainerStorage.getLastPageSize();
-            CurrentPage = ContainerStorage.getLastCurrentPage();
-            TotalPages = ContainerStorage.getLastTotalPage();
-            //ContainerStorage.setPaginationData(CurrentPage, TotalPages, PageSize);
+
+            getPaginationFromContainer();
             StateHasChanged();
         }
     }
@@ -108,12 +121,9 @@
         if (firstRender)
         {
             isFirstRender = false;
-            
+
             //PageSize = ContainerStorage.getLastPageSize();
-            this._pageSize = ContainerStorage.getLastPageSize();
-            CurrentPage = ContainerStorage.getLastCurrentPage();
-            TotalPages = ContainerStorage.getLastTotalPage();
-            
+            getPaginationFromContainer();
             StateHasChanged(); 
         }
     }
