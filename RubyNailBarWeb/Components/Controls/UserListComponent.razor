@@ -6,6 +6,8 @@
 
 @inject ContainerStorage ContainerStorage
 
+@inject IJSRuntime JSRuntime
+
 @attribute [StreamRendering]
 
 <table class="table table-striped table-hover">
@@ -46,11 +48,11 @@
             int i = 0;
             @foreach (var user in PagedUsers)
             {
-                <tr >
-                    <td>
+                <tr class="align-middle">
+                    <td style="cursor:pointer" @onclick="@(e => ShowUserDetails(user))">
                         @(++i)
                     </td>
-                    <td>
+                    <td style="cursor:pointer" @onclick="@(e => ShowUserDetails(user))">
                         @if (user.UserGroups.Any())
                         {
                             var listStoreId = user.UserGroups
@@ -70,14 +72,14 @@
                         }
                     </td>
 
-                    <td>
+                    <td style="cursor:pointer" @onclick="@(e => ShowUserDetails(user))">
                         @($"{user.FirstName} {@user.LastName}")
                     </td>
-                    <td>
+                    <td style="cursor:pointer" @onclick="@(e => ShowUserDetails(user))">
                         @user.Username
                     </td>
 
-                    <td>
+                    <td style="cursor:pointer" @onclick="@(e => ShowUserDetails(user))">
                         @if (user.UserGroups.Any())
                         {
                             foreach (var group in user.UserGroups)
@@ -92,7 +94,7 @@
                         }
                     </td>
 
-                    <td>
+                    <td style="cursor:pointer" @onclick="@(e => ShowUserDetails(user))">
                         @if (user.UserGroups.Any())
                         {
                             foreach (var group in user.UserGroups)
@@ -106,7 +108,7 @@
                             <text>N/A</text>
                         }
                     </td>
-                    <td>
+                    <td style="cursor:pointer" @onclick="@(e => ShowUserDetails(user))">
                         <span class="badge  border @(user.IsActive ? "text-success border-success" : "text-danger border-danger")">@(user.IsActive ? "Active" : "InActive")</span>
 
                     </td>
@@ -157,10 +159,122 @@
 
 </table>
 
+<!-- User Detail Modal -->
+<div class="modal fade" id="userDetailModal" tabindex="-1" aria-labelledby="userDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="userDetailModalLabel">User Detail</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                @if (selectedUser != null)
+                {
+                    <div class="row">
+                        <!-- Profile Picture -->
+                        <div class="col-md-3 text-center">
+                            <img src="/img/img-default.png" alt="Profile Image" class="img-thumbnail" style="max-width: 150px;" />
+                        </div>
+
+                        <!-- User Info -->
+                        <div class="col-md-9">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5><i class="bi bi-person"></i> SUMMARY</h5>
+                                <a class="btn btn-outline-warning btn-sm text-uppercase px-2 py-0" href=@($"/user/{selectedUser.UserId}")>Edit</a>
+                            </div>
+
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <div><strong>Name:</strong> @selectedUser.FirstName @selectedUser.LastName</div>
+                                    <div><strong>Username:</strong> @selectedUser.Username</div>
+                                    <div><strong>Team:</strong> <a href="#">your team name</a></div>
+                                    <div class="mt-2">
+                                        <strong>Status:</strong>
+                                        <span class="text-@(selectedUser.IsActive ? "success" : "danger")">
+                                            @(selectedUser.IsActive ? "Active" : "Access Revoked")
+                                        </span>
+                                    </div>
+                                    <div><strong>Role:</strong> your role </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div><strong>Email:</strong> <a href="mailto:@selectedUser.Email">@selectedUser.Email</a></div>
+                                    <div><strong>Mobile:</strong> @selectedUser.PhoneNo</div>
+                                    <div><strong>Address:</strong> your user address</div>
+                                    <div class="mt-2"><strong>Role Permissions:</strong> All</div>
+                                    <div>
+                                        <strong>User Access:</strong>
+                                        <div class="small text-muted">
+                                            Configuration, Users, History, Reports, Helpdesk, Supplier Portal Administrator, Employee Portal Administrator, Workflow Administrator
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Groups / Roles / Stores -->
+                            <hr />
+                            <div>
+                                <strong>Store & Group & Role:</strong>
+                                <ul class="mb-0">
+                                    @foreach (var group in selectedUser.UserGroups)
+                                    {
+                                        <li>
+                                            @(group.StoreId != null ? StoresService.GetStoreById(group.StoreId.Value).Name : "N/A")
+                                            - @group.GroupName - @group.RoleName
+                                        </li>
+                                    }
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                }
+                else
+                {
+                    <p class="text-muted">No user selected.</p>
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 
 
 @code {
+
+    private User? selectedUser;
+
+
+    // private async Task OnRowClick(MouseEventArgs e, User user)
+    // {
+    //     // Prevent popup if the clicked element is a button or link
+    //     var targetElement = e.Type?.ToLower(); // Use 'Type' property instead of 'Target'
+    //     if (targetElement != null &&
+    //         (targetElement.Contains("button") || targetElement.Contains("a") || targetElement.Contains("svg") || targetElement.Contains("path") || targetElement.Contains("i") || targetElement.Contains("span")))
+    //     {
+    //         Console.WriteLine($"Phu check click element {targetElement.ToString()}");
+    //         return;
+    //     }
+
+    //     await ShowUserModal(user);
+    // }
+    
+
+    private async Task ShowUserDetails(User user)
+    {
+        selectedUser = user;
+
+        // Small delay to ensure modal is rendered before showing it
+        await Task.Delay(100);
+
+        // Call JS to show modal
+        await JSRuntime.InvokeVoidAsync("bootstrapInterop.showModal", "#userDetailModal");
+
+     
+    }
 
 
     private List<User>? PagedUsers { get; set; }
