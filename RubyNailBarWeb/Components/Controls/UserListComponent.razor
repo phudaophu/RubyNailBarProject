@@ -45,12 +45,12 @@
     <tbody>
         @if (listUsers != null && listUsers.Any() && PagedUsers != null)
         {
-            int i = 0;
+            
             @foreach (var user in PagedUsers)
             {
                 <tr class="align-middle">
                     <td style="cursor:pointer" @onclick="@(e => ShowUserDetails(user))">
-                        @(++i)
+                        @(listUsers.FindIndex(u => u.UserId == user.UserId) + 1)
                     </td>
                     <td style="cursor:pointer" @onclick="@(e => ShowUserDetails(user))">
                         @if (user.UserGroups.Any())
@@ -245,8 +245,8 @@
 
 @code {
 
-    [Parameter]
-    public PaginationComponent? PaginationComponentRef { get; set; }
+    // [Parameter]
+    // public PaginationComponent? PaginationComponentRef { get; set; }
 
     private User? selectedUser;
 
@@ -325,13 +325,25 @@
         { "Role",      0 }
     };
 
+    private bool IsSorrting()
+    {
+        foreach (var state in this.sortStates.Values)
+        {
+            if (state > 0)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public void ClearSorting()
     {
         foreach (var key in sortStates.Keys.ToList())
         {
             sortStates[key] = 0;
         }
-        
+
     }
 
     private void ToggleSort(string column)
@@ -346,7 +358,7 @@
             {
                 sortStates[key] = 0;
             }
-         
+
         }
 
 
@@ -412,15 +424,22 @@
         {
             case 0:
 
-                this.listUsers = UsersService.GetUsersService();
-              
+                if (!string.IsNullOrWhiteSpace(this.FilteredUsersData))
+                {
+                    listUsers = UsersService.SearchUserService(FilteredUsersData);
+                }
+                else
+                {
+                    this.listUsers = UsersService.GetUsersService();
+                }
+
                 break;
 
             case 1:
                 if(listUsers != null)
                 {
                     this.listUsers = listUsers.OrderBy(selector).ToList();
-                    
+
                 }
                 break;
 
@@ -428,7 +447,7 @@
                 if(listUsers != null)
                 {
                     this.listUsers = listUsers.OrderByDescending(selector).ToList();
-                    
+
                 }
                 break;
         }
@@ -449,13 +468,14 @@
             else if (string.IsNullOrWhiteSpace(this.FilteredUsersData))
             {
 
-                if (!OnSortingCallBack.HasDelegate)
+                if (IsSorrting())
                 {
-                    listUsers = UsersService.GetUsersService();
+                    
                     statusUserListView = "Data Is Loading...";
                 }
-                else
+                else 
                 {
+                    listUsers = UsersService.GetUsersService();
                     statusUserListView = "Data Is Loading...";
                 }
 
@@ -463,14 +483,23 @@
 
             else if (!string.IsNullOrWhiteSpace(this.FilteredUsersData))
             {
-                listUsers = UsersService.SearchUserService(FilteredUsersData);
-
-                if (listUsers is null || listUsers.Count == 0)
+                if (IsSorrting())
                 {
-                    statusUserListView = "No User Found";
+                    statusUserListView = "Data Is Loading...";
                 }
-  
+                else
+                {
+                    listUsers = UsersService.SearchUserService(FilteredUsersData);
 
+                    statusUserListView = "Data Is Loading...";
+
+                    if (listUsers is null || listUsers.Count == 0)
+                    {
+                        statusUserListView = "No User Found";
+                    }
+                }
+
+  
             }
 
 

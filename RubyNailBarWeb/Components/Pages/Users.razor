@@ -6,7 +6,7 @@
 
 <h3>User</h3>
 
-<SearchBarComponent SearchUsersCallBack="HandleSearchUser" @ref="searchBarComponent">
+<SearchBarComponent SearchUsersCallBack="HandleSearchUser" OnClearSearchBarCallBack="HandleClearSearchBar" @ref="searchBarComponent">
     <ElementControl>
         <a class="btn btn-outline-secondary" href="/user"> Add User </a>
     </ElementControl>
@@ -43,6 +43,10 @@
     //     paginationComponent?.getPaginationFromContainer();
     // }
     // new addition
+    public void HandleClearSearchBar()
+    {
+        userListComponent?.ClearSorting();
+    }
 
     public void HandleSorting()
     {

@@ -22,6 +22,9 @@
     public EventCallback<string> SearchUsersCallBack { get; set; }
 
     [Parameter]
+    public EventCallback OnClearSearchBarCallBack { get; set; }
+
+    [Parameter]
     public RenderFragment? ElementControl { get; set; }
 
 
@@ -36,7 +39,9 @@
     {
         this.usersFilter = string.Empty;
         SearchUsersCallBack.InvokeAsync(usersFilter);
+        OnClearSearchBarCallBack.InvokeAsync();
     }
+
 
     
 }
