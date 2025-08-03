@@ -1,0 +1,9 @@
+10:45 PM 7/30/2025
+Complete: SearchBarComponent, PaginationComponent, UserListComponent, Test case ok 
+Process: Import User Image, Edit User Image
+1:26 AM 7/31/2025
+Complete: FileUploadService
+Process: EditUser add avatar uploading
+5:05 PM 8/3/2025
+Complete: FileUploadService, Verify Duplicate Username, Add Unblock/block button to modify username
+Process: Customer Page

@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.EntityFrameworkCore;
 using RubyNailBarWeb.Models;
+using System.Diagnostics.Eventing.Reader;
 
 namespace RubyNailBarWeb.Repositories
 {
@@ -11,6 +12,12 @@ namespace RubyNailBarWeb.Repositories
         {
             this.contextFactory = _contextFactory;  
         
+        }
+
+        public bool IsUsernameExists(string username, int? excludedUserId = null)
+        {
+            using var db = this.contextFactory.CreateDbContext();
+            return db.Users.Any(user => user.Username == username && user.UserId != excludedUserId);
         }
 
         public int AddUser (User user) 
@@ -62,6 +69,9 @@ namespace RubyNailBarWeb.Repositories
                 userToUpdate.Email = user.Email;
                 userToUpdate.PhoneNo = user.PhoneNo;
                 userToUpdate.IsActive = user.IsActive;
+                userToUpdate.ImageUrl = user.ImageUrl;
+                userToUpdate.Address1 = user.Address1;
+                userToUpdate.IsDelete = user.IsDelete;
                 userToUpdate.ModifiedDatetime = DateTime.Now;
                 db.SaveChanges();
             }

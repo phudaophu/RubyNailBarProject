@@ -293,6 +293,8 @@ public partial class NailsDbContext : DbContext
             entity.Property(e => e.PasswordHash).HasMaxLength(255);
             entity.Property(e => e.PhoneNo).HasMaxLength(20);
             entity.Property(e => e.Username).HasMaxLength(50);
+            entity.Property(e => e.ImageUrl).HasMaxLength(255);
+            entity.Property(e => e.Address1).HasMaxLength(255);
         });
 
         modelBuilder.Entity<UserGroup>(entity =>

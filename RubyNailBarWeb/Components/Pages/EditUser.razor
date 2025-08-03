@@ -6,6 +6,8 @@
 @inject IStoresService StoresService
 @inject IUserGroupService UserGroupService
 
+@inject FileUploadService FileUploadService
+
 @if (Id.HasValue)
 {
     <h3>Edit User</h3>
@@ -57,22 +59,58 @@ else
                                     </Control>
                                 </FieldComponent>
 
+                                <FieldComponent Label="Phone Number">
+                                    <Control>
+                                        <InputText type="tel" @bind-Value="user.PhoneNo"></InputText>
+                                    </Control>
+                                </FieldComponent>
+                               
+
+
                             </div>
 
                             <div class="col-xs-12 col-sm-6 col-centered">
 
+                                <FieldComponent Label="Upload Avatar">
+                                    <Control>
+                                        <div class="d-flex align-items-center gap-3">
+
+                                            @if(!string.IsNullOrEmpty(user.ImageUrl))
+                                            {
+                                                <img src="@user.ImageUrl" style="width: 30px; height:30px" />
+
+                                            }
+                                            else
+                                            {
+                                                <img src="/img/img-default.png" style="width: 30px; height:30px" />
+
+                                            }
+                                            
+                                            <InputFile OnChange="@(e => HandleImageUpload(e, user))" />
+                                        </div>
+
+                                    </Control>
+                                </FieldComponent>
+
                                 <FieldComponent Label="User Name">
                                     <Control>
-                                        <InputText @bind-Value="user.Username"></InputText>
+                                        <div class="d-flex align-items-center gap-3">
+                                            <InputText @bind-Value="user.Username" disabled="@(isEditUserName == false)" class="@(isDuplicatedUsername == true ? "border-danger" : "")" @onblur="ClearUsernameError"></InputText>
+                                            <button type="button" class="btn btn-sm @(isEditUserName ? "btn-outline-secondary" : "btn-outline-warning")" @onclick="EditUsernameButton"> @(isEditUserName ? "Block" : "Unlock")</button>
+                                        </div>
                                     </Control>
                                     <ValidationControl>
                                         <ValidationMessage For="() => user.Username"></ValidationMessage>
+                                        @if (isDuplicatedUsername)
+                                        {
+                                            <div class="text-danger">@usernameDuplicatedError</div>
+                                        }
                                     </ValidationControl>
                                 </FieldComponent>
 
-                                <FieldComponent Label="Phone Number">
+                                <FieldComponent Label="Address">
                                     <Control>
-                                        <InputText type="tel" @bind-Value="user.PhoneNo"></InputText>
+                                        <InputText  @bind-Value="user.Address1"></InputText>
                                     </Control>
                                 </FieldComponent>
 
@@ -115,7 +153,6 @@ else
 
         </div>
 
-        
         <a class="btn btn-primary" href="/users"> Back </a>
         &nbsp;
         <button class="btn btn-primary" type="submit">Update</button>
@@ -125,13 +162,8 @@ else
             <a class="btn btn-primary" href=@($"/usergroups/{user.UserId}")> Edit Group </a>
         }
 
-
     </EditForm>
-
-
 }
-
-
 
 
 @code {
@@ -142,6 +174,10 @@ else
 
     [SupplyParameterFromForm]
     private User? user { get; set; }
+
+    private bool isEditUserName = false;    
+    private bool isDuplicatedUsername = false;
+    private string? usernameDuplicatedError = null;
 
     private List<Store> listStore = new List<Store>();
 
@@ -158,13 +194,57 @@ else
         }
     }
 
+    private async Task  HandleImageUpload(InputFileChangeEventArgs e, User user)
+    {
+        var file = e.File;
+
+        if (file == null || user.UserId <= 0)
+        {
+            throw new InvalidOperationException("File is null or UserId is not set.");
+        }
+
+        string imageUrl = await FileUploadService.SaveOrReplaceImageAsync(file, $"{user.Username}", $"user-avatar-{user.Username}");
+
+        if(!string.IsNullOrEmpty(imageUrl))
+        {
+            user.ImageUrl = imageUrl;
+
+        }
+        else
+        {
+            throw new InvalidOperationException("Image upload failed.");
+        }
+    }
+    private void  EditUsernameButton()
+    {
+        isEditUserName = !isEditUserName;
+    }
+
+    private void ClearUsernameError(FocusEventArgs e)
+    {
+        isDuplicatedUsername = false;
+        usernameDuplicatedError = null;
+    }
+
     private void SubmitFunc()
     {
 
-        if (user is not null)
+        if (user is not null && user.Username is not null)
         {
+            isDuplicatedUsername = UsersService.IsUsernameExistsService(user.Username, Id);
+            if (isDuplicatedUsername)
+            {
+                usernameDuplicatedError = "The Username is already taken.";
+                return; // stop submission
+            }
+            else
+            {
+                usernameDuplicatedError = null;
+            }
 
-            if (this.Id.HasValue)
+            
+
+            if (this.Id.HasValue)   
             {
                 UsersService.UpdateUserService(user.UserId, user);
                 NavigationManager.NavigateTo("/users");

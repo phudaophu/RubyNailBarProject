@@ -27,6 +27,12 @@ public partial class User
 
     public DateTime? ModifiedDatetime { get; set; }
 
+    public bool IsDelete { get; set; } = false;
+
+    public string? ImageUrl { get; set; }
+
+    public string? Address1 { get; set; }
+
     public virtual ICollection<InvoiceDetail> InvoiceDetails { get; set; } = new List<InvoiceDetail>();
 
     public virtual ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();

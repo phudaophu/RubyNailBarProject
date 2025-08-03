@@ -5,7 +5,7 @@ using RubyNailBarWeb.Repositories;
 using RubyNailBarWeb.Services;
 using RubyNailBarWeb.Services.Implements;
 using RubyNailBarWeb.StateStorage;
-
+using RubyNailBarWeb.Utilities;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,6 +19,11 @@ builder.Services.AddDbContextFactory<NailsDbContext>(options =>
 
 });
 
+
+builder.Services.Configure<FileUploadSettings>(
+    builder.Configuration.GetSection("FileUploadSettings"));
+
+builder.Services.AddScoped<FileUploadService>();
 builder.Services.AddScoped<ContainerStorage>();
 
 builder.Services.AddScoped<UsersRepository>();

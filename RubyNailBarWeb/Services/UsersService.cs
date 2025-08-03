@@ -7,9 +7,18 @@ namespace RubyNailBarWeb.Services
     public class UsersService : IUsersService
     {
         private readonly UsersRepository usersRepository;
+
+
+
         public UsersService(UsersRepository _usersRepository)
         {
             this.usersRepository = _usersRepository;
+        }
+
+        // exclueedUserId is used to exclude the user from the check, useful when updating the user
+        public bool IsUsernameExistsService(string username, int? excludedUserId = null)
+        {
+            return usersRepository.IsUsernameExists(username, excludedUserId);
         }
 
         public int AddUserService(User user)
