@@ -1,9 +1,22 @@
 10:45 PM 7/30/2025
 Complete: SearchBarComponent, PaginationComponent, UserListComponent, Test case ok 
 Process: Import User Image, Edit User Image
+
 1:26 AM 7/31/2025
 Complete: FileUploadService
 Process: EditUser add avatar uploading
+
 5:05 PM 8/3/2025
 Complete: FileUploadService, Verify Duplicate Username, Add Unblock/block button to modify username
+Process: Customer Page
+
+12:58 AM 8/4/2025
+Process: Edit Avatar, Fix FileUploadService add UserService DJ to check ImgUrl is exist and then delete it if add new file.
+
+12:41 AM 8/5/2025
+Complete: update FileUploadService get params from appsettings via FileUploadSettings
+Process: when upload failure, trigger UI notification
+
+1:25 AM 8/5/2025
+Complete: FileUploadService for upload image, show error status when fail to upload
 Process: Customer Page

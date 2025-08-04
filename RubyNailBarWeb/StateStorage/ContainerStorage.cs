@@ -4,6 +4,10 @@ namespace RubyNailBarWeb.StateStorage
 {
     public class ContainerStorage
     {
+        
+        public ContainerStorage() { }
+
+        
         private PaginationData paginationData { set; get; } = new PaginationData(); 
 
         public void setPaginationData(int currentPage, int totalPages, int pageSize)

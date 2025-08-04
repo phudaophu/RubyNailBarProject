@@ -75,35 +75,40 @@ else
                                     <Control>
                                         <div class="d-flex align-items-center gap-3">
 
-                                            @if(!string.IsNullOrEmpty(user.ImageUrl))
-                                            {
-                                                <img src="@user.ImageUrl" style="width: 30px; height:30px" />
+                                                @if (!string.IsNullOrEmpty(user.ImageUrl))
+                                                {
+                                                    <img src="@user.ImageUrl" style="width: 30px; height:30px" />
+                                                }
+                                                else
+                                                {
+                                                    <img src=@(FileUploadService.GetUserAvatarDefaultImage()) style="width: 30px; height:30px" />
+                                                }
 
-                                            }
-                                            else
-                                            {
-                                                <img src="/img/img-default.png" style="width: 30px; height:30px" />
-
-                                            }
-                                            
-                                            <InputFile OnChange="@(e => HandleImageUpload(e, user))" />
+                                                <InputFile OnChange="@(e => HandleImageUpload(e, user))" />
                                         </div>
 
                                     </Control>
+                                    <ValidationControl>
+                                        @if (!string.IsNullOrEmpty(uploadImageError))
+                                        {
+                                            <div class="validation-message">@uploadImageError</div>
+                                        }
+                                    </ValidationControl>
                                 </FieldComponent>
+
 
                                 <FieldComponent Label="User Name">
                                     <Control>
                                         <div class="d-flex align-items-center gap-3">
                                             <InputText @bind-Value="user.Username" disabled="@(isEditUserName == false)" class="@(isDuplicatedUsername == true ? "border-danger" : "")" @onblur="ClearUsernameError"></InputText>
-                                            <button type="button" class="btn btn-sm @(isEditUserName ? "btn-outline-secondary" : "btn-outline-warning")" @onclick="EditUsernameButton"> @(isEditUserName ? "Block" : "Unlock")</button>
+                                            <button type="button" class="btn btn-sm @(isEditUserName ? "btn-outline-secondary" : "btn-outline-warning")" @onclick="EditUsernameButton" title="Click to modify username"> @(isEditUserName ? "🔓" : "🔒")</button>
                                         </div>
                                     </Control>
                                     <ValidationControl>
                                         <ValidationMessage For="() => user.Username"></ValidationMessage>
                                         @if (isDuplicatedUsername)
                                         {
-                                            <div class="text-danger">@usernameDuplicatedError</div>
+                                            <div class="validation-message">@usernameDuplicatedError</div>
                                         }
                                     </ValidationControl>
                                 </FieldComponent>
@@ -178,6 +183,7 @@ else
     private bool isEditUserName = false;    
     private bool isDuplicatedUsername = false;
     private string? usernameDuplicatedError = null;
+    private string? uploadImageError = null;
 
     private List<Store> listStore = new List<Store>();
 
@@ -203,18 +209,33 @@ else
             throw new InvalidOperationException("File is null or UserId is not set.");
         }
 
-        string imageUrl = await FileUploadService.SaveOrReplaceImageAsync(file, $"{user.Username}", $"user-avatar-{user.Username}");
+        string subFolderName = $"user\\{user.Username}-{user.UserId}";
+
+        string fileNameWithoutExtension = $"user-avatar-{user.Username}";
+
+        string imageUrl = string.Empty;
+
+        try
+        {
+            imageUrl = await FileUploadService.SaveOrReplaceImageAsync(file, subFolderName, fileNameWithoutExtension);
+
+        }catch (Exception ex)
+        {
+            uploadImageError = ex.Message;  
+        }
+
 
         if(!string.IsNullOrEmpty(imageUrl))
         {
             user.ImageUrl = imageUrl;
-
+            StateHasChanged();
         }
         else
         {
             throw new InvalidOperationException("Image upload failed.");
         }
     }
+
     private void  EditUsernameButton()
     {
         isEditUserName = !isEditUserName;

@@ -6,6 +6,8 @@
 
 @inject ContainerStorage ContainerStorage
 
+@inject FileUploadService FileUploadService
+
 @inject IJSRuntime JSRuntime
 
 @attribute [StreamRendering]
@@ -173,8 +175,8 @@
                     <div class="row">
                         <!-- Profile Picture -->
                         <div class="col-md-3 text-center">
-                            <img src="@(string.IsNullOrWhiteSpace(selectedUser.ImageUrl) ? "/img/img-default.png" : selectedUser.ImageUrl)" 
-         alt="User Image" class="img-thumbnail" style="max-width: 150px;" />
+                            <img src="@(string.IsNullOrWhiteSpace(selectedUser.ImageUrl) ? FileUploadService.GetUserAvatarDefaultImage() : selectedUser.ImageUrl)"
+                                 alt="User Image" class="img-thumbnail" style="max-width: 150px;" />
                         </div>
 
                         <!-- User Info -->
