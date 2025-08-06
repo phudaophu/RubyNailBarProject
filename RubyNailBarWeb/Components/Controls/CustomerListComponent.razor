@@ -1,0 +1,131 @@
+﻿@inject NavigationManager NavigationManager 
+@inject ICustomersService CustomersService
+@attribute [StreamRendering]
+
+
+<table class="table table-striped table-hover">
+
+
+    <thead>
+        <tr>
+            <th>
+                <button class="btn border-0 btn-sm"> Index </button>
+            </th>
+            <th>
+                <button type="button" class="btn border-0 btn-sm text-nowrap px-3" >Customer Name </button>
+            </th>
+
+            <th>
+                <button type="button" class="btn border-0 btn-sm text-nowrap px-3" >Phone No</button>
+            </th>
+
+            <th> 
+                <button type="button" class="btn border-0 btn-sm text-nowrap px-3" >Email </button>
+            </th>
+
+            <th>
+                <button type="button" class="btn border-0 btn-sm text-nowrap px-3" >Birthday </button>
+            </th>
+
+            <th>
+                <button type="button" class="btn border-0 btn-sm text-nowrap px-3" >Points</button>
+            </th>
+
+            <th>
+                <button type="button" class="btn border-0 btn-sm text-nowrap px-3" >Last Visit </button>
+            </th>
+
+            <th></th>
+            <th></th>
+        </tr>
+
+    </thead>
+    <tbody>
+        @if (listCustomers != null && listCustomers.Any())
+        {
+
+            @foreach (var customer in listCustomers)
+            {
+                <tr class="align-middle">
+                    <td style="cursor:pointer" @onclick="@(e => ShowCustomerDetails(customer))">
+                        @(listCustomers.FindIndex(c => c.CustomerId == customer.CustomerId) + 1)
+                    </td>
+                    <td style="cursor:pointer" @onclick="@(e => ShowCustomerDetails(customer))">
+                        @customer.Name
+                    </td>
+
+                    <td style="cursor:pointer" @onclick="@(e => ShowCustomerDetails(customer))">
+                        @customer.PhoneNo
+                    </td>
+                    <td style="cursor:pointer" @onclick="@(e => ShowCustomerDetails(customer))">
+                        @customer.Email
+                    </td>
+
+                    <td style="cursor:pointer" @onclick="@(e => ShowCustomerDetails(customer))">
+                        @customer.Birthday?.ToString("dd/MM/yyyy")  
+                    </td>
+
+                    <td style="cursor:pointer" @onclick="@(e => ShowCustomerDetails(customer))">
+                        @customer.Points
+                    </td>
+                    <td style="cursor:pointer" @onclick="@(e => ShowCustomerDetails(customer))">
+                        @customer.LastVisitDatetime?.ToString("dd/MM/yyyy") 
+                    </td>
+                    <td>
+                            <a class="btn btn-outline-primary btn-sm px-2 py-0 text-nowrap"> Edit </a>
+                    </td>
+                    <td>
+                            <a class="btn btn-outline-primary btn-sm px-2 py-0 text-nowrap"> Edit Group </a>
+                    </td>
+                </tr>
+            }
+
+        }
+
+
+        else
+        {
+            <tr>
+                <td class="text-center text-black-50" colspan="9">
+                    @statusUserListView
+                </td>
+            </tr>
+        }
+
+    </tbody>
+
+
+</table>
+
+
+@code {
+
+    private string statusUserListView = "Customer data is loading";
+
+    private List<Customer>? listCustomers = new List<Customer>();
+
+    private List<Customer>? pagedListCustomers = new List<Customer>();
+
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            listCustomers = CustomersService.GetCustomersService();
+            StateHasChanged();
+        }
+    }
+
+    private void ShowCustomerDetails(Customer customer)
+    {
+        
+    }
+
+    private void SetCustomerStatus(int customerId, bool isActive)
+    {
+        // Logic to set user status
+        // This could involve calling a service to update the user's status in the database
+    }
+
+    
+}

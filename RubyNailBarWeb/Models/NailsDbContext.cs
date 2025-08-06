@@ -75,13 +75,22 @@ public partial class NailsDbContext : DbContext
             entity.ToTable("Customer");
 
             entity.Property(e => e.CreatedDatetime).HasColumnType("datetime");
-            entity.Property(e => e.CustomerLevel)
-                .HasMaxLength(10)
-                .IsUnicode(false);
+            entity.Property(e => e.CustomerLevel).HasMaxLength(10).IsUnicode(false);
             entity.Property(e => e.Email).HasMaxLength(100);
-            entity.Property(e => e.LastVistDatetime).HasColumnType("datetime");
+            entity.Property(e => e.LastVisitDatetime).HasColumnType("datetime");
+            entity.Property(e => e.ModifiedDatetime).HasColumnType("datetime");
+            entity.Property(e => e.Birthday).HasColumnType("date");
             entity.Property(e => e.Name).HasMaxLength(100);
             entity.Property(e => e.PhoneNo).HasMaxLength(20);
+            entity.Property(e => e.ImageUrl).HasMaxLength(255);
+            entity.Property(e => e.Address1).HasMaxLength(255);
+            entity.Property(e => e.CivicAddress).HasMaxLength(255);
+            entity.Property(e => e.CityName).HasMaxLength(128);
+            entity.Property(e => e.ProvinceName).HasMaxLength(128);
+            entity.Property(e => e.PostalCode).HasMaxLength(128);
+            entity.Property(e => e.CountryName).HasMaxLength(128);
+            entity.Property(e => e.LifetimeSpend).HasColumnType("decimal(10, 2)");
+            entity.Property(e => e.Description).HasMaxLength(512).IsUnicode(true);
         });
 
         modelBuilder.Entity<CustomerPointLog>(entity =>

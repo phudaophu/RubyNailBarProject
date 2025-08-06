@@ -1,22 +1,23 @@
-﻿@page "/users"
+﻿@page "/customers"
+
 
 @inject ContainerStorage ContainerStorage
-@inject IUsersService UsersService
 @rendermode InteractiveServer
+<h3>Customers</h3>
 
-<h3>Users</h3>
 
-<SearchBarComponent SearchUsersCallBack="HandleSearchUser" OnClearSearchBarCallBack="HandleClearSearchBar" @ref="searchBarComponent">
+@* <SearchBarComponent SearchUsersCallBack="HandleSearchUser" OnClearSearchBarCallBack="HandleClearSearchBar" @ref="searchBarComponent">
     <ElementControl>
         <a class="btn btn-outline-secondary" href="/user"> Add User </a>
     </ElementControl>
-</SearchBarComponent>
+</SearchBarComponent> *@
 
 
-<UserListComponent FilteredUsersData="@filteredUsers" PageSize="@pageSize" CurrentPage="@currentPage" TotalPagesCallBack="HandleTotalPage" OnSortingCallBack="HandleSorting" @ref="userListComponent"></UserListComponent>
 
-<PaginationComponent TotalPages="@totalPages" PageSizeCallBack="HandlePageSize" CurrentPageCallBack="HandleCurrentPage" @ref = "paginationComponent"></PaginationComponent>
+ <CustomerListComponent></CustomerListComponent>
 
+@* <PaginationComponent TotalPages="@totalPages" PageSizeCallBack="HandlePageSize" CurrentPageCallBack="HandleCurrentPage" @ref = "paginationComponent"></PaginationComponent>
+ *@
 
 @code {
 
@@ -34,23 +35,10 @@
 
     private UserListComponent? userListComponent;
 
+    // new addition
     private PaginationComponent? paginationComponent;
 
-
-    private void OnBeforeInternalNavigation(LocationChangingContext locationChangingContext)
-    {
-        List<string> listOfInternalPath = new List<string>
-        {
-            "/users","user", "/usergroups"
-        };
-        // Check if the target location is in the list of internal paths
-        if (!listOfInternalPath.Any(path => locationChangingContext.TargetLocation.Contains(path)))
-        {
-            ContainerStorage.resetPaginationData();
-        }
-
-    }
-
+    // new addition
     public void HandleClearSearchBar()
     {
         userListComponent?.ClearSorting();
@@ -69,18 +57,28 @@
     private void HandleTotalPage(int totalPages)
     {
         this.totalPages = totalPages;
+        //StateHasChanged();
     }
 
     private void HandlePageSize(int pageSize)
     {
         this.pageSize = pageSize;
+
         searchBarComponent?.ClearSearchBar();
         userListComponent?.ClearSorting();
+        //StateHasChanged();
     }
 
     private void HandleCurrentPage(int currentPage)
     {
         this.currentPage = currentPage;
-
+        //StateHasChanged();
     }
+
+
+
+
+
+
+
 }

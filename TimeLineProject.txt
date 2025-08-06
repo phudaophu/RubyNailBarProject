@@ -20,3 +20,19 @@ Process: when upload failure, trigger UI notification
 1:25 AM 8/5/2025
 Complete: FileUploadService for upload image, show error status when fail to upload
 Process: Customer Page
+
+1:22 PM 8/5/2025
+Complete: DeleteFileByPath in FileUploadService, delete previous uploaded image, reset pagination data when nav to external 
+Process: consider customer model
+
+9:35 PM 8/6/2025
+Complete: Fix Upload Image when Add new user, complete customer model, render customer list to customer page
+Process: CustomerListComponent, SearchbarComponent, PaginationComponent
+
+
+
+
+
+
+
+

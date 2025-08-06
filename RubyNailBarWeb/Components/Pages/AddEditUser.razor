@@ -7,6 +7,9 @@
 @inject IUserGroupService UserGroupService
 
 @inject FileUploadService FileUploadService
+@inject ContainerStorage ContainerStorage
+@inject IJSRuntime JSRuntime
+
 
 @if (Id.HasValue)
 {
@@ -84,7 +87,7 @@ else
                                                     <img src=@(FileUploadService.GetUserAvatarDefaultImage()) style="width: 30px; height:30px" />
                                                 }
 
-                                                <InputFile OnChange="@(e => HandleImageUpload(e, user))" />
+                                                <InputFile OnChange="@(e => HandleImageUpload(e, user))" disabled="@(!Id.HasValue)"/>
                                         </div>
 
                                     </Control>
@@ -180,22 +183,39 @@ else
     [SupplyParameterFromForm]
     private User? user { get; set; }
 
-    private bool isEditUserName = false;    
+    private bool isEditUserName = false;
+
     private bool isDuplicatedUsername = false;
     private string? usernameDuplicatedError = null;
     private string? uploadImageError = null;
 
     private List<Store> listStore = new List<Store>();
 
+    private void OnBeforeInternalNavigation(LocationChangingContext locationChangingContext)
+    {
+        List<string> listOfInternalPath = new List<string>
+        {
+            "/users","user", "/usergroups"
+        };
+        // Check if the target location is in the list of external paths
+        if (!listOfInternalPath.Any(path => locationChangingContext.TargetLocation.Contains(path)))
+        {
+            ContainerStorage.resetPaginationData();
+        }
+
+    }
+
     protected override void OnParametersSet()
     {
         if (this.Id.HasValue)
         {
             user ??= UsersService.GetUserByIdService(this.Id.Value);
+            isEditUserName = false;
         }
         else
         {
             user ??= new User() { IsActive = false };
+            isEditUserName = true;
             listStore = StoresService.GetStores().Where(x => x.IsActive == true).ToList();    
         }
     }
@@ -206,6 +226,7 @@ else
 
         if (file == null || user.UserId <= 0)
         {
+            uploadImageError = "File is null or UserId is not set.";
             throw new InvalidOperationException("File is null or UserId is not set.");
         }
 
@@ -217,28 +238,58 @@ else
 
         try
         {
-            imageUrl = await FileUploadService.SaveOrReplaceImageAsync(file, subFolderName, fileNameWithoutExtension);
+            imageUrl = await FileUploadService.SaveImageAsync(file, subFolderName, fileNameWithoutExtension);
 
-        }catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             uploadImageError = ex.Message;  
         }
 
-
         if(!string.IsNullOrEmpty(imageUrl))
         {
+            if(!string.IsNullOrEmpty(user.ImageUrl))
+            {
+                try
+                {
+                    FileUploadService.DeleteFileByPathAsync(user.ImageUrl); 
+
+                }
+                catch (Exception ex)
+                {
+                    uploadImageError = ex.Message;
+                }
+            }
             user.ImageUrl = imageUrl;
             StateHasChanged();
         }
         else
         {
+            uploadImageError = "Image upload failed.";
             throw new InvalidOperationException("Image upload failed.");
         }
     }
 
-    private void  EditUsernameButton()
+    private async Task  EditUsernameButton()
     {
-        isEditUserName = !isEditUserName;
+        if (Id.HasValue && isEditUserName == false)
+        {
+            var isConfirmed = await JSRuntime.InvokeAsync<bool>("confirm", "🚧🚧🚧🚧🚧🚧\n👉🏼  Are you want to edit username? \n⚠️  That may cause some problems related to file-uploading ⚠️\n🚨   Proceed to edit, click OK ");
+            if (isConfirmed == true) 
+            {
+                isEditUserName = true;
+            }
+            else
+            {
+                isEditUserName = false; 
+            }
+
+        }
+        else
+        {
+            isEditUserName = !isEditUserName; // Toggle the edit mode
+        }
+
     }
 
     private void ClearUsernameError(FocusEventArgs e)

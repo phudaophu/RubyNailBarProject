@@ -5,7 +5,7 @@
 @inject NavigationManager NavigationManager
 @rendermode InteractiveServer
 @inject IJSRuntime JSRuntime
-
+@inject ContainerStorage ContainerStorage
 
 <h3>User Groups</h3>
 
@@ -142,6 +142,21 @@
         { "Staff", new List<string> { "Staff" } }
     };
 
+
+    private void OnBeforeInternalNavigation(LocationChangingContext locationChangingContext)
+    {
+        List<string> listOfInternalPath = new List<string>
+        {
+            "/users","user", "/usergroups"
+        };
+        // Check if the target location is in the list of external paths
+        if (!listOfInternalPath.Any(path => locationChangingContext.TargetLocation.Contains(path)))
+        {
+            ContainerStorage.resetPaginationData();
+        }
+
+    }
+
     protected override void OnParametersSet()
     {
         if (this.Id.HasValue)
@@ -235,13 +250,12 @@
             {
                 if (string.IsNullOrEmpty(userGroupToCheck.GroupName) || string.IsNullOrEmpty(userGroupToCheck.RoleName))
                 {
-                    Console.WriteLine($"Fail CheckEmptyUserGroup: {userGroupToCheck.GroupName} - {userGroupToCheck.RoleName} - {userGroupToCheck.StoreId}");
 
                     return false;
                 }
             }
         }
-        Console.WriteLine($"Pass CheckEmptyUserGroup: {userGroupToCheck.GroupName} - {userGroupToCheck.RoleName} - {userGroupToCheck.StoreId}");
+        //Console.WriteLine($"Pass CheckEmptyUserGroup: {userGroupToCheck.GroupName} - {userGroupToCheck.RoleName} - {userGroupToCheck.StoreId}");
         return true;
     }
 
@@ -273,11 +287,11 @@
 
         if (exists)
         {
-            Console.WriteLine($"Fail CheckDuplicateUserGroup: {userGroupToCheck.GroupName} - {userGroupToCheck.RoleName} - {userGroupToCheck.StoreId}");
+            //Console.WriteLine($"Fail CheckDuplicateUserGroup: {userGroupToCheck.GroupName} - {userGroupToCheck.RoleName} - {userGroupToCheck.StoreId}");
             return false;
         }
 
-        Console.WriteLine($"Pass CheckDuplicateUserGroup: {userGroupToCheck.GroupName} - {userGroupToCheck.RoleName} - {userGroupToCheck.StoreId} - {userGroupToCheck.UserId}");
+        //Console.WriteLine($"Pass CheckDuplicateUserGroup: {userGroupToCheck.GroupName} - {userGroupToCheck.RoleName} - {userGroupToCheck.StoreId} - {userGroupToCheck.UserId}");
         return true;
     }
 

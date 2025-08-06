@@ -33,7 +33,6 @@ namespace RubyNailBarWeb.Repositories
             return db.Users.Include(user => user.UserGroups).ToList();
 
         }
-
         public User? GetUserById(int userId) 
         {
             using var db = this.contextFactory.CreateDbContext();
@@ -53,7 +52,7 @@ namespace RubyNailBarWeb.Repositories
         {
             if (user is null)
             {
-                throw new ArgumentNullException(nameof(user));
+                throw new ArgumentNullException("Loi: UpdateUser() user is null "+nameof(user));
             }
             if (userId != user.UserId) return;
 
