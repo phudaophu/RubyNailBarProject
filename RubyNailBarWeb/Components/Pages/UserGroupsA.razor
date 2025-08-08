@@ -1,4 +1,4 @@
-﻿@page "/usergrou/{id:int?}"
+﻿@page "/usergroups/{id:int?}"
 
 @inject IStoresService StoresService
 @inject IUserGroupService UserGroupService
@@ -31,14 +31,14 @@
         </tr>
     </thead>
     <tbody>
-        @if (listUserGroup != null && listUserGroup.Count > 0)
+        @if (listUserGroup != null && listUserGroup.Any() && listRenderUserGroup != null && listRenderUserGroup.Any())
         {
             int i = 0;
 
-            @foreach (var userGroup in listUserGroup)
-            
+            @foreach (var userGroup in listRenderUserGroup)
+
             {
-                <tr>
+                <tr @key="userGroup.UserGroupId">
                     <td>
                         @(++i)
                     </td>
@@ -60,9 +60,10 @@
                             <span class="text-muted">No Store Data</span>
                         }
                     </td>
+
                     <td>
 
-                        <InputSelect @bind-Value="userGroup.GroupName" class="form-select" >
+                        <InputSelect ValueExpression="@(() => userGroup.GroupName)" Value="@userGroup.GroupName" class="form-select" ValueChanged="(string e) => { OnGroupChanged(e, userGroup); }">
 
                             <option value="" disabled selected>Select Group</option>
                             @foreach (var element in dictGroupRole)
@@ -71,23 +72,17 @@
                             }
                         </InputSelect>
                     </td>
-          
+
                     <td>
                         <InputSelect @bind-Value="userGroup.RoleName" class="form-select">
 
-                            <option value="" disabled selected>Select Role </option>
+                            <option value="@string.Empty" >Select Role </option>
 
                             @if (!string.IsNullOrEmpty(userGroup.GroupName) && dictGroupRole.TryGetValue(userGroup.GroupName, out var listRole))
                             {
-
-                                if (listRole.Any())
-                                {
-                                    userGroup.RoleName = listRole.FirstOrDefault();
-                                }
-
                                 @foreach (var role in listRole)
                                 {
-                                    <option value="@role">@role</option>
+                                    <option value="@role" >@role</option>
                                 }
                             }
 
@@ -147,6 +142,10 @@
 
     private List<UserGroup>? listUserGroup = new List<UserGroup>();
 
+    private List<UserGroup>? listRenderUserGroup = new List<UserGroup>();
+
+
+
     private Dictionary<string, List<string>> dictGroupRole = new Dictionary<string, List<string>>
     {
         { "Manager", new List<string> { "Admin","Viewer" } },
@@ -161,6 +160,7 @@
             listUserGroup = UserGroupService.GetUserGroupsByUserId(this.Id.Value);
             if (listUserGroup != null && listUserGroup.Count > 0)
             {
+                listRenderUserGroup = listUserGroup;
                 statusUserListView = "Data Loaded Successfully";
                 listStores = StoresService.GetStores();
                 StateHasChanged();
@@ -176,17 +176,22 @@
         }
     }
 
+    private void OnGroupChanged(string e, UserGroup userGroup)
+    {
+        userGroup.GroupName = e?.ToString();
+        userGroup.RoleName = string.Empty; // Reset to placeholder every time group changes
+    }
 
     private async Task SaveUserGroupChange()
     {
-        if (listUserGroup != null && listUserGroup.Count > 0 )
+        if (listRenderUserGroup != null && listRenderUserGroup.Count > 0)
         {
             List<UserGroup> listValidUserGroup = new List<UserGroup>();
-            List<UserGroup> listInValidUserGroup = CheckDuplicateUserGroupItem(listUserGroup);
+            List<UserGroup> listInValidUserGroup = CheckDuplicateUserGroupItem(listRenderUserGroup);
 
 
 
-            foreach (var userGroup in listUserGroup)
+            foreach (var userGroup in listRenderUserGroup)
             {
 
                 if (CheckEmptyUserGroup(userGroup))
@@ -201,18 +206,23 @@
 
             }
 
-            // listValidUserGroup.AddRange(listUserGroup.Where(CheckEmptyUserGroup));
-            // listInValidUserGroup.AddRange(listUserGroup.Where(ug => !CheckEmptyUserGroup(ug)));
 
-
-            if (listInValidUserGroup.Count == 0 && listUserGroup.Count == listValidUserGroup.Count)
+            if (listInValidUserGroup.Count == 0 && listRenderUserGroup.Count == listValidUserGroup.Count)
             {
-                foreach(var validUserGroup in listValidUserGroup)
+                foreach (var validUserGroup in listValidUserGroup)
                 {
                     if (listNewUserGroup.Any(ug => ug.UserGroupId == validUserGroup.UserGroupId))
                     {
-                        validUserGroup.Store = null;
-                        UserGroupService.AddUserGroup(validUserGroup);
+
+                        UserGroup addedUserGroup = new UserGroup
+                        {
+                            StoreId = validUserGroup.StoreId,
+                            GroupName = validUserGroup.GroupName,
+                            RoleName = validUserGroup.RoleName,
+                            UserId = validUserGroup.UserId,
+                        };
+
+                        UserGroupService.AddUserGroup(addedUserGroup);
                         listNewUserGroup.Remove(validUserGroup);
                     }
                     else
@@ -221,14 +231,14 @@
 
                     }
                 }
-
+                updateRenderUserGroup();
                 StateHasChanged();
                 NavigationManager.NavigateTo("/users");
             }
             else
             {
                 await JSRuntime.InvokeVoidAsync("alert", $"There Are {listInValidUserGroup.Count} Group(s) Is Invalid \n Do not let Group/ Role empty. \n Make Sure There Is No Duplicate Row !");
-    
+
             }
 
         }
@@ -243,9 +253,9 @@
     private bool CheckEmptyUserGroup(UserGroup userGroupToCheck)
     {
 
-        if (listUserGroup != null && listUserGroup.Count > 0)
+        if (listRenderUserGroup != null && listRenderUserGroup.Count > 0)
         {
-            foreach (var currentUserGroup in listUserGroup)
+            foreach (var currentUserGroup in listRenderUserGroup)
             {
                 if (string.IsNullOrEmpty(userGroupToCheck.GroupName) || string.IsNullOrEmpty(userGroupToCheck.RoleName))
                 {
@@ -261,17 +271,20 @@
     public List<UserGroup> CheckDuplicateUserGroupItem(List<UserGroup> listUserGroup)
     {
         var listInvalidUserGroup = new List<UserGroup>();
-
-        var groups = listUserGroup
-            .GroupBy(ug => new { ug.GroupName, ug.RoleName, ug.StoreId, ug.UserId });
-
-        foreach (var group in groups)
+        if (listRenderUserGroup != null && listRenderUserGroup.Count >= 0)
         {
-            if (group.Count() >= 2)
+            var groups = listRenderUserGroup
+                            .GroupBy(ug => new { ug.GroupName, ug.RoleName, ug.StoreId, ug.UserId });
+
+            foreach (var group in groups)
             {
-                listInvalidUserGroup.Add(group.First());
+                if (group.Count() >= 2)
+                {
+                    listInvalidUserGroup.Add(group.First());
+                }
             }
         }
+     
 
         return listInvalidUserGroup;
     }
@@ -279,65 +292,79 @@
 
     private bool CheckDuplicateUserGroup(UserGroup userGroupToCheck)
     {
-        bool exists = listUserGroup?.Any(ug =>
+        bool exists = listRenderUserGroup?.Any(ug =>
             ug.GroupName == userGroupToCheck.GroupName &&
             ug.RoleName == userGroupToCheck.RoleName &&
             ug.StoreId == userGroupToCheck.StoreId) ?? false;
 
         if (exists)
         {
-            //Console.WriteLine($"Fail CheckDuplicateUserGroup: {userGroupToCheck.GroupName} - {userGroupToCheck.RoleName} - {userGroupToCheck.StoreId}");
             return false;
         }
 
-        //Console.WriteLine($"Pass CheckDuplicateUserGroup: {userGroupToCheck.GroupName} - {userGroupToCheck.RoleName} - {userGroupToCheck.StoreId} - {userGroupToCheck.UserId}");
         return true;
     }
 
 
     private void DeleteUserGroup(int userGroupId)
     {
+        int checkDeleted = -1;
 
         if (listUserGroup != null && listUserGroup.Count >= 0)
         {
 
-            var userGroupToRemove = listUserGroup.FirstOrDefault(ug => ug.UserGroupId == userGroupId);
-            if (userGroupToRemove != null)
+            if (listUserGroup.Any(ug => ug.UserGroupId == userGroupId))
             {
-                listUserGroup.Remove(userGroupToRemove);
-
-                if (!listNewUserGroup.Any(ug => ug.UserGroupId == userGroupId))
-                {
-                    UserGroupService.RemoveUserGroup(userGroupId);
-                }
-                else
-                {
-                    listNewUserGroup.Remove(userGroupToRemove);
-                }
+                listUserGroup.RemoveAll(ug => ug.UserGroupId == userGroupId);
+                UserGroupService.RemoveUserGroup(userGroupId);
+                checkDeleted++;
             }
-
-            StateHasChanged();  
+            if( listNewUserGroup.Any(ug => ug.UserGroupId == userGroupId))
+            {
+                listNewUserGroup.RemoveAll(ug => ug.UserGroupId == userGroupId);
+                checkDeleted++;
+            }
+            if(checkDeleted >= 0)
+            {
+                statusUserListView = "User Group Deleted Successfully";
+            }
+            else
+            {
+                statusUserListView = "No User Group Found To Delete";
+            }
+            updateRenderUserGroup();
+            StateHasChanged();
 
         }
 
     }
 
+    private void updateRenderUserGroup()
+    {
+        if(listUserGroup != null && listUserGroup.Count > 0)
+        {
+            listRenderUserGroup = listUserGroup.Concat(listNewUserGroup).ToList();
+        }
+    }
+
     private void AddUserGroup(int userId)
     {
         Store? storeActiveDefault = StoresService.GetStores().Where(s => s.IsActive == true).FirstOrDefault();
-        
-        if (storeActiveDefault != null && this.Id.HasValue)
+    
+        if (storeActiveDefault != null && this.Id.HasValue && listRenderUserGroup != null && listRenderUserGroup.Any())
         {
+            int tempUserGroupId = listRenderUserGroup.Max(ug => ug.UserGroupId) + 1;
             UserGroup newUserGroup = new UserGroup()
             {
+                UserGroupId = tempUserGroupId,
                 StoreId = storeActiveDefault.StoreId,
                 Store = storeActiveDefault,
                 UserId = this.Id.Value
             };
 
-            this.listUserGroup.Add(newUserGroup);
             this.listNewUserGroup.Add(newUserGroup);
-            StateHasChanged();
+
+            updateRenderUserGroup();
         }
         return;
 

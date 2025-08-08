@@ -26,8 +26,26 @@ Complete: DeleteFileByPath in FileUploadService, delete previous uploaded image,
 Process: consider customer model
 
 9:35 PM 8/6/2025
-Complete: Fix Upload Image when Add new user, complete customer model, render customer list to customer page
+Complete: Fix Upload Image when Add new user, complete customer model, render customer list to customer page, add JS alert to unlock for username editing 
 Process: CustomerListComponent, SearchbarComponent, PaginationComponent
+
+
+9:32 AM 8/7/2025
+Complete: Fix select usergroup error, UI render but not saving to user.RoleName
+
+
+
+3:11 PM 8/8/2025
+complete: fix delete usergroup, pagination reset amongs defined pages
+
+
+5:42 PM 8/8/2025
+complete: input select group name, make change on role name 
+process: customer page 
+
+
+
+
 
 
 

@@ -7,14 +7,20 @@ namespace RubyNailBarWeb.StateStorage
         
         public ContainerStorage() { }
 
-        private PaginationData paginationData { set; get; } = new PaginationData(); 
-
-        public void resetPaginationData()
+        private PaginationData paginationData { set; get; } = new PaginationData();
+        private List<string> allowedToResetPaginationDataPathList { set; get; } = new List<string>() { "","users", "customers" };
+        private string savedPaginationPath { set; get; } = string.Empty;   
+        public void resetPaginationData(string currentPath)
         {
-            paginationData.TotalPages  = 1;
-            paginationData.CurrentPage = 1;
-            paginationData.PageSize    = 5;
-        }
+            if ( allowedToResetPaginationDataPathList.Any(p => p.Contains(currentPath,StringComparison.OrdinalIgnoreCase)) 
+                && !currentPath.Equals(savedPaginationPath, StringComparison.OrdinalIgnoreCase))
+            {
+                this.savedPaginationPath = currentPath;
+                paginationData.CurrentPage = 1;
+                paginationData.TotalPages = 1;
+                paginationData.PageSize = 5;
+            }
+        } 
 
         public void setPaginationData(int currentPage, int totalPages, int pageSize)
         {

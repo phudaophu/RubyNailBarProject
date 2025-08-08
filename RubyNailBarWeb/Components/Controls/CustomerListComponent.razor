@@ -1,5 +1,8 @@
 ﻿@inject NavigationManager NavigationManager 
 @inject ICustomersService CustomersService
+@inject ContainerStorage ContainerStorage
+
+@inject ICustomersService CustomersService
 @attribute [StreamRendering]
 
 
@@ -41,10 +44,10 @@
 
     </thead>
     <tbody>
-        @if (listCustomers != null && listCustomers.Any())
+        @if (listCustomers != null && listCustomers.Any() && pagedListCustomers != null )
         {
 
-            @foreach (var customer in listCustomers)
+            @foreach (var customer in pagedListCustomers)
             {
                 <tr class="align-middle">
                     <td style="cursor:pointer" @onclick="@(e => ShowCustomerDetails(customer))">
@@ -87,7 +90,7 @@
         {
             <tr>
                 <td class="text-center text-black-50" colspan="9">
-                    @statusUserListView
+                    @statusCustomerListView
                 </td>
             </tr>
         }
@@ -99,33 +102,163 @@
 
 
 @code {
+ 
+    [Parameter]
+    public int PageSize { get; set; }
 
-    private string statusUserListView = "Customer data is loading";
+    [Parameter]
+    public int CurrentPage { get; set; }
+
+    [Parameter]
+    public EventCallback<int> TotalPagesCallBack { get; set; }
+
+    [Parameter]
+    public string? FilteredCustomersData { get; set; }
+
+    private int previousTotalPage = -1;
+
+    private bool isFirstRender = true;  
+
+    private string statusCustomerListView = "Customer data is loading";
 
     private List<Customer>? listCustomers = new List<Customer>();
 
     private List<Customer>? pagedListCustomers = new List<Customer>();
 
+    private Dictionary<string, int> sortStates = new()
+    {
+        { "Store",     0 },
+        { "Firstname", 0 },
+        { "Username",  0 },
+        { "Group",     0 },
+        { "Status",    0 },
+        { "Role",      0 }
+    };
+
+
+    private void UpdatePagedCustomers()
+    {
+        if (listCustomers is not null && listCustomers.Any())
+        {
+            pagedListCustomers = listCustomers.Skip((CurrentPage - 1) * PageSize)
+                                   .Take(PageSize)
+                                    .ToList();
+
+            int _totalPage = (int)Math.Ceiling((double)listCustomers.Count / PageSize);
+
+            if (previousTotalPage != _totalPage)
+            {
+                previousTotalPage = _totalPage;
+                TotalPagesCallBack.InvokeAsync(_totalPage);
+                ContainerStorage.setTotalPages(_totalPage);
+            }
+            else
+            {
+                ContainerStorage.setTotalPages(_totalPage);
+
+            }
+
+        }
+
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (isFirstRender == false)
+        {
+
+            if (listCustomers is null || listCustomers.Count == 0)
+            {
+                listCustomers = CustomersService.GetCustomersService();
+                statusCustomerListView = "Data Is Loading...";
+            }
+
+            else if (string.IsNullOrWhiteSpace(this.FilteredCustomersData))
+            {
+
+                if (IsSorrting())
+                {
+
+                    statusCustomerListView = "Data Is Loading...";
+                }
+                else
+                {
+                    listCustomers = CustomersService.GetCustomersService();
+                    statusCustomerListView = "Data Is Loading...";
+                }
+
+            }
+
+            else if (!string.IsNullOrWhiteSpace(this.FilteredCustomersData))
+            {
+                if (IsSorrting())
+                {
+                    statusCustomerListView = "Data Is Loading...";
+                }
+                else
+                {
+                    listCustomers = CustomersService.SearchCustomerService(FilteredCustomersData);
+
+                    statusCustomerListView = "Data Is Loading...";
+
+                    if (listCustomers is null || listCustomers.Count == 0)
+                    {
+                        statusCustomerListView = "No User Found";
+                    }
+                }
+            }
+
+            this.PageSize = ContainerStorage.getLastPageSize();
+            this.CurrentPage = ContainerStorage.getLastCurrentPage();
+
+            UpdatePagedCustomers();
+            StateHasChanged();
+        }
+    }
 
     protected override void OnAfterRender(bool firstRender)
     {
         if (firstRender)
         {
-            listCustomers = CustomersService.GetCustomersService();
+
+            isFirstRender = false;
+            string currentPath = NavigationManager.ToBaseRelativePath(NavigationManager.Uri).Split('?', '#')[0];
+            ContainerStorage.resetPaginationData(currentPath);
+
+            if (string.IsNullOrWhiteSpace(this.FilteredCustomersData))
+            {
+                listCustomers = CustomersService.GetCustomersService();
+            }
+            else
+            {
+                listCustomers = CustomersService.SearchCustomerService(FilteredCustomersData);
+                if (listCustomers is null || listCustomers.Count == 0)
+                {
+                    statusCustomerListView = "No User Found";
+                }
+
+            }
+
+            this.CurrentPage = ContainerStorage.getLastCurrentPage();
+            this.PageSize = ContainerStorage.getLastPageSize();
+            UpdatePagedCustomers();
             StateHasChanged();
         }
     }
+
+
+    private bool IsSorrting()
+    {
+        // Implement sorting logic here if needed
+        return false;
+    }   
 
     private void ShowCustomerDetails(Customer customer)
     {
         
     }
 
-    private void SetCustomerStatus(int customerId, bool isActive)
-    {
-        // Logic to set user status
-        // This could involve calling a service to update the user's status in the database
-    }
+
 
     
 }

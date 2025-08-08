@@ -124,7 +124,10 @@ else
 
                                 <FieldComponent Label="Password">
                                     <Control>
-                                        <InputText type="password" @bind-Value="user.PasswordHash"></InputText>
+                                        <div class="d-flex align-items-center gap-3">
+                                            <InputText type="@(isShowedPassword==true?"text":"password")" @bind-Value="user.PasswordHash"></InputText>
+                                            <button type="button" class="btn btn-sm @(isShowedPassword ? "btn-outline-secondary" : "btn-outline-warning")" @onclick="ShowingPasswordButton" title="Click to unhide password"> @(isShowedPassword ? "🔓" : "🔒")</button>
+                                        </div>
                                     </Control>
                                     <ValidationControl>
                                         <ValidationMessage For="() => user.PasswordHash"></ValidationMessage>
@@ -185,25 +188,14 @@ else
 
     private bool isEditUserName = false;
 
+    private bool isShowedPassword = false;
+
     private bool isDuplicatedUsername = false;
     private string? usernameDuplicatedError = null;
     private string? uploadImageError = null;
 
     private List<Store> listStore = new List<Store>();
 
-    private void OnBeforeInternalNavigation(LocationChangingContext locationChangingContext)
-    {
-        List<string> listOfInternalPath = new List<string>
-        {
-            "/users","user", "/usergroups"
-        };
-        // Check if the target location is in the list of external paths
-        if (!listOfInternalPath.Any(path => locationChangingContext.TargetLocation.Contains(path)))
-        {
-            ContainerStorage.resetPaginationData();
-        }
-
-    }
 
     protected override void OnParametersSet()
     {
@@ -214,7 +206,7 @@ else
         }
         else
         {
-            user ??= new User() { IsActive = false };
+            user ??= new User() { IsActive = true };
             isEditUserName = true;
             listStore = StoresService.GetStores().Where(x => x.IsActive == true).ToList();    
         }
@@ -270,7 +262,12 @@ else
         }
     }
 
-    private async Task  EditUsernameButton()
+    private void ShowingPasswordButton()
+    {
+        isShowedPassword = !isShowedPassword; // Toggle the visibility of the password
+    }   
+
+    private async Task EditUsernameButton()
     {
         if (Id.HasValue && isEditUserName == false)
         {
@@ -324,6 +321,7 @@ else
             else
             {
                 user.ModifiedDatetime = DateTime.Now;
+                //user.IsActive = true;
                 int newUserId =  UsersService.AddUserService(user);
                 UserGroupService.AddUserGroup(new UserGroup()
                 {

@@ -46,8 +46,5 @@ namespace RubyNailBarWeb.Services
         }
 
 
-
-
-
     }
 }

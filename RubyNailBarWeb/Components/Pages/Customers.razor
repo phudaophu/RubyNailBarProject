@@ -6,18 +6,19 @@
 <h3>Customers</h3>
 
 
-@* <SearchBarComponent SearchUsersCallBack="HandleSearchUser" OnClearSearchBarCallBack="HandleClearSearchBar" @ref="searchBarComponent">
+<SearchBarComponent SearchUsersCallBack="HandleSearchUser" OnClearSearchBarCallBack="HandleClearSearchBar" @ref="searchBarComponent">
     <ElementControl>
-        <a class="btn btn-outline-secondary" href="/user"> Add User </a>
+        <a class="btn btn-outline-secondary" href="/customer"> Add Customer </a>
     </ElementControl>
-</SearchBarComponent> *@
+</SearchBarComponent>
+
+
+<CustomerListComponent FilteredCustomersData="@filteredCustomers" PageSize="@pageSize" CurrentPage="@currentPage" TotalPagesCallBack="HandleTotalPage"></CustomerListComponent>
 
 
 
- <CustomerListComponent></CustomerListComponent>
+<PaginationComponent TotalPages="@totalPages" PageSizeCallBack="HandlePageSize" CurrentPageCallBack="HandleCurrentPage" @ref = "paginationComponent"></PaginationComponent>
 
-@* <PaginationComponent TotalPages="@totalPages" PageSizeCallBack="HandlePageSize" CurrentPageCallBack="HandleCurrentPage" @ref = "paginationComponent"></PaginationComponent>
- *@
 
 @code {
 
@@ -27,21 +28,40 @@
 
     private int currentPage;
 
-    private List<User> listUsers = new List<User>();    
+   // private List<User> listUsers = new List<User>();    
 
-    private string? filteredUsers = "";
+    private string? filteredCustomers = "";
 
     private SearchBarComponent? searchBarComponent;
 
-    private UserListComponent? userListComponent;
-
-    // new addition
     private PaginationComponent? paginationComponent;
 
-    // new addition
+    //private CustomerListComponent? customerListComponent;
+
+
+    private void HandleTotalPage(int totalPages)
+    {
+        this.totalPages = totalPages;
+    }
+
+    private void HandlePageSize(int pageSize)
+    {
+        this.pageSize = pageSize;
+        searchBarComponent?.ClearSearchBar();
+        //CustomerListComponent?.ClearSorting();
+
+    }
+
+    private void HandleCurrentPage(int currentPage)
+    {
+        this.currentPage = currentPage;
+    }
+
+
+
     public void HandleClearSearchBar()
     {
-        userListComponent?.ClearSorting();
+
     }
 
     public void HandleSorting()
@@ -49,36 +69,10 @@
         paginationComponent?.setCurrentPage(1);
     }
 
-    public void HandleSearchUser(string userFilterData)
+    public void HandleSearchUser(string customerFilterData)
     {
-        filteredUsers = userFilterData;
+        filteredCustomers = customerFilterData;
     }
-
-    private void HandleTotalPage(int totalPages)
-    {
-        this.totalPages = totalPages;
-        //StateHasChanged();
-    }
-
-    private void HandlePageSize(int pageSize)
-    {
-        this.pageSize = pageSize;
-
-        searchBarComponent?.ClearSearchBar();
-        userListComponent?.ClearSorting();
-        //StateHasChanged();
-    }
-
-    private void HandleCurrentPage(int currentPage)
-    {
-        this.currentPage = currentPage;
-        //StateHasChanged();
-    }
-
-
-
-
-
 
 
 }

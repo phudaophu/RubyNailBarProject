@@ -22,7 +22,7 @@ namespace RubyNailBarWeb.Services
             var userGroups = userGroupRepository.GetUserGroups();
             if (userGroups is null || !userGroups.Any())
             {
-                return 1;
+                return 0;
             }
             return userGroups.Max(ug => ug.UserGroupId);
         }

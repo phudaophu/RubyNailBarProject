@@ -3,6 +3,8 @@
 @inject ContainerStorage ContainerStorage
 @inject IUsersService UsersService
 @rendermode InteractiveServer
+@inject NavigationManager NavigationManager
+
 
 <h3>Users</h3>
 
@@ -26,7 +28,7 @@
 
     private int currentPage;
 
-    private List<User> listUsers = new List<User>();    
+   // private List<User> listUsers = new List<User>();    
 
     private string? filteredUsers = "";
 
@@ -36,21 +38,9 @@
 
     private PaginationComponent? paginationComponent;
 
+    private IDisposable? _locationChangingHandler;
 
-    private void OnBeforeInternalNavigation(LocationChangingContext locationChangingContext)
-    {
-        List<string> listOfInternalPath = new List<string>
-        {
-            "/users","user", "/usergroups"
-        };
-        // Check if the target location is in the list of internal paths
-        if (!listOfInternalPath.Any(path => locationChangingContext.TargetLocation.Contains(path)))
-        {
-            ContainerStorage.resetPaginationData();
-        }
-
-    }
-
+   
     public void HandleClearSearchBar()
     {
         userListComponent?.ClearSorting();

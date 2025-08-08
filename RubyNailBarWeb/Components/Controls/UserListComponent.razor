@@ -10,6 +10,8 @@
 
 @inject IJSRuntime JSRuntime
 
+@inject NavigationManager NavigationManager    
+
 @attribute [StreamRendering]
 
 <table class="table table-striped table-hover">
@@ -248,8 +250,6 @@
 
 @code {
 
-    // [Parameter]
-    // public PaginationComponent? PaginationComponentRef { get; set; }
 
     private User? selectedUser;
 
@@ -473,7 +473,7 @@
 
                 if (IsSorrting())
                 {
-                    
+
                     statusUserListView = "Data Is Loading...";
                 }
                 else 
@@ -502,13 +502,13 @@
                     }
                 }
 
-  
+
             }
 
 
             this.PageSize = ContainerStorage.getLastPageSize();
             this.CurrentPage = ContainerStorage.getLastCurrentPage();
-            
+
 
             UpdatePagedUsers();
             StateHasChanged();
@@ -520,6 +520,9 @@
         if (firstRender)
         {
             isFirstRender = false;
+            string currentPath = NavigationManager.ToBaseRelativePath(NavigationManager.Uri).Split('?', '#')[0];
+            ContainerStorage.resetPaginationData(currentPath);
+
             if (string.IsNullOrWhiteSpace(this.FilteredUsersData))
             {
                 listUsers = UsersService.GetUsersService();
@@ -560,69 +563,5 @@
         }
     }
 
-    // private int currentPage = 1;
-    // private int _pageSize = 5;
-
-    // private int pageSize
-    // {
-    //     get => _pageSize;
-    //     set
-    //     {
-    //         if (value > 0 && value != _pageSize)
-    //         {
-    //             _pageSize = value;
-    //             currentPage = 1; // Optional: reset page
-    //             UpdatePagedUsers(); // Refresh your paged list
-    //         }
-    //     }
-    // }
-
-    // private int totalPages
-    // {
-    //     get
-    //     {
-    //         if(listUsers is null || !listUsers.Any())
-    //         {
-    //             return 1;
-    //         }
-    //         return (int)Math.Ceiling((double)listUsers.Count / _pageSize);
-    //     }
-    // }
-
-    // private void OnPageSizeChanged()
-    // {
-    //     currentPage = 1;
-    //     UpdatePagedUsers();
-
-    // }
-
-    // private void PrevPage()
-    // {
-    //     if (currentPage > 1)
-    //     {
-    //         currentPage--;
-    //         UpdatePagedUsers();
-    //     }
-    // }
-
-    // private void NextPage()
-    // {
-    //     if (currentPage < totalPages)
-    //     {
-    //         currentPage++;
-    //         UpdatePagedUsers();
-    //     }
-    // }
-
-    // private void UpdatePagedUsers()
-    // {
-    //     if (listUsers is not null && listUsers.Any())
-    //     {
-    //         pagedUsers = listUsers
-    //                     .Skip((currentPage - 1) * _pageSize)
-    //                     .Take(_pageSize)
-    //                     .ToList();
-    //     }
-
-    // }
+  
 }
