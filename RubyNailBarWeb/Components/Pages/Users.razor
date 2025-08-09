@@ -1,6 +1,7 @@
 ﻿@page "/users"
 
 @inject ContainerStorage ContainerStorage
+@inject IStoresService StoresService
 @inject IUsersService UsersService
 @rendermode InteractiveServer
 @inject NavigationManager NavigationManager
@@ -8,19 +9,37 @@
 
 <h3>Users</h3>
 
-<SearchBarComponent SearchUsersCallBack="HandleSearchUser" OnClearSearchBarCallBack="HandleClearSearchBar" @ref="searchBarComponent">
+<SearchBarComponent SearchBarInfo="@searchLabel" SearchUsersCallBack="HandleSearchUser" OnClearSearchBarCallBack="HandleClearSearchBar" @ref="searchBarComponent">
+    <SelectControl>
+        <InputSelect @bind-Value="selectedStoreId" class="@(selectedStoreId == 0? "text-secondary":"text-danger border-danger")">
+
+            <option value="0">-- All Stores --</option>
+
+            @foreach (var store in listStore)
+            {
+                <option value="@store.StoreId" class="text-dark">@store.Name</option>
+            }
+
+        </InputSelect>
+    </SelectControl>
     <ElementControl>
         <a class="btn btn-outline-secondary" href="/user"> Add User </a>
     </ElementControl>
 </SearchBarComponent>
 
 
-<UserListComponent FilteredUsersData="@filteredUsers" PageSize="@pageSize" CurrentPage="@currentPage" TotalPagesCallBack="HandleTotalPage" OnSortingCallBack="HandleSorting" @ref="userListComponent"></UserListComponent>
+<UserListComponent FilteredUsersData="@filteredUsers" PageSize="@pageSize" CurrentPage="@currentPage" TotalPagesCallBack="HandleTotalPage" OnSortingCallBack="HandleSorting" SelectedStoreId="@selectedStoreId" @ref="userListComponent"></UserListComponent>
 
 <PaginationComponent TotalPages="@totalPages" PageSizeCallBack="HandlePageSize" CurrentPageCallBack="HandleCurrentPage" @ref = "paginationComponent"></PaginationComponent>
 
 
 @code {
+
+    private int selectedStoreId = 0;
+
+    private List<Store> listStore = new List<Store>();
+
+    private string searchLabel = "Enter Users Info";    
 
     private int totalPages;
 
@@ -28,7 +47,7 @@
 
     private int currentPage;
 
-   // private List<User> listUsers = new List<User>();    
+    // private List<User> listUsers = new List<User>();    
 
     private string? filteredUsers = "";
 
@@ -40,9 +59,17 @@
 
     private IDisposable? _locationChangingHandler;
 
-   
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if(firstRender)
+        {
+            listStore = StoresService.GetStores().Where(s => s.IsActive == true).ToList();
+        }
+    }
+
     public void HandleClearSearchBar()
     {
+        selectedStoreId = 0;
         userListComponent?.ClearSorting();
     }
 
@@ -53,6 +80,9 @@
 
     public void HandleSearchUser(string userFilterData)
     {
+
+        currentPage = 1;
+        ContainerStorage.setCurrentPage(1);
         filteredUsers = userFilterData;
     }
 

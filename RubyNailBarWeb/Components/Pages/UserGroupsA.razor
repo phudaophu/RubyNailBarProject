@@ -162,7 +162,7 @@
             {
                 listRenderUserGroup = listUserGroup;
                 statusUserListView = "Data Loaded Successfully";
-                listStores = StoresService.GetStores();
+                listStores = StoresService.GetStores().Where(s => s.IsActive == true).ToList();
                 StateHasChanged();
             }
             else

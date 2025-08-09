@@ -15,27 +15,27 @@
                 <button class="btn border-0 btn-sm"> Index </button>
             </th>
             <th>
-                <button type="button" class="btn border-0 btn-sm text-nowrap px-3" >Customer Name </button>
+                <button type="button" class="btn border-0 btn-sm text-nowrap px-3" @onclick="@(() => ToggleSort("Customer Name"))">Customer Name  @GetSortIcon("Customer Name")</button>
             </th>
 
             <th>
-                <button type="button" class="btn border-0 btn-sm text-nowrap px-3" >Phone No</button>
+                <button type="button" class="btn border-0 btn-sm text-nowrap px-3" @onclick="@(() => ToggleSort("Phone No"))">Phone No @GetSortIcon("Phone No")</button>
             </th>
 
             <th> 
-                <button type="button" class="btn border-0 btn-sm text-nowrap px-3" >Email </button>
+                <button type="button" class="btn border-0 btn-sm text-nowrap px-3" @onclick="@(() => ToggleSort("Email"))">Email @GetSortIcon("Email")</button>
             </th>
 
             <th>
-                <button type="button" class="btn border-0 btn-sm text-nowrap px-3" >Birthday </button>
+                <button type="button" class="btn border-0 btn-sm text-nowrap px-3" @onclick="@(() => ToggleSort("Birthday"))">Birthday  @GetSortIcon("Birthday")</button>
             </th>
 
             <th>
-                <button type="button" class="btn border-0 btn-sm text-nowrap px-3" >Points</button>
+                <button type="button" class="btn border-0 btn-sm text-nowrap px-3" @onclick="@(() => ToggleSort("Points"))">Points @GetSortIcon("Points")</button>
             </th>
 
             <th>
-                <button type="button" class="btn border-0 btn-sm text-nowrap px-3" >Last Visit </button>
+                <button type="button" class="btn border-0 btn-sm text-nowrap px-3" @onclick="@(() => ToggleSort("Last Visit"))">Last Visit @GetSortIcon("Last Visit")</button>
             </th>
 
             <th></th>
@@ -65,7 +65,7 @@
                     </td>
 
                     <td style="cursor:pointer" @onclick="@(e => ShowCustomerDetails(customer))">
-                        @customer.Birthday?.ToString("dd/MM/yyyy")  
+                        @customer.Birthday?.ToString("dd-MMM")  
                     </td>
 
                     <td style="cursor:pointer" @onclick="@(e => ShowCustomerDetails(customer))">
@@ -82,9 +82,7 @@
                     </td>
                 </tr>
             }
-
         }
-
 
         else
         {
@@ -102,7 +100,7 @@
 
 
 @code {
- 
+
     [Parameter]
     public int PageSize { get; set; }
 
@@ -111,6 +109,9 @@
 
     [Parameter]
     public EventCallback<int> TotalPagesCallBack { get; set; }
+
+    [Parameter]
+    public EventCallback OnSortingCallBack { get; set; }    
 
     [Parameter]
     public string? FilteredCustomersData { get; set; }
@@ -127,13 +128,153 @@
 
     private Dictionary<string, int> sortStates = new()
     {
-        { "Store",     0 },
-        { "Firstname", 0 },
-        { "Username",  0 },
-        { "Group",     0 },
-        { "Status",    0 },
-        { "Role",      0 }
+        { "Customer Name", 0 },
+        { "Phone No",      0 },
+        { "Email",         0 },
+        { "Birthday",      0 },
+        { "Points",        0 },
+        { "Last Visit",    0 }
     };
+
+
+    private bool IsSorrting()
+    {
+        foreach (var state in this.sortStates.Values)
+        {
+            if (state > 0)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public void ClearSorting()
+    {
+        foreach (var key in sortStates.Keys.ToList())
+        {
+            sortStates[key] = 0;
+        }
+        this.CurrentPage = 1;
+        ContainerStorage.setCurrentPage(1);
+    }
+
+    private void ToggleSort(string column)
+    {
+        if (listCustomers is null || !listCustomers.Any())
+            return;
+
+        // reset other columns
+        foreach (var key in sortStates.Keys.ToList())
+        {
+            if (key != column)
+            {
+                sortStates[key] = 0;
+            }
+
+        }
+
+        // advance states
+        sortStates[column]++;
+
+        this.CurrentPage = 1;
+        ContainerStorage.setCurrentPage(1);
+        OnSortingCallBack.InvokeAsync();
+
+
+        if (sortStates[column] > 2)
+        {
+            sortStates[column] = 0;
+        }
+
+        switch (column)
+        {
+            case "Customer Name":
+                ApplyLogicSort(u => u.Name, column);
+                break;
+
+            case "Phone No":
+                ApplyLogicSort(u => u.PhoneNo, column);
+                break;
+
+            case "Email":
+                ApplyLogicSort(u => u.Email, column);
+                break;
+
+            case "Birthday":
+                // Sort by month and day only, ignoring year
+                ApplyLogicSort(
+                    u => u.Birthday.HasValue 
+                        ? (u.Birthday.Value.Month, u.Birthday.Value.Day) 
+                        : (int.MaxValue, int.MaxValue), 
+                    column
+                );
+                break;  
+
+            case "Points":
+                ApplyLogicSort(u => u.Points, column);
+                break;
+
+            case "Last Visit":
+                ApplyLogicSort(u => u.LastVisitDatetime, column);
+                break;
+        }
+
+        //StateHasChanged();
+    }
+
+
+    private RenderFragment GetSortIcon(string column) => builder =>
+    {
+        string icon = sortStates[column] switch
+        {
+            1 => "▲", // ascending
+            2 => "▼", // descending
+            _ => ""
+        };
+        builder.AddContent(0, icon);
+    };
+
+
+    private void ApplyLogicSort<TKey>(Func<Customer, TKey> selector, string column)
+    {
+        switch (this.sortStates[column])
+        {
+            case 0:
+
+                if (!string.IsNullOrWhiteSpace(this.FilteredCustomersData))
+                {
+                    listCustomers = CustomersService.SearchCustomerService(FilteredCustomersData);
+                }
+                else
+                {
+                    this.listCustomers = CustomersService.GetCustomersService();
+                }
+
+                break;
+
+            case 1:
+                if (listCustomers != null)
+                {
+                    this.listCustomers = listCustomers.OrderBy(selector).ToList();
+
+                }
+                break;
+
+            case 2:
+                if (listCustomers != null)
+                {
+                    this.listCustomers = listCustomers.OrderByDescending(selector).ToList();
+
+                }
+                break;
+        }
+
+    }
+
+
+
+
 
 
     private void UpdatePagedCustomers()
@@ -246,12 +387,7 @@
         }
     }
 
-
-    private bool IsSorrting()
-    {
-        // Implement sorting logic here if needed
-        return false;
-    }   
+  
 
     private void ShowCustomerDetails(Customer customer)
     {

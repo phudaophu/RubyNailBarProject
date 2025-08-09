@@ -268,6 +268,25 @@
 
     private List<User>? PagedUsers { get; set; }
 
+    private int _selectedStoreId = 0;
+
+    [Parameter]
+    public int SelectedStoreId
+    {
+
+        get => _selectedStoreId;
+        set
+        {
+            if (value >= 0 && value != _selectedStoreId)
+            {
+                _selectedStoreId = value;
+                ClearSorting();
+
+            }
+        }
+
+    }
+
     [Parameter]
     public int CurrentPage { get; set; }
 
@@ -340,6 +359,8 @@
         return false;
     }
 
+
+
     public void ClearSorting()
     {
         foreach (var key in sortStates.Keys.ToList())
@@ -347,6 +368,8 @@
             sortStates[key] = 0;
         }
 
+        this.CurrentPage = 1;
+        ContainerStorage.setCurrentPage(1);
     }
 
     private void ToggleSort(string column)
@@ -462,7 +485,7 @@
         if (isFirstRender == false)
         {
 
-            if (listUsers is null || listUsers.Count == 0)
+            if ((listUsers is null || listUsers.Count == 0) && _selectedStoreId == 0)
             {
                 listUsers = UsersService.GetUsersService();
                 statusUserListView = "Data Is Loading...";
@@ -484,7 +507,7 @@
 
             }
 
-            else if (!string.IsNullOrWhiteSpace(this.FilteredUsersData))
+            else if (!string.IsNullOrWhiteSpace(this.FilteredUsersData) )
             {
                 if (IsSorrting())
                 {
@@ -502,9 +525,17 @@
                     }
                 }
 
-
             }
 
+
+            if (SelectedStoreId > 0 && listUsers is not null && listUsers.Count > 0)
+            {
+                listUsers = listUsers.Where(u => u.UserGroups.Any(ug => ug.StoreId == SelectedStoreId)).ToList();
+                if (listUsers.Count == 0)
+                {
+                    statusUserListView = "No User Found";
+                }
+            }
 
             this.PageSize = ContainerStorage.getLastPageSize();
             this.CurrentPage = ContainerStorage.getLastCurrentPage();

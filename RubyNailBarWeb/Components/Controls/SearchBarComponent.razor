@@ -1,8 +1,11 @@
 ﻿
 
-<div class="d-flex flex-row justify-content-end">
-    <div class="input-group mb-3" style="width:34rem">
-        <input type="text" class="form-control" placeholder="Enter User Info" @bind-value="usersFilter" @bind-value:event="oninput" />
+<div class="d-flex flex-row justify-content-between">
+    <div class="input-group mb-3" style="">
+        @SelectControl
+    </div>
+    <div class="input-group mb-3" style="">
+        <input type="text" class="form-control" placeholder="@SearchBarInfo" @bind-value="elementFilter" @bind-value:event="oninput" />
         <button type="button" class="btn btn-outline-secondary" @onclick="HandleSearch">Search</button>
         <button type="button" class="btn btn-outline-secondary" @onclick="ClearSearchBar">Clear</button>
         
@@ -17,6 +20,8 @@
 
     // [Parameter(CaptureUnmatchedValues = true)]
     // public Dictionary<string, object>? OtherAttributes { get; set; } // style="width:700px"
+    [Parameter]
+    public string? SearchBarInfo { get; set; } = "Input Info";
 
     [Parameter]
     public EventCallback<string> SearchUsersCallBack { get; set; }
@@ -27,18 +32,20 @@
     [Parameter]
     public RenderFragment? ElementControl { get; set; }
 
+    [Parameter]
+    public RenderFragment? SelectControl { get; set; }
 
-    public string? usersFilter;
+    public string? elementFilter;
 
     private void HandleSearch()
     {
-        SearchUsersCallBack.InvokeAsync(usersFilter);
+        SearchUsersCallBack.InvokeAsync(elementFilter);
     }
 
     public void ClearSearchBar()
     {
-        this.usersFilter = string.Empty;
-        SearchUsersCallBack.InvokeAsync(usersFilter);
+        this.elementFilter = string.Empty;
+        SearchUsersCallBack.InvokeAsync(elementFilter);
         OnClearSearchBarCallBack.InvokeAsync();
     }
 

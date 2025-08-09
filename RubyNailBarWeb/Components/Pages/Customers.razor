@@ -6,14 +6,17 @@
 <h3>Customers</h3>
 
 
-<SearchBarComponent SearchUsersCallBack="HandleSearchUser" OnClearSearchBarCallBack="HandleClearSearchBar" @ref="searchBarComponent">
+<SearchBarComponent SearchBarInfo="@searchLabel" SearchUsersCallBack="HandleSearchCustomer" OnClearSearchBarCallBack="HandleClearSearchBar" @ref="searchBarComponent">
+    <SelectControl>
+
+    </SelectControl>
     <ElementControl>
         <a class="btn btn-outline-secondary" href="/customer"> Add Customer </a>
     </ElementControl>
 </SearchBarComponent>
 
 
-<CustomerListComponent FilteredCustomersData="@filteredCustomers" PageSize="@pageSize" CurrentPage="@currentPage" TotalPagesCallBack="HandleTotalPage"></CustomerListComponent>
+<CustomerListComponent FilteredCustomersData="@filteredCustomers" PageSize="@pageSize" CurrentPage="@currentPage" TotalPagesCallBack="HandleTotalPage" OnSortingCallBack="HandleSorting" @ref="customerListComponent"></CustomerListComponent>
 
 
 
@@ -22,13 +25,13 @@
 
 @code {
 
+    private string searchLabel = "Enter Customers Info";    
+
     private int totalPages;
 
     private int pageSize;
 
     private int currentPage;
-
-   // private List<User> listUsers = new List<User>();    
 
     private string? filteredCustomers = "";
 
@@ -36,7 +39,7 @@
 
     private PaginationComponent? paginationComponent;
 
-    //private CustomerListComponent? customerListComponent;
+    private CustomerListComponent? customerListComponent;
 
 
     private void HandleTotalPage(int totalPages)
@@ -48,7 +51,7 @@
     {
         this.pageSize = pageSize;
         searchBarComponent?.ClearSearchBar();
-        //CustomerListComponent?.ClearSorting();
+        customerListComponent?.ClearSorting();  
 
     }
 
@@ -61,7 +64,7 @@
 
     public void HandleClearSearchBar()
     {
-
+        customerListComponent?.ClearSorting();
     }
 
     public void HandleSorting()
@@ -69,7 +72,7 @@
         paginationComponent?.setCurrentPage(1);
     }
 
-    public void HandleSearchUser(string customerFilterData)
+    public void HandleSearchCustomer(string customerFilterData)
     {
         filteredCustomers = customerFilterData;
     }
