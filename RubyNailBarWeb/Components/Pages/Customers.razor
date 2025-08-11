@@ -8,7 +8,13 @@
 
 <SearchBarComponent SearchBarInfo="@searchLabel" SearchUsersCallBack="HandleSearchCustomer" OnClearSearchBarCallBack="HandleClearSearchBar" @ref="searchBarComponent">
     <SelectControl>
-
+        <InputSelect @bind-Value="selectedMonth" class="@(selectedMonth == 0 ? "text-secondary" : "text-danger border-danger")">
+            <option value="0">-- All Months --</option>
+            @for (int i = 1; i <= 12; i++)
+            {
+                <option value="@i" class="text-dark">@GetSelectedMonthName(i)</option>
+            }
+        </InputSelect>
     </SelectControl>
     <ElementControl>
         <a class="btn btn-outline-secondary" href="/customer"> Add Customer </a>
@@ -16,7 +22,7 @@
 </SearchBarComponent>
 
 
-<CustomerListComponent FilteredCustomersData="@filteredCustomers" PageSize="@pageSize" CurrentPage="@currentPage" TotalPagesCallBack="HandleTotalPage" OnSortingCallBack="HandleSorting" @ref="customerListComponent"></CustomerListComponent>
+<CustomerListComponent FilteredCustomersData="@filteredCustomers" PageSize="@pageSize" CurrentPage="@currentPage" TotalPagesCallBack="HandleTotalPage" OnSortingCallBack="HandleSorting" selectedMonthFilter=@selectedMonth @ref="customerListComponent"></CustomerListComponent>
 
 
 
@@ -24,6 +30,8 @@
 
 
 @code {
+    
+    private int selectedMonth = 0;
 
     private string searchLabel = "Enter Customers Info";    
 
@@ -41,6 +49,10 @@
 
     private CustomerListComponent? customerListComponent;
 
+    private string GetSelectedMonthName(int selectedMonth)
+    {
+        return new DateTime(2025, selectedMonth, 1).ToString("MMMM"); // Get month namer
+    }
 
     private void HandleTotalPage(int totalPages)
     {
@@ -60,10 +72,9 @@
         this.currentPage = currentPage;
     }
 
-
-
     public void HandleClearSearchBar()
     {
+        selectedMonth = 0;
         customerListComponent?.ClearSorting();
     }
 
@@ -74,7 +85,10 @@
 
     public void HandleSearchCustomer(string customerFilterData)
     {
+        currentPage = 1;
+        ContainerStorage.setCurrentPage(1);
         filteredCustomers = customerFilterData;
+
     }
 
 

@@ -116,6 +116,22 @@
     [Parameter]
     public string? FilteredCustomersData { get; set; }
 
+    private int _selectedMonth = 0;
+
+    [Parameter]
+    public int SelectedMonthFilter
+    {
+        get => _selectedMonth;
+        set
+        {
+            if(value >= 0 && value != _selectedMonth)
+            {
+                _selectedMonth = value;
+                ClearSorting();
+            }
+        }
+    }  
+
     private int previousTotalPage = -1;
 
     private bool isFirstRender = true;  
@@ -273,10 +289,6 @@
     }
 
 
-
-
-
-
     private void UpdatePagedCustomers()
     {
         if (listCustomers is not null && listCustomers.Any())
@@ -308,7 +320,7 @@
         if (isFirstRender == false)
         {
 
-            if (listCustomers is null || listCustomers.Count == 0)
+            if ((listCustomers is null || listCustomers.Count == 0) && _selectedMonth == 0)
             {
                 listCustomers = CustomersService.GetCustomersService();
                 statusCustomerListView = "Data Is Loading...";
@@ -346,6 +358,16 @@
                     {
                         statusCustomerListView = "No User Found";
                     }
+                }
+            }
+
+
+            if (SelectedMonthFilter > 0 && listCustomers is not null && listCustomers.Count > 0)
+            {
+                listCustomers = listCustomers.Where(c => c.Birthday?.Month == new DateOnly(2025, SelectedMonthFilter,1).Month).ToList();
+                if (listCustomers.Count == 0)
+                {
+                    statusCustomerListView = "No Customer Found";
                 }
             }
 

@@ -271,7 +271,7 @@
     private int _selectedStoreId = 0;
 
     [Parameter]
-    public int SelectedStoreId
+    public int SelectedStoreFilter
     {
 
         get => _selectedStoreId;
@@ -528,9 +528,9 @@
             }
 
 
-            if (SelectedStoreId > 0 && listUsers is not null && listUsers.Count > 0)
+            if (SelectedStoreFilter > 0 && listUsers is not null && listUsers.Count > 0)
             {
-                listUsers = listUsers.Where(u => u.UserGroups.Any(ug => ug.StoreId == SelectedStoreId)).ToList();
+                listUsers = listUsers.Where(u => u.UserGroups.Any(ug => ug.StoreId == SelectedStoreFilter)).ToList();
                 if (listUsers.Count == 0)
                 {
                     statusUserListView = "No User Found";

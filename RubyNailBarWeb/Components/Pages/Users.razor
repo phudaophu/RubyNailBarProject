@@ -28,7 +28,7 @@
 </SearchBarComponent>
 
 
-<UserListComponent FilteredUsersData="@filteredUsers" PageSize="@pageSize" CurrentPage="@currentPage" TotalPagesCallBack="HandleTotalPage" OnSortingCallBack="HandleSorting" SelectedStoreId="@selectedStoreId" @ref="userListComponent"></UserListComponent>
+<UserListComponent FilteredUsersData="@filteredUsers" PageSize="@pageSize" CurrentPage="@currentPage" TotalPagesCallBack="HandleTotalPage" OnSortingCallBack="HandleSorting" SelectedStoreFilter="@selectedStoreId" @ref="userListComponent"></UserListComponent>
 
 <PaginationComponent TotalPages="@totalPages" PageSizeCallBack="HandlePageSize" CurrentPageCallBack="HandleCurrentPage" @ref = "paginationComponent"></PaginationComponent>
 
