@@ -41,7 +41,7 @@
 
     private int currentPage;
 
-    private string? filteredCustomers = "";
+    private string? filteredCustomers = string.Empty;
 
     private SearchBarComponent? searchBarComponent;
 
@@ -74,6 +74,7 @@
 
     public void HandleClearSearchBar()
     {
+        filteredCustomers = string.Empty;
         selectedMonth = 0;
         customerListComponent?.ClearSorting();
     }

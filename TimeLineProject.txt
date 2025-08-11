@@ -44,7 +44,9 @@ complete: input select group name, make change on role name
 process: customer page 
 
 
-
+4:49 PM 8/11/2025
+complete: render user list, customer list 
+process: customer page for edit customer, show customer details, add a customer
 
 
 

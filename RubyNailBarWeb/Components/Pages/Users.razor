@@ -49,7 +49,7 @@
 
     // private List<User> listUsers = new List<User>();    
 
-    private string? filteredUsers = "";
+    private string? filteredUsers = string.Empty;
 
     private SearchBarComponent? searchBarComponent;
 
@@ -69,6 +69,7 @@
 
     public void HandleClearSearchBar()
     {
+        filteredUsers = string.Empty; 
         selectedStoreId = 0;
         userListComponent?.ClearSorting();
     }

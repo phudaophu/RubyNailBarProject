@@ -75,7 +75,7 @@
                         @customer.LastVisitDatetime?.ToString("dd/MM/yyyy") 
                     </td>
                     <td>
-                            <a class="btn btn-outline-primary btn-sm px-2 py-0 text-nowrap"> Edit </a>
+                        <a class="btn btn-outline-primary btn-sm px-2 py-0 text-nowrap" href="@($"/customer/{customer.CustomerId}")"> Edit </a>
                     </td>
                     <td>
                             <a class="btn btn-outline-primary btn-sm px-2 py-0 text-nowrap"> Edit Group </a>
@@ -142,6 +142,8 @@
 
     private List<Customer>? pagedListCustomers = new List<Customer>();
 
+    private string sortingByColumn = string.Empty;
+
     private Dictionary<string, int> sortStates = new()
     {
         { "Customer Name", 0 },
@@ -153,16 +155,43 @@
     };
 
 
-    private bool IsSorrting()
+    private void UpdateCustomerSorting(string sortingByColumn)
     {
-        foreach (var state in this.sortStates.Values)
+        switch (sortingByColumn)
         {
-            if (state > 0)
-            {
-                return true;
-            }
+            case "Customer Name":
+                ApplyLogicSort(u => u.Name, sortingByColumn);
+                break;
+
+            case "Phone No":
+                ApplyLogicSort(u => u.PhoneNo, sortingByColumn);
+                break;
+
+            case "Email":
+                ApplyLogicSort(u => u.Email, sortingByColumn);
+                break;
+
+            case "Birthday":
+                // Sort by month and day only, ignoring year
+                ApplyLogicSort(
+                    u => u.Birthday.HasValue
+                        ? (u.Birthday.Value.Month, u.Birthday.Value.Day)
+                        : (int.MaxValue, int.MaxValue),
+                    sortingByColumn
+                );
+                break;
+
+            case "Points":
+                ApplyLogicSort(u => u.Points, sortingByColumn);
+                break;
+
+            case "Last Visit":
+                ApplyLogicSort(u => u.LastVisitDatetime, sortingByColumn);
+                break;
+
+            default:
+                break;
         }
-        return false;
     }
 
     public void ClearSorting()
@@ -171,6 +200,7 @@
         {
             sortStates[key] = 0;
         }
+        this.sortingByColumn = string.Empty;
         this.CurrentPage = 1;
         ContainerStorage.setCurrentPage(1);
     }
@@ -192,6 +222,7 @@
 
         // advance states
         sortStates[column]++;
+        this.sortingByColumn = column;
 
         this.CurrentPage = 1;
         ContainerStorage.setCurrentPage(1);
@@ -201,42 +232,11 @@
         if (sortStates[column] > 2)
         {
             sortStates[column] = 0;
+            this.sortingByColumn = string.Empty;
+
         }
 
-        switch (column)
-        {
-            case "Customer Name":
-                ApplyLogicSort(u => u.Name, column);
-                break;
 
-            case "Phone No":
-                ApplyLogicSort(u => u.PhoneNo, column);
-                break;
-
-            case "Email":
-                ApplyLogicSort(u => u.Email, column);
-                break;
-
-            case "Birthday":
-                // Sort by month and day only, ignoring year
-                ApplyLogicSort(
-                    u => u.Birthday.HasValue 
-                        ? (u.Birthday.Value.Month, u.Birthday.Value.Day) 
-                        : (int.MaxValue, int.MaxValue), 
-                    column
-                );
-                break;  
-
-            case "Points":
-                ApplyLogicSort(u => u.Points, column);
-                break;
-
-            case "Last Visit":
-                ApplyLogicSort(u => u.LastVisitDatetime, column);
-                break;
-        }
-
-        //StateHasChanged();
     }
 
 
@@ -320,49 +320,30 @@
         if (isFirstRender == false)
         {
 
-            if ((listCustomers is null || listCustomers.Count == 0) && _selectedMonth == 0)
+            if (listCustomers is not null && listCustomers?.Count >= 0)
             {
                 listCustomers = CustomersService.GetCustomersService();
                 statusCustomerListView = "Data Is Loading...";
             }
-
-            else if (string.IsNullOrWhiteSpace(this.FilteredCustomersData))
+            else
             {
-
-                if (IsSorrting())
-                {
-
-                    statusCustomerListView = "Data Is Loading...";
-                }
-                else
-                {
-                    listCustomers = CustomersService.GetCustomersService();
-                    statusCustomerListView = "Data Is Loading...";
-                }
-
+                statusCustomerListView = "No User Found";
             }
+        
 
-            else if (!string.IsNullOrWhiteSpace(this.FilteredCustomersData))
+            if (listCustomers is not null && listCustomers.Count >= 0 && !string.IsNullOrWhiteSpace(FilteredCustomersData))
             {
-                if (IsSorrting())
-                {
-                    statusCustomerListView = "Data Is Loading...";
-                }
-                else
-                {
-                    listCustomers = CustomersService.SearchCustomerService(FilteredCustomersData);
+                listCustomers = CustomersService.SearchCustomerService(FilteredCustomersData);
 
-                    statusCustomerListView = "Data Is Loading...";
+                statusCustomerListView = "Data Is Loading...";
 
-                    if (listCustomers is null || listCustomers.Count == 0)
-                    {
-                        statusCustomerListView = "No User Found";
-                    }
+                if (listCustomers is null || listCustomers.Count == 0)
+                {
+                    statusCustomerListView = "No Customer Found";
                 }
             }
 
-
-            if (SelectedMonthFilter > 0 && listCustomers is not null && listCustomers.Count > 0)
+            if (listCustomers is not null && listCustomers.Count >= 0 && SelectedMonthFilter > 0)
             {
                 listCustomers = listCustomers.Where(c => c.Birthday?.Month == new DateOnly(2025, SelectedMonthFilter,1).Month).ToList();
                 if (listCustomers.Count == 0)
@@ -373,10 +354,12 @@
 
             this.PageSize = ContainerStorage.getLastPageSize();
             this.CurrentPage = ContainerStorage.getLastCurrentPage();
+            UpdateCustomerSorting(sortingByColumn);
 
             UpdatePagedCustomers();
             StateHasChanged();
         }
+
     }
 
     protected override void OnAfterRender(bool firstRender)

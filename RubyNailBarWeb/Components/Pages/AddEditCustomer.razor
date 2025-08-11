@@ -1,0 +1,130 @@
+﻿@page "/customer/{id:int?}"
+@rendermode InteractiveServer
+@inject FileUploadService FileUploadService
+
+@if (Id.HasValue)
+{
+    <h3>Edit Customer</h3>
+}
+else
+{
+    <h3>Add Customer</h3>
+}
+
+@if (customer is not null)
+{
+     <EditForm Model="customer" FormName="customerForm" OnValidSubmit="SubmitFunc">
+        <DataAnnotationsValidator></DataAnnotationsValidator>
+        <div class="container">
+            <form class="form-horizontal">
+                <div class="row">
+                    <div class="col-sm-12 col-sm-offset-1">
+                        <div class="row row-centered">
+                            <div class="col-xs-12 col-sm-6 col-centered">
+
+                                <FieldComponent Label="Customer Id">
+
+                                    <Control>
+                                        <InputNumber @bind-Value="customer.CustomerId" disabled></InputNumber>
+                                    </Control>
+
+                                </FieldComponent>
+
+                                <FieldComponent Label="First Name">
+                                    <Control>
+                                        <InputText @bind-Value="customer.Name"></InputText>
+                                    </Control>
+                                    <ValidationControl>
+                                        <ValidationMessage For="() => customer.Name"></ValidationMessage>
+                                    </ValidationControl>
+                                </FieldComponent>
+
+
+                            </div>
+
+                            <div class="col-xs-12 col-sm-6 col-centered">
+
+                                <FieldComponent Label="Upload Avatar">
+                                    <Control>
+                                        <div class="d-flex align-items-center gap-3">
+
+                                            @if (!string.IsNullOrEmpty(customer.ImageUrl))
+                                            {
+                                                <img src="@customer.ImageUrl" style="width: 30px; height:30px" />
+                                            }
+                                            else
+                                            {
+                                                <img src=@(FileUploadService.GetUserAvatarDefaultImage()) style="width: 30px; height:30px" />
+                                            }
+
+                                            <InputFile OnChange="@(e => HandleImageUpload(e, customer))" disabled="@(!Id.HasValue)" />
+                                        </div>
+
+                                    </Control>
+                                    <ValidationControl>
+                                        @if (!string.IsNullOrEmpty(uploadImageError))
+                                        {
+                                            <div class="validation-message">@uploadImageError</div>
+                                        }
+                                    </ValidationControl>
+                                </FieldComponent>
+
+                                <FieldComponent Label="Customer Level">
+                                    <Control>
+                                        <div class="d-flex align-items-center gap-3">
+                                            <InputText @bind-Value="customer.CustomerLevel" ></InputText>
+                                        </div>
+                                    </Control>
+                                </FieldComponent>
+
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </EditForm>
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+@code {
+
+
+
+
+    [Parameter]
+    public int? Id { get; set; }
+
+    [SupplyParameterFromForm]
+    private Customer? customer { get; set; }
+
+    private string uploadImageError = string.Empty;
+
+
+    private void SubmitFunc()
+    {
+
+    }
+
+    private void HandleImageUpload(InputFileChangeEventArgs e, Customer customer)
+    {
+        
+    }
+
+
+
+
+
+}

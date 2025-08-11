@@ -336,6 +336,7 @@
 
     private string? statusUserListView = "Data Is Loading...";
 
+    private string sortingByColumn = string.Empty;       
 
     private Dictionary<string, int> sortStates = new()
     {
@@ -347,19 +348,40 @@
         { "Role",      0 }
     };
 
-    private bool IsSorrting()
+
+    private void UpdateUserSorting(string sortingColumn)
     {
-        foreach (var state in this.sortStates.Values)
+
+        switch (sortingColumn)
         {
-            if (state > 0)
-            {
-                return true;
-            }
+            case "Firstname":
+                ApplyLogicSort(u => u.FirstName, sortingColumn);
+                break;
+
+            case "Store":
+                ApplyLogicSort(u => u.UserGroups.Count, sortingColumn);
+                break;
+
+            case "Username":
+                ApplyLogicSort(u => u.Username, sortingColumn);
+                break;
+
+            case "Group":
+                ApplyLogicSort(u => u.UserGroups.Count, sortingColumn);
+                break;
+
+            case "Role":
+                ApplyLogicSort(u => u.UserGroups.Count, sortingColumn);
+                break;
+
+            case "Status":
+                ApplyLogicSort(u => u.IsActive, sortingColumn);
+                break;
+            default:
+                break;
         }
-        return false;
+   
     }
-
-
 
     public void ClearSorting()
     {
@@ -367,7 +389,7 @@
         {
             sortStates[key] = 0;
         }
-
+        this.sortingByColumn = string.Empty;
         this.CurrentPage = 1;
         ContainerStorage.setCurrentPage(1);
     }
@@ -387,48 +409,19 @@
 
         }
 
-
-        // advance states
         sortStates[column]++;
+        this.sortingByColumn = column;
 
         this.CurrentPage = 1;
         ContainerStorage.setCurrentPage(1);
         OnSortingCallBack.InvokeAsync();
 
-
         if (sortStates[column] > 2)
         {
             sortStates[column] = 0;
+            this.sortingByColumn = string.Empty;
         }
 
-        switch (column)
-        {
-            case "Firstname":
-                ApplyLogicSort(u => u.FirstName, column);
-                break;
-
-            case "Store":
-                ApplyLogicSort(u => u.UserGroups.Count, column);
-                break;
-
-            case "Username":
-                ApplyLogicSort(u => u.Username, column);
-                break;
-
-            case "Group":
-                ApplyLogicSort(u => u.UserGroups.Count, column);
-                break;
-
-            case "Role":
-                ApplyLogicSort(u => u.UserGroups.Count, column);
-                break;
-
-            case "Status":
-                ApplyLogicSort(u => u.IsActive, column);
-                break;
-        }
-
-        //StateHasChanged();
     }
 
 
@@ -485,62 +478,43 @@
         if (isFirstRender == false)
         {
 
-            if ((listUsers is null || listUsers.Count == 0) && _selectedStoreId == 0)
+            if (listUsers is not null || listUsers?.Count >= 0)
             {
                 listUsers = UsersService.GetUsersService();
                 statusUserListView = "Data Is Loading...";
             }
 
-            else if (string.IsNullOrWhiteSpace(this.FilteredUsersData))
+
+            if (listUsers is not null && listUsers.Count >= 0 && !string.IsNullOrWhiteSpace(FilteredUsersData))
             {
+                listUsers = UsersService.SearchUserService(FilteredUsersData);
 
-                if (IsSorrting())
-                {
+                statusUserListView = "Data Is Loading...";
 
-                    statusUserListView = "Data Is Loading...";
-                }
-                else 
-                {
-                    listUsers = UsersService.GetUsersService();
-                    statusUserListView = "Data Is Loading...";
-                }
-
-            }
-
-            else if (!string.IsNullOrWhiteSpace(this.FilteredUsersData) )
-            {
-                if (IsSorrting())
-                {
-                    statusUserListView = "Data Is Loading...";
-                }
-                else
-                {
-                    listUsers = UsersService.SearchUserService(FilteredUsersData);
-
-                    statusUserListView = "Data Is Loading...";
-
-                    if (listUsers is null || listUsers.Count == 0)
-                    {
-                        statusUserListView = "No User Found";
-                    }
-                }
-
-            }
-
-
-            if (SelectedStoreFilter > 0 && listUsers is not null && listUsers.Count > 0)
-            {
-                listUsers = listUsers.Where(u => u.UserGroups.Any(ug => ug.StoreId == SelectedStoreFilter)).ToList();
-                if (listUsers.Count == 0)
+                if (listUsers is null || listUsers.Count == 0)
                 {
                     statusUserListView = "No User Found";
                 }
             }
 
+
+            if (listUsers is not null && listUsers.Count >= 0 && SelectedStoreFilter > 0)
+            {
+                listUsers = listUsers.Where(u => u.UserGroups.Any(ug => ug.StoreId == SelectedStoreFilter)).ToList();
+
+                statusUserListView = "Data Is Loading...";
+
+                if (listUsers is null || listUsers.Count == 0)
+                {
+                    statusUserListView = "No User Found";
+                }
+            }
+
+
             this.PageSize = ContainerStorage.getLastPageSize();
             this.CurrentPage = ContainerStorage.getLastCurrentPage();
 
-
+            UpdateUserSorting(sortingByColumn);
             UpdatePagedUsers();
             StateHasChanged();
         }
@@ -586,7 +560,6 @@
             UsersService.UpdateUserService(userId, userToUpdate);
             listUsers = UsersService.GetUsersService();
             UpdatePagedUsers();
-            //StateHasChanged();
         }
         else
         {
