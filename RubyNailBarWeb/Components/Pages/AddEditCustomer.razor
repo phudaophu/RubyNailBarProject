@@ -1,5 +1,10 @@
 ﻿@page "/customer/{id:int?}"
+
+
 @rendermode InteractiveServer
+@inject FileUploadService FileUploadService
+@inject ICustomersService CustomerService
+@inject NavigationManager NavigationManager 
 @inject FileUploadService FileUploadService
 
 @if (Id.HasValue)
@@ -30,7 +35,7 @@ else
 
                                 </FieldComponent>
 
-                                <FieldComponent Label="First Name">
+                                <FieldComponent Label="Name">
                                     <Control>
                                         <InputText @bind-Value="customer.Name"></InputText>
                                     </Control>
@@ -39,41 +44,129 @@ else
                                     </ValidationControl>
                                 </FieldComponent>
 
-
-                            </div>
-
-                            <div class="col-xs-12 col-sm-6 col-centered">
-
-                                <FieldComponent Label="Upload Avatar">
+                                <FieldComponent Label="Phone">
                                     <Control>
-                                        <div class="d-flex align-items-center gap-3">
-
-                                            @if (!string.IsNullOrEmpty(customer.ImageUrl))
-                                            {
-                                                <img src="@customer.ImageUrl" style="width: 30px; height:30px" />
-                                            }
-                                            else
-                                            {
-                                                <img src=@(FileUploadService.GetUserAvatarDefaultImage()) style="width: 30px; height:30px" />
-                                            }
-
-                                            <InputFile OnChange="@(e => HandleImageUpload(e, customer))" disabled="@(!Id.HasValue)" />
-                                        </div>
-
+                                        <InputText @bind-Value="customer.PhoneNo" @onblur="ClearDuplicateCustomerNPhoneNoError"></InputText>
                                     </Control>
                                     <ValidationControl>
-                                        @if (!string.IsNullOrEmpty(uploadImageError))
+                                        <ValidationMessage For="() => customer.PhoneNo"></ValidationMessage>
+                                        @if (isDuplicateCustomerPhoneNo)
                                         {
-                                            <div class="validation-message">@uploadImageError</div>
+                                            <div class="validation-message">@customerPhoneNoDuplicatedError</div>
                                         }
                                     </ValidationControl>
                                 </FieldComponent>
 
-                                <FieldComponent Label="Customer Level">
+                                <FieldComponent Label="Birthday">
                                     <Control>
-                                        <div class="d-flex align-items-center gap-3">
-                                            <InputText @bind-Value="customer.CustomerLevel" ></InputText>
-                                        </div>
+                                        <InputDate @bind-Value="customer.Birthday"></InputDate>
+                                    </Control>
+                                </FieldComponent>
+
+                                <FieldComponent Label="Email">
+                                    <Control>
+                                        <InputText @bind-Value="customer.Email"></InputText>
+                                    </Control>
+                                </FieldComponent>
+
+                                <FieldComponent Label="Address">
+                                    <Control>
+                                        <InputText @bind-Value="customer.Address1"></InputText>
+                                    </Control>
+                                </FieldComponent>
+
+                                <FieldComponent Label="Create Date">
+                                    <Control>
+                                        <input type="datetime" @bind="customer.CreatedDatetime" disabled>
+                                    </Control>
+                                </FieldComponent>
+
+                                @if (Id.HasValue)
+                                {
+                                    <FieldComponent Label="Modified Date">
+                                        <Control>
+                                            <input type="datetime" @bind="customer.ModifiedDatetime">
+                                        </Control>
+                                    </FieldComponent>
+                                }
+
+
+
+                            </div>
+
+                            <div class="col-xs-12 col-sm-6 col-centered">
+                                @if (Id.HasValue)
+                                {
+                                    <FieldComponent Label="Upload Avatar">
+                                        <Control>
+                                            <div class="d-flex align-items-center gap-3">
+
+                                                @if (!string.IsNullOrEmpty(customer.ImageUrl))
+                                                {
+                                                    <img src="@customer.ImageUrl" style="width: 30px; height:30px" />
+                                                }
+                                                else
+                                                {
+                                                    <img src=@(FileUploadService.GetUserAvatarDefaultImage()) style="width: 30px; height:30px" />
+                                                }
+
+                                                <InputFile OnChange="@(e => HandleImageUpload(e, customer))" disabled="@(!Id.HasValue)" />
+                                            </div>
+
+                                        </Control>
+                                        <ValidationControl>
+                                            @if (!string.IsNullOrEmpty(uploadImageError))
+                                            {
+                                                <div class="validation-message">@uploadImageError</div>
+                                            }
+                                        </ValidationControl>
+                                    </FieldComponent>
+
+                                    <FieldComponent Label="Points">
+                                        <Control>
+                                            <div class="d-flex align-items-center gap-3">
+                                                <InputNumber @bind-Value="customer.Points"></InputNumber>
+                                            </div>
+                                        </Control>
+                                    </FieldComponent>
+
+                                    <FieldComponent Label="Customer Level">
+                                        <Control>
+                                            <div class="d-flex align-items-center gap-3">
+                                                <InputSelect @bind-Value="customer.CustomerLevel">
+                                                    <option value="Silver">Silver (1)   </option>
+                                                    <option value="Gold">Gold (2)    </option>
+                                                    <option value="Platinum">Platinum (3) </option>
+                                                    <option value="Diamond">Diamond (4)  </option>
+                                                </InputSelect>
+                                            </div>
+                                        </Control>
+                                    </FieldComponent>
+
+                                    <FieldComponent Label="Transaction Count">
+                                        <Control>
+                                            <InputNumber @bind-Value="customer.TransactionCount" ></InputNumber>
+                                        </Control>
+                                    </FieldComponent>
+
+                                    <FieldComponent Label="Lifetime Spend">
+                                        <Control>
+                                            <InputNumber @bind-Value="customer.LifetimeSpend" ></InputNumber>
+                                        </Control>
+                                    </FieldComponent>
+
+
+                                    <FieldComponent Label="Last Visit">
+                                        <Control>
+                                            <input type="datetime" @bind="customer.LastVisitDatetime">
+                                        </Control>
+                                    </FieldComponent>
+                                }
+
+
+                                <FieldComponent Label="Description">
+                                    <Control>
+                                        <InputTextArea @bind-Value="customer.Description" style="resize:both"></InputTextArea>
                                     </Control>
                                 </FieldComponent>
 
@@ -84,6 +177,12 @@ else
                 </div>
             </form>
         </div>
+
+        <a class="btn btn-primary" href="/customers"> Back </a>
+        &nbsp;
+        <button class="btn btn-primary" type="submit"> @(Id.HasValue==true?"Update":"Add") </button>
+
+
     </EditForm>
 }
 
@@ -91,17 +190,7 @@ else
 
 
 
-
-
-
-
-
-
-
-
 @code {
-
-
 
 
     [Parameter]
@@ -112,15 +201,115 @@ else
 
     private string uploadImageError = string.Empty;
 
+    private string customerPhoneNoDuplicatedError = string.Empty;  
+
+    private bool isDuplicateCustomerPhoneNo = false;
+
+    private void ClearDuplicateCustomerNPhoneNoError()
+    {
+        isDuplicateCustomerPhoneNo = false;
+        customerPhoneNoDuplicatedError = string.Empty;
+    }
+
+
+    protected override void OnParametersSet()
+    {
+        if (this.Id.HasValue)
+        {
+            customer ??= CustomerService.GetCustomerByIdService(this.Id.Value);
+            //isEditUserName = false;
+        }
+        else
+        {
+            customer ??= new Customer() { Points = 0, CreatedDatetime = DateTime.Now };
+            //isEditUserName = true;
+            //listStore = StoresService.GetStores().Where(x => x.IsActive == true).ToList();
+        }
+    }
 
     private void SubmitFunc()
     {
+        if(customer is not null && customer.PhoneNo is not null)
+        {
+            isDuplicateCustomerPhoneNo = CustomerService.IsCustomerPhoneNoExistService(customer.PhoneNo, customer.CustomerId);
+            if(isDuplicateCustomerPhoneNo)
+            {
+                customerPhoneNoDuplicatedError = "This phone number already exists.";
+                return;
+            }
+            else
+            {
+                customerPhoneNoDuplicatedError = string.Empty;
+            }
 
+            if (this.Id.HasValue)
+            {
+                customer.ModifiedDatetime = DateTime.Now;
+                CustomerService.UpdateCustomerService(customer.CustomerId,customer);    
+                
+            }
+            else
+            {
+                customer.CreatedDatetime = DateTime.Now;
+                customer.ModifiedDatetime = DateTime.Now;
+                customer.Points = 0;
+                customer.LifetimeSpend = 0;
+                customer.TransactionCount = 0;
+                customer.CustomerLevel = "Silver";
+                int newCustomerId = CustomerService.AddCustomerService(customer);   
+            }
+            NavigationManager.NavigateTo("/customers");
+        }
     }
 
-    private void HandleImageUpload(InputFileChangeEventArgs e, Customer customer)
+    private async Task HandleImageUpload(InputFileChangeEventArgs e, Customer customer)
     {
-        
+        var file = e.File;
+
+        if (file == null || customer.CustomerId <= 0)
+        {
+            uploadImageError = "File is null or CustomerId is not set.";
+            throw new InvalidOperationException("File is null or CustomerId is not set.");
+        }
+
+        string subFolderName = $"customer\\{customer.Name}-{customer.CustomerId}";
+
+        string fileNameWithoutExtension = $"customer-avatar-{customer.Name}";
+
+        string imageUrl = string.Empty;
+
+        try
+        {
+            imageUrl = await FileUploadService.SaveImageAsync(file, subFolderName, fileNameWithoutExtension);
+
+        }
+        catch (Exception ex)
+        {
+            uploadImageError = ex.Message;
+        }
+
+        if (!string.IsNullOrEmpty(imageUrl))
+        {
+            if (!string.IsNullOrEmpty(customer.ImageUrl))
+            {
+                try
+                {
+                    FileUploadService.DeleteFileByPathAsync(customer.ImageUrl);
+
+                }
+                catch (Exception ex)
+                {
+                    uploadImageError = ex.Message;
+                }
+            }
+            customer.ImageUrl = imageUrl;
+            StateHasChanged();
+        }
+        else
+        {
+            uploadImageError = "Image upload failed.";
+            throw new InvalidOperationException("Image upload failed.");
+        }
     }
 
 

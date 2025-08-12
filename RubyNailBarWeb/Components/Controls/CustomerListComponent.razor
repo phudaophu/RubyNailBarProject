@@ -1,8 +1,10 @@
 ﻿@inject NavigationManager NavigationManager 
 @inject ICustomersService CustomersService
 @inject ContainerStorage ContainerStorage
+@inject FileUploadService FileUploadService
 
 @inject ICustomersService CustomersService
+@inject IJSRuntime JSRuntime    
 @attribute [StreamRendering]
 
 
@@ -99,7 +101,123 @@
 </table>
 
 
+
+<!-- User Detail Modal -->
+<div class="modal fade" id="userDetailModal" tabindex="-1" aria-labelledby="userDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="userDetailModalLabel">User Detail</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                @if (selectedCustomer != null)
+                {
+                    <div class="row">
+                        <!-- Profile Picture -->
+                        <div class="col-md-3 text-center">
+                            <img src="@(string.IsNullOrWhiteSpace(selectedCustomer.ImageUrl) ? FileUploadService.GetUserAvatarDefaultImage() : selectedCustomer.ImageUrl)"
+                                 alt="User Image" class="img-thumbnail" style="max-width: 150px;" />
+                        </div>
+
+                        <!-- User Info -->
+                        <div class="col-md-9">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5><i class="bi bi-person"></i> SUMMARY</h5>
+                                <a class="btn btn-outline-warning btn-sm text-uppercase px-2 py-0" href=@($"/customer/{selectedCustomer.CustomerId}")>Edit</a>
+                            </div>
+
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <div><strong>Name:</strong> @selectedCustomer.Name</div>
+                                    <div><strong>Mobile:</strong> @selectedCustomer.PhoneNo</div>
+                                    <div><strong>Birthday:</strong> @selectedCustomer.Birthday?.ToString("MMMM dd,yyyy")</div>
+
+                                    <div class="mt-2"><strong>Email:</strong> <a href="mailto:@selectedCustomer.Email">@selectedCustomer.Email</a></div>
+                                    <div><strong>Address:</strong> @selectedCustomer.Address1</div>
+                                    <div><strong>Description:</strong> @selectedCustomer.Description</div>
+
+@*                                  <div class="mt-2">
+                                        <strong>Status:</strong>
+                                        <span class="text-@(selectedUser.IsActive ? "success" : "danger")">
+                                            @(selectedUser.IsActive ? "Active" : "Access Revoked")
+                                        </span>
+                                    </div> 
+                                    <div><strong>Role:</strong> your role </div>*@
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div><strong>Points:</strong> @selectedCustomer.Points</div>
+                                    <div><strong>Customer Level:</strong>
+                                        <span class="badge border @(selectedCustomer.CustomerLevel?.Equals("Silver") == true ? "border-secondary text-secondary" : "")
+                                                                    @(selectedCustomer.CustomerLevel?.Equals("Gold") == true ? "border-warning text-warning" : "") 
+                                                                        @(selectedCustomer.CustomerLevel?.Equals("Platinum") == true ? "border-success text-success" : "")
+                                                                            @(selectedCustomer.CustomerLevel?.Equals("Diamond") == true ? "border-danger text-danger" : "") ">
+
+                                            @selectedCustomer.CustomerLevel</span>
+                                    </div>
+                                    <div><strong>Transaction Number:</strong> @selectedCustomer.TransactionCount</div>
+
+                                    <div class="mt-2"><strong>Lifetime Spend:</strong> @selectedCustomer.LifetimeSpend</div>
+                                    <div><strong>First Visit:</strong> @selectedCustomer.CreatedDatetime?.ToString("MMM dd,yyyy hh:mm:ss")</div>
+                                    <div><strong>Last Visit:</strong> @selectedCustomer.LastVisitDatetime?.ToString("MMM dd,yyyy hh:mm:ss")</div>
+
+                                   @* <div class="mt-2"><strong>Role Permissions:</strong> All</div> *@
+                                   @*<div>
+                                        <strong>User Access:</strong>
+                                        <div class="small text-muted">
+                                            Configuration, Users, History, Reports, Helpdesk, Supplier Portal Administrator, Employee Portal Administrator, Workflow Administrator
+                                        </div>
+                                    </div> *@
+                                </div>
+                            </div>
+
+                            <!-- Groups / Roles / Stores -->
+                            <hr />
+                            <div>
+                                <strong>Recent Invoice:</strong>
+                               @*  <ul class="mb-0">
+                                    @foreach (var group in selectedUser.UserGroups)
+                                    {
+                                        <li>
+                                            @(group.StoreId != null ? StoresService.GetStoreById(group.StoreId.Value).Name : "N/A")
+                                            - @group.GroupName - @group.RoleName
+                                        </li>
+                                    }
+                                </ul> *@
+                            </div>
+                        </div>
+                    </div>
+
+                }
+                else
+                {
+                    <p class="text-muted">No user selected.</p>
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
 @code {
+
+
+    private Customer? selectedCustomer;
+
+    private async Task ShowCustomerDetails(Customer customer)
+    {
+        selectedCustomer = customer;
+
+        await Task.Delay(100);
+
+        await JSRuntime.InvokeVoidAsync("bootstrapInterop.showModal", "#userDetailModal");
+
+    }
 
     [Parameter]
     public int PageSize { get; set; }
@@ -392,14 +510,5 @@
         }
     }
 
-  
-
-    private void ShowCustomerDetails(Customer customer)
-    {
-        
-    }
-
-
-
-    
+   
 }

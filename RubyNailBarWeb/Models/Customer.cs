@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace RubyNailBarWeb.Models;
 
@@ -7,10 +8,12 @@ public partial class Customer
 {
     public int CustomerId { get; set; }
 
+    [Required]
     public string? Name { get; set; }
 
     public string? Email { get; set; }
 
+    [Required]
     public string? PhoneNo { get; set; }
 
     public DateOnly? Birthday { get; set; }

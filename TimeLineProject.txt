@@ -49,9 +49,9 @@ complete: render user list, customer list
 process: customer page for edit customer, show customer details, add a customer
 
 
-
-
-
+6:32 PM 8/12/2025
+complete: addedit customer, customer details 
+process: container storage add selected item (user, customer)
 
 
 

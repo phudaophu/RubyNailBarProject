@@ -13,11 +13,20 @@ namespace RubyNailBarWeb.Repositories
             this.contextFactory = _contextFactory;
         }
 
-        public void AddCustomer(Customer customer)
+
+        public bool IsCustomerPhoneNoExist(string phoneNo, int? excludedCustomerId = null)
+        {
+            using var db = this.contextFactory.CreateDbContext();
+            return db.Customers.Any(customer => customer.PhoneNo == phoneNo && customer.CustomerId != excludedCustomerId);
+        }
+
+
+        public int AddCustomer(Customer customer)
         {
             using var db = this.contextFactory.CreateDbContext();
             db.Customers.Add(customer);
             db.SaveChanges();
+            return customer.CustomerId; 
         }
 
         public List<Customer> GetCustomers()

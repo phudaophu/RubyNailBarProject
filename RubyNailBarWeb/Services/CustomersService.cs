@@ -11,9 +11,14 @@ namespace RubyNailBarWeb.Services
             this._customersRepository = customersRepository;
         }
 
-        public void AddCustomerService(Customer customer)
+        public bool IsCustomerPhoneNoExistService(string phoneNo, int? excludedCustomerId = null)
         {
-            _customersRepository.AddCustomer(customer);
+            return _customersRepository.IsCustomerPhoneNoExist(phoneNo, excludedCustomerId);
+        }
+
+        public int AddCustomerService(Customer customer)
+        {
+          return  _customersRepository.AddCustomer(customer);
         }
 
         public List<Customer> GetCustomersService()
