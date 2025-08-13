@@ -3,3 +3,7 @@
     font-size: 0.875rem;
     margin-top: 0.25rem;
 }
+
+table.table tbody tr.selected-row {
+    background-color: rgba(197, 202, 233, 0.6) !important;
+}

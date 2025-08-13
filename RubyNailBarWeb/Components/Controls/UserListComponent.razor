@@ -52,7 +52,7 @@
             
             @foreach (var user in PagedUsers)
             {
-                <tr class="align-middle">
+                <tr class="align-middle @(user.UserId == this.selectedUserId ? "selected-row" : "") ">
                     <td style="cursor:pointer" @onclick="@(e => ShowUserDetails(user))">
                         @(listUsers.FindIndex(u => u.UserId == user.UserId) + 1)
                     </td>
@@ -250,16 +250,18 @@
 
 @code {
 
+    private int selectedUserId = 0;
 
     private User? selectedUser;
 
     private async Task ShowUserDetails(User user)
     {
         selectedUser = user;
-
+        // Set Last Selected Record Id
+        selectedUserId = user.UserId;
+        ContainerStorage.SetSelectedRecordId(user.UserId);
         // Small delay to ensure modal is rendered before showing it
         await Task.Delay(100);
-
         // Call JS to show modal
         await JSRuntime.InvokeVoidAsync("bootstrapInterop.showModal", "#userDetailModal");
 
@@ -315,11 +317,11 @@
             {
                 previousTotalPage = _totalPage; 
                 TotalPagesCallBack.InvokeAsync(_totalPage);
-                ContainerStorage.setTotalPages(_totalPage);
+                ContainerStorage.SetTotalPages(_totalPage);
             }
             else
             {
-                ContainerStorage.setTotalPages(_totalPage);
+                ContainerStorage.SetTotalPages(_totalPage);
 
             }
 
@@ -380,7 +382,7 @@
             default:
                 break;
         }
-   
+
     }
 
     public void ClearSorting()
@@ -391,7 +393,9 @@
         }
         this.sortingByColumn = string.Empty;
         this.CurrentPage = 1;
-        ContainerStorage.setCurrentPage(1);
+        this.selectedUserId = 0;    
+        ContainerStorage.SetCurrentPage(1);
+        ContainerStorage.SetSelectedRecordId(0);
     }
 
     private void ToggleSort(string column)
@@ -413,8 +417,11 @@
         this.sortingByColumn = column;
 
         this.CurrentPage = 1;
-        ContainerStorage.setCurrentPage(1);
+        this.selectedUserId = 0;    
+        ContainerStorage.SetCurrentPage(1);
+        ContainerStorage.SetSelectedRecordId(0);
         OnSortingCallBack.InvokeAsync();
+
 
         if (sortStates[column] > 2)
         {
@@ -511,8 +518,15 @@
             }
 
 
-            this.PageSize = ContainerStorage.getLastPageSize();
-            this.CurrentPage = ContainerStorage.getLastCurrentPage();
+            this.PageSize = ContainerStorage.GetLastPageSize();
+            this.CurrentPage = ContainerStorage.GetLastCurrentPage();
+
+            this.selectedUserId = ContainerStorage.GetLastSelectedRecordId();
+
+            // if (selectedUserId > 0)
+            // {
+            //     this.selectedUser = UsersService.GetUserByIdService(selectedUserId);
+            // }
 
             UpdateUserSorting(sortingByColumn);
             UpdatePagedUsers();
@@ -526,7 +540,7 @@
         {
             isFirstRender = false;
             string currentPath = NavigationManager.ToBaseRelativePath(NavigationManager.Uri).Split('?', '#')[0];
-            ContainerStorage.resetPaginationData(currentPath);
+            ContainerStorage.ResetPaginationData(currentPath);
 
             if (string.IsNullOrWhiteSpace(this.FilteredUsersData))
             {
@@ -543,8 +557,17 @@
 
             }
 
-            this.CurrentPage = ContainerStorage.getLastCurrentPage();
-            this.PageSize = ContainerStorage.getLastPageSize();
+            this.CurrentPage = ContainerStorage.GetLastCurrentPage();
+            this.PageSize = ContainerStorage.GetLastPageSize();
+
+            this.selectedUserId = ContainerStorage.GetLastSelectedRecordId();
+
+            // if (selectedUserId > 0)
+            // {
+            //     this.selectedUser = UsersService.GetUserByIdService(selectedUserId);
+            // }
+
+
             UpdatePagedUsers();
             StateHasChanged();
         }

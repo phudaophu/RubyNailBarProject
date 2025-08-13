@@ -76,14 +76,16 @@
 
     public void HandleSorting()
     {
-        paginationComponent?.setCurrentPage(1);
+        paginationComponent?.SetCurrentPage(1);
+        ContainerStorage.SetSelectedRecordId(0);
     }
 
     public void HandleSearchUser(string userFilterData)
     {
 
         currentPage = 1;
-        ContainerStorage.setCurrentPage(1);
+        ContainerStorage.SetCurrentPage(1);
+        ContainerStorage.SetSelectedRecordId(0);
         filteredUsers = userFilterData;
     }
 

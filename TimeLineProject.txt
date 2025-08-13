@@ -53,6 +53,7 @@ process: customer page for edit customer, show customer details, add a customer
 complete: addedit customer, customer details 
 process: container storage add selected item (user, customer)
 
-
+8:34 AM 8/13/2025
+complete: customer page 
 
 

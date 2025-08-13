@@ -12,7 +12,7 @@
 
 
     <thead>
-        <tr>
+        <tr >
             <th>
                 <button class="btn border-0 btn-sm"> Index </button>
             </th>
@@ -24,9 +24,9 @@
                 <button type="button" class="btn border-0 btn-sm text-nowrap px-3" @onclick="@(() => ToggleSort("Phone No"))">Phone No @GetSortIcon("Phone No")</button>
             </th>
 
-            <th> 
+@*             <th> 
                 <button type="button" class="btn border-0 btn-sm text-nowrap px-3" @onclick="@(() => ToggleSort("Email"))">Email @GetSortIcon("Email")</button>
-            </th>
+            </th> *@
 
             <th>
                 <button type="button" class="btn border-0 btn-sm text-nowrap px-3" @onclick="@(() => ToggleSort("Birthday"))">Birthday  @GetSortIcon("Birthday")</button>
@@ -34,6 +34,10 @@
 
             <th>
                 <button type="button" class="btn border-0 btn-sm text-nowrap px-3" @onclick="@(() => ToggleSort("Points"))">Points @GetSortIcon("Points")</button>
+            </th>
+
+            <th>
+                <button type="button" class="btn border-0 btn-sm text-nowrap px-3" @onclick="@(() => ToggleSort("Customer Level"))">Level @GetSortIcon("Customer Level")</button>
             </th>
 
             <th>
@@ -51,7 +55,7 @@
 
             @foreach (var customer in pagedListCustomers)
             {
-                <tr class="align-middle">
+                <tr class="align-middle @(customer.CustomerId == this.selectedCustomerId ? "selected-row" : "") ">
                     <td style="cursor:pointer" @onclick="@(e => ShowCustomerDetails(customer))">
                         @(listCustomers.FindIndex(c => c.CustomerId == customer.CustomerId) + 1)
                     </td>
@@ -62,9 +66,9 @@
                     <td style="cursor:pointer" @onclick="@(e => ShowCustomerDetails(customer))">
                         @customer.PhoneNo
                     </td>
-                    <td style="cursor:pointer" @onclick="@(e => ShowCustomerDetails(customer))">
+@*                     <td style="cursor:pointer" @onclick="@(e => ShowCustomerDetails(customer))">
                         @customer.Email
-                    </td>
+                    </td> *@
 
                     <td style="cursor:pointer" @onclick="@(e => ShowCustomerDetails(customer))">
                         @customer.Birthday?.ToString("dd-MMM")  
@@ -73,6 +77,17 @@
                     <td style="cursor:pointer" @onclick="@(e => ShowCustomerDetails(customer))">
                         @customer.Points
                     </td>
+
+                    <td style="cursor:pointer" @onclick="@(e => ShowCustomerDetails(customer))">
+                        <span class="badge border @(customer.CustomerLevel?.Equals("Silver") == true ? "border-secondary text-secondary" : "")
+                                                    @(customer.CustomerLevel?.Equals("Gold") == true ? "border-warning text-warning" : "")
+                                                       @(customer.CustomerLevel?.Equals("Platinum") == true ? "border-success text-success" : "")
+                                                          @(customer.CustomerLevel?.Equals("Diamond") == true ? "border-danger text-danger" : "") ">
+
+                            @customer.CustomerLevel
+                        </span>
+                    </td>
+
                     <td style="cursor:pointer" @onclick="@(e => ShowCustomerDetails(customer))">
                         @customer.LastVisitDatetime?.ToString("dd/MM/yyyy") 
                     </td>
@@ -80,7 +95,7 @@
                         <a class="btn btn-outline-primary btn-sm px-2 py-0 text-nowrap" href="@($"/customer/{customer.CustomerId}")"> Edit </a>
                     </td>
                     <td>
-                            <a class="btn btn-outline-primary btn-sm px-2 py-0 text-nowrap"> Edit Group </a>
+                            <a class="btn btn-outline-primary btn-sm px-2 py-0 text-nowrap"> Invoices </a>
                     </td>
                 </tr>
             }
@@ -206,12 +221,15 @@
 
 @code {
 
+    private int selectedCustomerId = 0;
 
     private Customer? selectedCustomer;
 
     private async Task ShowCustomerDetails(Customer customer)
     {
         selectedCustomer = customer;
+        selectedCustomerId = customer.CustomerId;
+        ContainerStorage.SetSelectedRecordId(customer.CustomerId);
 
         await Task.Delay(100);
 
@@ -264,12 +282,13 @@
 
     private Dictionary<string, int> sortStates = new()
     {
-        { "Customer Name", 0 },
-        { "Phone No",      0 },
-        { "Email",         0 },
-        { "Birthday",      0 },
-        { "Points",        0 },
-        { "Last Visit",    0 }
+        { "Customer Name",  0 },
+        { "Phone No",       0 },
+        //{ "Email",          0 },
+        { "Birthday",       0 },
+        { "Points",         0 },
+        { "Customer Level", 0 },
+        { "Last Visit",     0 }
     };
 
 
@@ -303,6 +322,23 @@
                 ApplyLogicSort(u => u.Points, sortingByColumn);
                 break;
 
+            case "Customer Level":
+                {
+                    var customerLevelOrder = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        { "Silver",     1 },
+                        { "Gold",       2 },
+                        { "Platinum",   3 },
+                        { "Diamond",    4 }
+                    };
+
+                    ApplyLogicSort(
+                        u => customerLevelOrder.ContainsKey(u.CustomerLevel ?? "") ? customerLevelOrder[u.CustomerLevel ?? ""] : int.MaxValue,
+                        sortingByColumn
+                    );
+                    break;
+                }
+
             case "Last Visit":
                 ApplyLogicSort(u => u.LastVisitDatetime, sortingByColumn);
                 break;
@@ -320,7 +356,9 @@
         }
         this.sortingByColumn = string.Empty;
         this.CurrentPage = 1;
-        ContainerStorage.setCurrentPage(1);
+        this.selectedCustomerId = 0;
+        ContainerStorage.SetCurrentPage(1);
+        ContainerStorage.SetSelectedRecordId(0);
     }
 
     private void ToggleSort(string column)
@@ -343,7 +381,9 @@
         this.sortingByColumn = column;
 
         this.CurrentPage = 1;
-        ContainerStorage.setCurrentPage(1);
+        this.selectedCustomerId = 0;
+        ContainerStorage.SetCurrentPage(1);
+        ContainerStorage.SetSelectedRecordId(0);
         OnSortingCallBack.InvokeAsync();
 
 
@@ -421,11 +461,11 @@
             {
                 previousTotalPage = _totalPage;
                 TotalPagesCallBack.InvokeAsync(_totalPage);
-                ContainerStorage.setTotalPages(_totalPage);
+                ContainerStorage.SetTotalPages(_totalPage);
             }
             else
             {
-                ContainerStorage.setTotalPages(_totalPage);
+                ContainerStorage.SetTotalPages(_totalPage);
 
             }
 
@@ -470,10 +510,11 @@
                 }
             }
 
-            this.PageSize = ContainerStorage.getLastPageSize();
-            this.CurrentPage = ContainerStorage.getLastCurrentPage();
-            UpdateCustomerSorting(sortingByColumn);
+            this.PageSize = ContainerStorage.GetLastPageSize();
+            this.CurrentPage = ContainerStorage.GetLastCurrentPage();
+            this.selectedCustomerId = ContainerStorage.GetLastSelectedRecordId();
 
+            UpdateCustomerSorting(sortingByColumn);
             UpdatePagedCustomers();
             StateHasChanged();
         }
@@ -487,7 +528,7 @@
 
             isFirstRender = false;
             string currentPath = NavigationManager.ToBaseRelativePath(NavigationManager.Uri).Split('?', '#')[0];
-            ContainerStorage.resetPaginationData(currentPath);
+            ContainerStorage.ResetPaginationData(currentPath);
 
             if (string.IsNullOrWhiteSpace(this.FilteredCustomersData))
             {
@@ -503,8 +544,10 @@
 
             }
 
-            this.CurrentPage = ContainerStorage.getLastCurrentPage();
-            this.PageSize = ContainerStorage.getLastPageSize();
+            this.CurrentPage = ContainerStorage.GetLastCurrentPage();
+            this.PageSize = ContainerStorage.GetLastPageSize();
+            this.selectedCustomerId = ContainerStorage.GetLastSelectedRecordId();
+
             UpdatePagedCustomers();
             StateHasChanged();
         }

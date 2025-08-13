@@ -81,13 +81,13 @@
 
     public void HandleSorting()
     {
-        paginationComponent?.setCurrentPage(1);
+        paginationComponent?.SetCurrentPage(1);
     }
 
     public void HandleSearchCustomer(string customerFilterData)
     {
         currentPage = 1;
-        ContainerStorage.setCurrentPage(1);
+        ContainerStorage.SetCurrentPage(1);
         filteredCustomers = customerFilterData;
 
     }

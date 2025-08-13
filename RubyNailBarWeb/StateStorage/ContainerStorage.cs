@@ -8,65 +8,80 @@ namespace RubyNailBarWeb.StateStorage
         public ContainerStorage() { }
 
         private PaginationData paginationData { set; get; } = new PaginationData();
-        private List<string> allowedToResetPaginationDataPathList { set; get; } = new List<string>() { "","users", "customers" };
+        private List<string> allowedToResetPaginationDataPathList { set; get; } = new List<string>() { "", "users", "customers" };
         private string savedPaginationPath { set; get; } = string.Empty;   
-        public void resetPaginationData(string currentPath)
+        public void ResetPaginationData(string currentPath)
         {
             if ( allowedToResetPaginationDataPathList.Any(p => p.Contains(currentPath,StringComparison.OrdinalIgnoreCase)) 
                 && !currentPath.Equals(savedPaginationPath, StringComparison.OrdinalIgnoreCase))
             {
                 this.savedPaginationPath = currentPath;
-                paginationData.CurrentPage = 1;
-                paginationData.TotalPages = 1;
-                paginationData.PageSize = 5;
+                paginationData.selectedRecordId = 0;
+                paginationData.currentPage = 1;
+                paginationData.totalPages = 1;
+                paginationData.pageSize = 5;
             }
         } 
 
-        public void setPaginationData(int currentPage, int totalPages, int pageSize)
+        public void SetPaginationData(int currentPage, int totalPages, int pageSize, int selectedRecordId)
         {
+            paginationData.currentPage = currentPage;
+            paginationData.totalPages = totalPages;
+            paginationData.pageSize = pageSize;
+            paginationData.selectedRecordId = selectedRecordId;
 
-            paginationData.CurrentPage = currentPage;
-            paginationData.TotalPages = totalPages;
-            paginationData.PageSize = pageSize;
-            
         }
 
-        public void setTotalPages(int totalPages)
+        public void SetSelectedRecordId(int selectedRecordId)
         {
-             paginationData.TotalPages = totalPages;
+            paginationData.selectedRecordId = selectedRecordId;
         }
 
-        public void setCurrentPage(int currentPage)
+        public int GetLastSelectedRecordId()
         {
-            paginationData.CurrentPage = currentPage;
+            return paginationData.selectedRecordId;
         }
 
-        public int getLastCurrentPage()
+        public void SetTotalPages(int totalPages)
         {
-           return paginationData.CurrentPage;
-        }
-        public int getLastTotalPage()
-        {
-            return paginationData.TotalPages;
+             paginationData.totalPages = totalPages;
         }
 
-        public int getLastPageSize()
+        public void SetCurrentPage(int currentPage)
         {
-            return paginationData.PageSize;
+            paginationData.currentPage = currentPage;
+        }
+
+        public int GetLastCurrentPage()
+        {
+           return paginationData.currentPage;
+        }
+        public int GetLastTotalPage()
+        {
+            return paginationData.totalPages;
+        }
+
+        public int GetLastPageSize()
+        {
+            return paginationData.pageSize;
         }
     }
 
     public class PaginationData
     {
-        public int CurrentPage { get; set; } = 1;
-        public int TotalPages { get; set; } = 1;
-        public int PageSize { get; set; } = 5;
+        // selectRecordId is used to store the ID of the currently selected record in the UI.
+        public int selectedRecordId { get; set; } = 0;  
+        public int currentPage { get; set; } = 1;
+        public int totalPages { get; set; } = 1;
+        public int pageSize { get; set; } = 5;
         public PaginationData() { }
-        public PaginationData(int currentPage, int totalPages, int pageSize)
+        public PaginationData( int currentPage, int totalPages, int pageSize, int selectedRecordId)
         {
-            CurrentPage = currentPage;
-            TotalPages = totalPages;
-            PageSize = pageSize;
+            this.currentPage = currentPage;
+            this.totalPages = totalPages;
+            this.pageSize = pageSize;
+            this.selectedRecordId = selectedRecordId;
+
         }
     }
 }
