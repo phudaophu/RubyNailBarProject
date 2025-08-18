@@ -56,4 +56,17 @@ process: container storage add selected item (user, customer)
 8:34 AM 8/13/2025
 complete: customer page 
 
+12:28 AM 8/14/2025
+complete: selected item for button, change <a> to <button>
+process: Invoices page
+
+
+1:22 AM 8/19/2025
+complete: pagination data including 8 params 
+process: Invoices page 
+
+
+
+
+
 

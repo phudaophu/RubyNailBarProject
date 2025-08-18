@@ -1,11 +1,11 @@
-﻿
+﻿@inject ContainerStorage ContainerStorage 
 
 <div class="d-flex flex-row justify-content-between">
     <div class="input-group mb-3" style="">
         @SelectControl
     </div>
     <div class="input-group mb-3" style="">
-        <input type="text" class="form-control" placeholder="@SearchBarInfo" @bind-value="elementFilter" @bind-value:event="oninput" />
+        <input type="text" class="form-control border-secondary" placeholder="@SearchBarInfo" @bind-value="elementFilter" @bind-value:event="oninput" />
         <button type="button" class="btn btn-outline-secondary" @onclick="HandleSearch">Search</button>
         <button type="button" class="btn btn-outline-secondary" @onclick="ClearSearchBar">Clear</button>
         
@@ -20,6 +20,10 @@
 
     // [Parameter(CaptureUnmatchedValues = true)]
     // public Dictionary<string, object>? OtherAttributes { get; set; } // style="width:700px"
+
+    [Parameter]
+    public string CurrentPath { get; set; } = string.Empty;
+
     [Parameter]
     public string? SearchBarInfo { get; set; } = "Input Info";
 
@@ -35,20 +39,47 @@
     [Parameter]
     public RenderFragment? SelectControl { get; set; }
 
-    public string? elementFilter;
+    private bool isFirstRender = true;
+
+    private string? elementFilter;
 
     private void HandleSearch()
     {
-        SearchUsersCallBack.InvokeAsync(elementFilter);
+        if (!string.IsNullOrWhiteSpace(elementFilter))
+        {
+            SearchUsersCallBack.InvokeAsync(elementFilter);
+            ContainerStorage.SetSearchedText(CurrentPath, elementFilter);
+        }
     }
 
     public void ClearSearchBar()
     {
-        this.elementFilter = string.Empty;
-        SearchUsersCallBack.InvokeAsync(elementFilter);
-        OnClearSearchBarCallBack.InvokeAsync();
+        if (!string.IsNullOrWhiteSpace(elementFilter))
+        {
+            this.elementFilter = string.Empty;
+            ContainerStorage.SetSearchedText(CurrentPath, string.Empty);
+            SearchUsersCallBack.InvokeAsync(elementFilter);
+            OnClearSearchBarCallBack.InvokeAsync();
+        }
+
     }
 
+    protected override void OnParametersSet()
+    {
+        if (!isFirstRender && !string.IsNullOrWhiteSpace(ContainerStorage.GetLastSearchedText(CurrentPath)))
+        {
+            this.elementFilter = ContainerStorage.GetLastSearchedText(CurrentPath);
+        }
+    }
 
-    
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            isFirstRender = false;
+            if (!string.IsNullOrWhiteSpace(ContainerStorage.GetLastSearchedText(CurrentPath)))
+                this.elementFilter = ContainerStorage.GetLastSearchedText(CurrentPath);
+        }
+    }
+
 }

@@ -90,12 +90,21 @@ namespace RubyNailBarWeb.Repositories
         public List<Customer>? SearchCustomer(string keyString)
         {
             using var db = this.contextFactory.CreateDbContext();
-            var customerList = db.Customers.Where(c =>
-                    (c.Name != null && c.Name.ToLower().IndexOf(keyString.ToLower()) >= 0) ||
-                    (c.Email != null && c.Email.ToLower().IndexOf(keyString.ToLower()) >= 0) ||
-                    (c.PhoneNo != null && c.PhoneNo.ToLower().IndexOf(keyString.ToLower()) >= 0)).ToList();
+            if (string.IsNullOrEmpty(keyString)) return new List<Customer>();
 
-            return customerList;
+            IQueryable<Customer> customerQuery = db.Customers.AsNoTracking().Where(c =>
+                                                                                    (c.Name != null && c.Name.ToLower().IndexOf(keyString.ToLower()) >= 0) ||
+                                                                                    (c.Email != null && c.Email.ToLower().IndexOf(keyString.ToLower()) >= 0) ||
+                                                                                    (c.PhoneNo != null && c.PhoneNo.ToLower().IndexOf(keyString.ToLower()) >= 0));
+            
+
+
+            //var customerList = db.Customers.Where(c =>
+            //        (c.Name != null && c.Name.ToLower().IndexOf(keyString.ToLower()) >= 0) ||
+            //        (c.Email != null && c.Email.ToLower().IndexOf(keyString.ToLower()) >= 0) ||
+            //        (c.PhoneNo != null && c.PhoneNo.ToLower().IndexOf(keyString.ToLower()) >= 0)).ToList();
+
+            return customerQuery.OrderBy(cq => cq.CustomerId).ToList();
         }
     }
 }

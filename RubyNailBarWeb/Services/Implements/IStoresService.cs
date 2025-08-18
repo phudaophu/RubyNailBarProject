@@ -3,8 +3,8 @@ namespace RubyNailBarWeb.Services.Implements
 {
     public interface IStoresService
     {
-        Store GetStoreById(int storeId);
-        List<Store> GetStores();
+        Store GetStoreByIdService(int storeId);
+        List<Store> GetStoresService();
     }
 
 }

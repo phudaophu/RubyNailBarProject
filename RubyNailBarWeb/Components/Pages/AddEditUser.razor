@@ -208,7 +208,7 @@ else
         {
             user ??= new User() { IsActive = true };
             isEditUserName = true;
-            listStore = StoresService.GetStores().Where(x => x.IsActive == true).ToList();    
+            listStore = StoresService.GetStoresService().Where(x => x.IsActive == true).ToList();    
         }
     }
 

@@ -9,7 +9,7 @@
 
 <h3>Users</h3>
 
-<SearchBarComponent SearchBarInfo="@searchLabel" SearchUsersCallBack="HandleSearchUser" OnClearSearchBarCallBack="HandleClearSearchBar" @ref="searchBarComponent">
+<SearchBarComponent CurrentPath="@currentPath" SearchBarInfo="@searchLabel" SearchUsersCallBack="HandleSearchUser" OnClearSearchBarCallBack="HandleClearSearchBar" @ref="searchBarComponent">
     <SelectControl>
         <InputSelect @bind-Value="selectedStoreId" class="@(selectedStoreId == 0? "text-secondary":"text-danger border-danger")">
 
@@ -28,14 +28,30 @@
 </SearchBarComponent>
 
 
-<UserListComponent FilteredUsersData="@filteredUsers" PageSize="@pageSize" CurrentPage="@currentPage" TotalPagesCallBack="HandleTotalPage" OnSortingCallBack="HandleSorting" SelectedStoreFilter="@selectedStoreId" @ref="userListComponent"></UserListComponent>
+<UserListComponent CurrentPath="@currentPath" SearchingUsersData="@searchedUsers" PageSize="@pageSize" CurrentPage="@currentPage" TotalPagesCallBack="HandleTotalPage" OnSortingCallBack="HandleSorting" SelectedStoreIdFilter="@selectedStoreId" @ref="userListComponent"></UserListComponent>
 
-<PaginationComponent TotalPages="@totalPages" PageSizeCallBack="HandlePageSize" CurrentPageCallBack="HandleCurrentPage" @ref = "paginationComponent"></PaginationComponent>
+<PaginationComponent CurrentPath="@currentPath" TotalPages="@totalPages" PageSizeCallBack="HandlePageSize" CurrentPageCallBack="HandleCurrentPage" @ref = "paginationComponent"></PaginationComponent>
 
 
 @code {
+    private string currentPath = string.Empty;
 
-    private int selectedStoreId = 0;
+    private int _selectedStoreId = 0;
+
+    private int selectedStoreId 
+    { 
+        get => _selectedStoreId;
+        set
+        {
+            if(value != _selectedStoreId)
+            {
+                _selectedStoreId = value;
+                userListComponent?.ClearSorting();
+                ContainerStorage.SetOptionalData(currentPath, "SelectedStoreId", _selectedStoreId);
+
+            }
+        }
+    }
 
     private List<Store> listStore = new List<Store>();
 
@@ -49,7 +65,7 @@
 
     // private List<User> listUsers = new List<User>();    
 
-    private string? filteredUsers = string.Empty;
+    private string? searchedUsers = string.Empty;
 
     private SearchBarComponent? searchBarComponent;
 
@@ -57,36 +73,49 @@
 
     private PaginationComponent? paginationComponent;
 
-    private IDisposable? _locationChangingHandler;
+   // private IDisposable? _locationChangingHandler;
 
     protected override void OnAfterRender(bool firstRender)
     {
         if(firstRender)
         {
-            listStore = StoresService.GetStores().Where(s => s.IsActive == true).ToList();
+            currentPath = NavigationManager.ToBaseRelativePath(NavigationManager.Uri).Split('?', '#')[0];
+            ContainerStorage.ResetPaginationData(currentPath);
+
+            listStore = StoresService.GetStoresService().Where(s => s.IsActive == true).ToList();
+            if (ContainerStorage.GetOptionalData(currentPath).Count > 0 && ContainerStorage.GetOptionalData(currentPath).Keys.Contains("SelectedStoreId"))
+            {
+                _selectedStoreId = ContainerStorage.GetOptionalData(currentPath)["SelectedStoreId"];
+            }
+            StateHasChanged();
         }
     }
 
     public void HandleClearSearchBar()
     {
-        filteredUsers = string.Empty; 
-        selectedStoreId = 0;
+        searchedUsers = string.Empty;
+        //selectedStoreId = 0;
+
+        ContainerStorage.SetSearchedText(currentPath, string.Empty);
+        //ContainerStorage.SetSelectedRecordId(0);
+        ContainerStorage.SetOptionalData(currentPath, "SelectedStoreId", 0);
+
         userListComponent?.ClearSorting();
     }
 
     public void HandleSorting()
     {
         paginationComponent?.SetCurrentPage(1);
-        ContainerStorage.SetSelectedRecordId(0);
+        ContainerStorage.SetSelectedRecordId(currentPath, 0);
     }
 
-    public void HandleSearchUser(string userFilterData)
+    public void HandleSearchUser(string searchingUserData)
     {
-
         currentPage = 1;
-        ContainerStorage.SetCurrentPage(1);
-        ContainerStorage.SetSelectedRecordId(0);
-        filteredUsers = userFilterData;
+        ContainerStorage.SetCurrentPage(currentPath, 1);
+        ContainerStorage.SetSelectedRecordId(currentPath,0);
+        searchedUsers = searchingUserData;
+        ContainerStorage.SetSearchedText(currentPath, searchingUserData);
     }
 
     private void HandleTotalPage(int totalPages)
@@ -97,6 +126,7 @@
     private void HandlePageSize(int pageSize)
     {
         this.pageSize = pageSize;
+        //ContainerStorage.SetOptionalData("selectedFilteredValueA", 0);
         searchBarComponent?.ClearSearchBar();
         userListComponent?.ClearSorting();
     }
@@ -106,4 +136,7 @@
         this.currentPage = currentPage;
 
     }
+
+
+
 }

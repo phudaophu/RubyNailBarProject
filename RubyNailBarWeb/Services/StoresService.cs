@@ -12,12 +12,12 @@ namespace RubyNailBarWeb.Services
             this.storesRepository = storesRepository;
         }
 
-        public Store GetStoreById(int storeId)
+        public Store GetStoreByIdService(int storeId)
         {
             return storesRepository.GetStoreById(storeId);
         }
 
-        public List<Store> GetStores()
+        public List<Store> GetStoresService()
         {
             var stores = storesRepository.GetStores();
             if (stores is null)

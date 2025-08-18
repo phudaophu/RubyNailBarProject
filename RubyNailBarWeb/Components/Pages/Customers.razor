@@ -3,12 +3,14 @@
 
 @inject ContainerStorage ContainerStorage
 @rendermode InteractiveServer
+@inject NavigationManager NavigationManager
+
 <h3>Customers</h3>
 
 
-<SearchBarComponent SearchBarInfo="@searchLabel" SearchUsersCallBack="HandleSearchCustomer" OnClearSearchBarCallBack="HandleClearSearchBar" @ref="searchBarComponent">
+<SearchBarComponent CurrentPath="@currentPath" SearchBarInfo="@searchLabel" SearchUsersCallBack="HandleSearchCustomer" OnClearSearchBarCallBack="HandleClearSearchBar" @ref="searchBarComponent">
     <SelectControl>
-        <InputSelect @bind-Value="selectedMonth" class="@(selectedMonth == 0 ? "text-secondary" : "text-danger border-danger")">
+        <InputSelect @bind-Value="selectedBirthdayMonth" class="@(selectedBirthdayMonth == 0 ? "text-secondary" : "text-danger border-danger")">
             <option value="0">-- All Months --</option>
             @for (int i = 1; i <= 12; i++)
             {
@@ -22,16 +24,32 @@
 </SearchBarComponent>
 
 
-<CustomerListComponent FilteredCustomersData="@filteredCustomers" PageSize="@pageSize" CurrentPage="@currentPage" TotalPagesCallBack="HandleTotalPage" OnSortingCallBack="HandleSorting" selectedMonthFilter=@selectedMonth @ref="customerListComponent"></CustomerListComponent>
+<CustomerListComponent CurrentPath="@currentPath" SeachingCustomersData="@searchedCustomers" PageSize="@pageSize" CurrentPage="@currentPage" TotalPagesCallBack="HandleTotalPage" OnSortingCallBack="HandleSorting" SelectedBirthdayMonthFilter=@selectedBirthdayMonth @ref="customerListComponent"></CustomerListComponent>
 
 
 
-<PaginationComponent TotalPages="@totalPages" PageSizeCallBack="HandlePageSize" CurrentPageCallBack="HandleCurrentPage" @ref = "paginationComponent"></PaginationComponent>
+<PaginationComponent CurrentPath="@currentPath" TotalPages="@totalPages" PageSizeCallBack="HandlePageSize" CurrentPageCallBack="HandleCurrentPage" @ref="paginationComponent"></PaginationComponent>
 
 
 @code {
-    
-    private int selectedMonth = 0;
+    private string currentPath = string.Empty;
+
+    private int _selectedBirthdayMonth = 0;
+
+    private int selectedBirthdayMonth 
+    {
+        get => _selectedBirthdayMonth;
+        set
+        {
+            if (value >= 0 && value != _selectedBirthdayMonth)
+            {
+                _selectedBirthdayMonth = value;
+                customerListComponent?.ClearSorting();
+                ContainerStorage.SetOptionalData(currentPath, "SelectedBirthdayMonth", _selectedBirthdayMonth);
+
+            }
+        } 
+    }
 
     private string searchLabel = "Enter Customers Info";    
 
@@ -41,7 +59,7 @@
 
     private int currentPage;
 
-    private string? filteredCustomers = string.Empty;
+    private string? searchedCustomers = string.Empty;
 
     private SearchBarComponent? searchBarComponent;
 
@@ -49,23 +67,30 @@
 
     private CustomerListComponent? customerListComponent;
 
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            currentPath = NavigationManager.ToBaseRelativePath(NavigationManager.Uri).Split('?', '#')[0];
+            ContainerStorage.ResetPaginationData(currentPath);
+
+            if (ContainerStorage.GetOptionalData(currentPath).Count >= 0 && ContainerStorage.GetOptionalData(currentPath).Keys.Contains("SelectedBirthdayMonth"))
+            {
+                _selectedBirthdayMonth = ContainerStorage.GetOptionalData(currentPath)["SelectedBirthdayMonth"];
+            }
+            StateHasChanged();
+
+        }
+    }
+
     private string GetSelectedMonthName(int selectedMonth)
     {
         return new DateTime(2025, selectedMonth, 1).ToString("MMMM"); // Get month namer
     }
 
-    private void HandleTotalPage(int totalPages)
-    {
-        this.totalPages = totalPages;
-    }
 
-    private void HandlePageSize(int pageSize)
-    {
-        this.pageSize = pageSize;
-        searchBarComponent?.ClearSearchBar();
-        customerListComponent?.ClearSorting();  
 
-    }
+
 
     private void HandleCurrentPage(int currentPage)
     {
@@ -74,23 +99,42 @@
 
     public void HandleClearSearchBar()
     {
-        filteredCustomers = string.Empty;
-        selectedMonth = 0;
+        searchedCustomers = string.Empty;
+        ContainerStorage.SetSearchedText(currentPath, string.Empty);
+
+        selectedBirthdayMonth = 0;
+        ContainerStorage.SetOptionalData(currentPath, "SelectedBirthdayMonth", 0);
+
+
         customerListComponent?.ClearSorting();
     }
 
     public void HandleSorting()
     {
         paginationComponent?.SetCurrentPage(1);
+        ContainerStorage.SetSelectedRecordId(currentPath, 0);
+
     }
 
-    public void HandleSearchCustomer(string customerFilterData)
+    public void HandleSearchCustomer(string searchingCustomerData)
     {
         currentPage = 1;
-        ContainerStorage.SetCurrentPage(1);
-        filteredCustomers = customerFilterData;
-
+        ContainerStorage.SetCurrentPage(currentPath, 1);
+        searchedCustomers = searchingCustomerData;
+        ContainerStorage.SetSearchedText(currentPath, searchingCustomerData);
     }
 
+    private void HandleTotalPage(int totalPages)
+    {
+        this.totalPages = totalPages;
+    
+    }
 
+    private void HandlePageSize(int pageSize)
+    {
+        this.pageSize = pageSize;
+        searchBarComponent?.ClearSearchBar();
+        customerListComponent?.ClearSorting();
+
+    }
 }

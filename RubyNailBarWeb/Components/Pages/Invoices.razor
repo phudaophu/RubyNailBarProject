@@ -1,0 +1,82 @@
+﻿@page "/invoices"
+
+
+@inject IStoresService StoresService
+@inject IUsersService UsersService
+@rendermode InteractiveServer
+
+<h3>Invoices</h3>
+
+<SearchBarComponent>
+    <SelectControl>
+
+@*      <InputSelect class="@( selectedStoreId==0? "text-secondary" : "text-danger border-danger")" ValueExpression="@(() => selectedStoreId)" Value="@selectedStoreId" ValueChanged="(int e) => { OnSelectStoreChanged(e); }">
+ *@
+        <InputSelect class=@($"form-control {(selectedStoreId == 0 ? "text-secondary border-secondary" : "text-danger border-danger")}")
+                     @bind-Value="selectedStoreId">
+            <option value="0">-- All Store --</option>
+
+            @foreach (var store in listStore)
+            {
+                <option value="@store.StoreId" class="text-dark">@store.Name</option>
+            }
+
+        </InputSelect>
+        <InputDate class=@($"form-control {(!selectedStartDate.HasValue ? "text-secondary border-secondary" : "text-danger border-danger")}") @bind-Value="selectedStartDate"></InputDate>
+        <InputDate class=@($"form-control {(!selectedEndDate.HasValue   ? "text-secondary border-secondary" : "text-danger border-danger")}") @bind-Value="selectedEndDate"></InputDate>
+
+
+@*         <InputSelect class="@( selectedManagerId==0 ? "text-secondary" : "text-danger border-danger")" @bind-Value="selectedManagerId">
+            
+            <option value="0">-- All Manager --</option>
+
+            @foreach (var user in listManager)
+            {
+                <option value="@user.UserId" class="text-dark">@user.FirstName @user.LastName</option>
+            }
+        </InputSelect> *@
+
+    </SelectControl>
+    <ElementControl>
+        <button class="btn btn-outline-secondary">Add Inovice</button>
+    </ElementControl>
+</SearchBarComponent>
+
+<InvoiceListComponent></InvoiceListComponent>
+
+<PaginationComponent></PaginationComponent>
+
+
+@code {
+    //private bool isFirstRender = true;
+    private DateOnly? selectedStartDate { get; set; }
+    private DateOnly? selectedEndDate { get; set; } 
+    private int selectedStoreId { get; set; } = 0;
+    private int selectedManagerId { get; set; } = 0;
+    private List<Store> listStore = new List<Store>();
+    private List<User> listManager = new List<User>();
+
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            listStore = StoresService.GetStoresService();
+            StateHasChanged();
+        }
+    }
+
+    // private void OnSelectStoreChanged(int e)
+    // {
+    //     this.selectedStoreId = e;
+    //     if(e > 0)
+    //     {
+    //         listManager = UsersService.getManagerListByStoreIdService(selectedStoreId);
+    //     }
+    //     else
+    //     {
+    //         listManager = new List<User>();
+    //     }
+    //     this.selectedManagerId = 0;
+    // }
+}

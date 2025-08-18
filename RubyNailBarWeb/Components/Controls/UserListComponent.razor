@@ -20,7 +20,7 @@
     <thead>
         <tr>
             <th>
-                <button class="btn border-0 btn-sm"> Index </button>
+                <button type="button" class="btn border-0 btn-sm text-nowrap px-3" @onclick="@(() => ToggleSort("Index"))">Index @GetSortIcon("Index")</button>
             </th>
             <th>
                 <button type="button" class="btn border-0 btn-sm text-nowrap px-3" @onclick="@(() => ToggleSort("Store"))">Store @GetSortIcon("Store")</button>
@@ -52,7 +52,7 @@
             
             @foreach (var user in PagedUsers)
             {
-                <tr class="align-middle @(user.UserId == this.selectedUserId ? "selected-row" : "") ">
+                <tr class="align-middle" style="background-color:  @(user.UserId == this.selectedUserId ? "#d8dbf2" : "white")">
                     <td style="cursor:pointer" @onclick="@(e => ShowUserDetails(user))">
                         @(listUsers.FindIndex(u => u.UserId == user.UserId) + 1)
                     </td>
@@ -66,7 +66,7 @@
 
                             foreach(var storeId in listStoreId)
                             {
-                                <span class="badge text-dark border border-dark">@StoresService.GetStoreById(storeId).Name</span>
+                                <span class="badge text-dark border border-dark">@StoresService.GetStoreByIdService(storeId).Name</span>
                                 <br>
                             }
                         }
@@ -138,10 +138,12 @@
                     &nbsp;
                     </td>
                     <td>
-                <a class="btn btn-outline-primary btn-sm px-2 py-0 text-nowrap" href=@($"/user/{user.UserId}")> Edit </a>
+    @*                 <a class="btn btn-outline-primary btn-sm px-2 py-0 text-nowrap" href=@($"/user/{user.UserId}")> Edit </a>
+     *@                 <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-0 text-nowrap" @onclick="(e) => HandleEditButton(user.UserId)">Edit</button>
                     </td>
                     <td>
-                <a class="btn btn-outline-primary btn-sm px-2 py-0 text-nowrap" href=@($"/usergroups/{user.UserId}")> Edit Group </a>
+@*                     <a class="btn btn-outline-primary btn-sm px-2 py-0 text-nowrap" href=@($"/usergroups/{user.UserId}")> Edit Group </a>
+ *@                    <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-0 text-nowrap" @onclick="(e) => HandleEditGroupButton(user.UserId)">Edit Group</button>
                     </td>
                 </tr>
             }
@@ -224,7 +226,7 @@
                                     @foreach (var group in selectedUser.UserGroups)
                                     {
                                         <li>
-                                            @(group.StoreId != null ? StoresService.GetStoreById(group.StoreId.Value).Name : "N/A")
+                                            @(group.StoreId != null ? StoresService.GetStoreByIdService(group.StoreId.Value).Name : "N/A")
                                             - @group.GroupName - @group.RoleName
                                         </li>
                                     }
@@ -250,6 +252,9 @@
 
 @code {
 
+    [Parameter]
+    public string CurrentPath {get;set;} = string.Empty;
+
     private int selectedUserId = 0;
 
     private User? selectedUser;
@@ -257,12 +262,10 @@
     private async Task ShowUserDetails(User user)
     {
         selectedUser = user;
-        // Set Last Selected Record Id
         selectedUserId = user.UserId;
-        ContainerStorage.SetSelectedRecordId(user.UserId);
-        // Small delay to ensure modal is rendered before showing it
+        ContainerStorage.SetSelectedRecordId(CurrentPath, user.UserId);
+        //ContainerStorage.SetOptionalData(CurrentPath, "SelectedStoreId", user.UserId);
         await Task.Delay(100);
-        // Call JS to show modal
         await JSRuntime.InvokeVoidAsync("bootstrapInterop.showModal", "#userDetailModal");
 
     }
@@ -273,7 +276,7 @@
     private int _selectedStoreId = 0;
 
     [Parameter]
-    public int SelectedStoreFilter
+    public int SelectedStoreIdFilter
     {
 
         get => _selectedStoreId;
@@ -282,7 +285,7 @@
             if (value >= 0 && value != _selectedStoreId)
             {
                 _selectedStoreId = value;
-                ClearSorting();
+                //ClearSorting();
 
             }
         }
@@ -317,11 +320,11 @@
             {
                 previousTotalPage = _totalPage; 
                 TotalPagesCallBack.InvokeAsync(_totalPage);
-                ContainerStorage.SetTotalPages(_totalPage);
+                ContainerStorage.SetTotalPages(CurrentPath, _totalPage);
             }
             else
             {
-                ContainerStorage.SetTotalPages(_totalPage);
+                ContainerStorage.SetTotalPages(CurrentPath, _totalPage);
 
             }
 
@@ -330,7 +333,7 @@
     }
 
     [Parameter]
-    public string? FilteredUsersData { set; get; }
+    public string? SearchingUsersData { set; get; }
 
     private List<User>? listUsers = new List<User>();
 
@@ -342,6 +345,7 @@
 
     private Dictionary<string, int> sortStates = new()
     {
+        { "Index",     0 },
         { "Store",     0 },
         { "Firstname", 0 },
         { "Username",  0 },
@@ -356,6 +360,10 @@
 
         switch (sortingColumn)
         {
+            case "Index":
+                ApplyLogicSort(u => u.UserId, sortingColumn);
+                break;
+
             case "Firstname":
                 ApplyLogicSort(u => u.FirstName, sortingColumn);
                 break;
@@ -391,11 +399,14 @@
         {
             sortStates[key] = 0;
         }
+
         this.sortingByColumn = string.Empty;
+
         this.CurrentPage = 1;
-        this.selectedUserId = 0;    
-        ContainerStorage.SetCurrentPage(1);
-        ContainerStorage.SetSelectedRecordId(0);
+        this.selectedUserId = 0;
+        ContainerStorage.SetCurrentPage(CurrentPath, 1);
+        ContainerStorage.SetSelectedRecordId(CurrentPath, 0);
+        
     }
 
     private void ToggleSort(string column)
@@ -418,8 +429,8 @@
 
         this.CurrentPage = 1;
         this.selectedUserId = 0;    
-        ContainerStorage.SetCurrentPage(1);
-        ContainerStorage.SetSelectedRecordId(0);
+        ContainerStorage.SetCurrentPage(CurrentPath, 1);
+        ContainerStorage.SetSelectedRecordId(CurrentPath, 0);
         OnSortingCallBack.InvokeAsync();
 
 
@@ -450,9 +461,9 @@
         {
             case 0:
 
-                if (!string.IsNullOrWhiteSpace(this.FilteredUsersData))
+                if (!string.IsNullOrWhiteSpace(this.SearchingUsersData))
                 {
-                    listUsers = UsersService.SearchUserService(FilteredUsersData);
+                    listUsers = UsersService.SearchUserService(SearchingUsersData);
                 }
                 else
                 {
@@ -485,6 +496,13 @@
         if (isFirstRender == false)
         {
 
+
+            this.SearchingUsersData = ContainerStorage.GetLastSearchedText(CurrentPath);
+            if (ContainerStorage.GetOptionalData(CurrentPath).Count >= 0 && ContainerStorage.GetOptionalData(CurrentPath).Keys.Contains("SelectedStoreId"))
+            {
+                _selectedStoreId = ContainerStorage.GetOptionalData(CurrentPath)["SelectedStoreId"];
+            }
+
             if (listUsers is not null || listUsers?.Count >= 0)
             {
                 listUsers = UsersService.GetUsersService();
@@ -492,9 +510,22 @@
             }
 
 
-            if (listUsers is not null && listUsers.Count >= 0 && !string.IsNullOrWhiteSpace(FilteredUsersData))
+            if (listUsers is not null && listUsers.Count >= 0 && !string.IsNullOrWhiteSpace(SearchingUsersData))
             {
-                listUsers = UsersService.SearchUserService(FilteredUsersData);
+                listUsers = UsersService.SearchUserService(SearchingUsersData);
+
+                statusUserListView = "Data Is Loading...";
+
+                if (listUsers is null || listUsers.Count == 0)
+                {
+                    statusUserListView = "No User Found";
+                }
+            }
+
+                                                            //SelectedStoreIdFilter
+            if (listUsers is not null && listUsers.Count >= 0 && _selectedStoreId > 0)
+            {
+                listUsers = listUsers.Where(u => u.UserGroups.Any(ug => ug.StoreId == _selectedStoreId)).ToList();
 
                 statusUserListView = "Data Is Loading...";
 
@@ -505,28 +536,11 @@
             }
 
 
-            if (listUsers is not null && listUsers.Count >= 0 && SelectedStoreFilter > 0)
-            {
-                listUsers = listUsers.Where(u => u.UserGroups.Any(ug => ug.StoreId == SelectedStoreFilter)).ToList();
-
-                statusUserListView = "Data Is Loading...";
-
-                if (listUsers is null || listUsers.Count == 0)
-                {
-                    statusUserListView = "No User Found";
-                }
-            }
+            this.PageSize = ContainerStorage.GetLastPageSize(CurrentPath);
+            this.CurrentPage = ContainerStorage.GetLastCurrentPage(CurrentPath);
+            this.selectedUserId = ContainerStorage.GetLastSelectedRecordId(CurrentPath);
 
 
-            this.PageSize = ContainerStorage.GetLastPageSize();
-            this.CurrentPage = ContainerStorage.GetLastCurrentPage();
-
-            this.selectedUserId = ContainerStorage.GetLastSelectedRecordId();
-
-            // if (selectedUserId > 0)
-            // {
-            //     this.selectedUser = UsersService.GetUserByIdService(selectedUserId);
-            // }
 
             UpdateUserSorting(sortingByColumn);
             UpdatePagedUsers();
@@ -539,48 +553,68 @@
         if (firstRender)
         {
             isFirstRender = false;
-            string currentPath = NavigationManager.ToBaseRelativePath(NavigationManager.Uri).Split('?', '#')[0];
-            ContainerStorage.ResetPaginationData(currentPath);
+            this.SearchingUsersData = ContainerStorage.GetLastSearchedText(CurrentPath);
+            if (ContainerStorage.GetOptionalData(CurrentPath).Count >= 0 && ContainerStorage.GetOptionalData(CurrentPath).Keys.Contains("SelectedStoreId"))
+            {
+                this.SelectedStoreIdFilter = ContainerStorage.GetOptionalData(CurrentPath)["SelectedStoreId"];
+            }
 
-            if (string.IsNullOrWhiteSpace(this.FilteredUsersData))
+
+            if (listUsers is not null || listUsers?.Count >= 0)
             {
                 listUsers = UsersService.GetUsersService();
-
+                statusUserListView = "Data Is Loading...";
             }
-            else
+
+
+            if (listUsers is not null && listUsers.Count >= 0 && !string.IsNullOrWhiteSpace(SearchingUsersData))
             {
-                listUsers = UsersService.SearchUserService(FilteredUsersData);
-                if (listUsers is null || listUsers.Count ==0)
+                listUsers = UsersService.SearchUserService(SearchingUsersData);
+
+                statusUserListView = "Data Is Loading...";
+
+                if (listUsers is null || listUsers.Count == 0)
                 {
                     statusUserListView = "No User Found";
                 }
-
             }
 
-            this.CurrentPage = ContainerStorage.GetLastCurrentPage();
-            this.PageSize = ContainerStorage.GetLastPageSize();
 
-            this.selectedUserId = ContainerStorage.GetLastSelectedRecordId();
+            if (listUsers is not null && listUsers.Count >= 0 && SelectedStoreIdFilter > 0)
+            {
+                listUsers = listUsers.Where(u => u.UserGroups.Any(ug => ug.StoreId == SelectedStoreIdFilter)).ToList();
 
-            // if (selectedUserId > 0)
-            // {
-            //     this.selectedUser = UsersService.GetUserByIdService(selectedUserId);
-            // }
+                statusUserListView = "Data Is Loading...";
 
+                if (listUsers is null || listUsers.Count == 0)
+                {
+                    statusUserListView = "No User Found";
+                }
+            }
+
+            this.CurrentPage = ContainerStorage.GetLastCurrentPage(CurrentPath);
+            this.PageSize = ContainerStorage.GetLastPageSize(CurrentPath);
+            this.selectedUserId = ContainerStorage.GetLastSelectedRecordId(CurrentPath);
 
             UpdatePagedUsers();
             StateHasChanged();
         }
     }
 
-    
+
     private void SetUserStatus(int userId, bool status)
     {
         var userToUpdate = UsersService.GetUserByIdService(userId);
         if (userToUpdate is not null && userToUpdate.IsActive != status)
         {
+            if (selectedUserId != userId)
+            {
+                selectedUserId = userId;
+                ContainerStorage.SetSelectedRecordId(CurrentPath, userId);
+            }
+
             userToUpdate.IsActive = status;
-            UsersService.UpdateUserService(userId, userToUpdate);
+            UsersService.UpdateUserService(userToUpdate.UserId, userToUpdate);
             listUsers = UsersService.GetUsersService();
             UpdatePagedUsers();
         }
@@ -590,5 +624,27 @@
         }
     }
 
-  
+    private void HandleEditButton(int userId)
+    {
+        if(selectedUserId != userId)
+        {
+            selectedUserId = userId;
+            ContainerStorage.SetSelectedRecordId(CurrentPath, userId);
+        }
+
+        NavigationManager.NavigateTo($"/user/{userId}");
+
+    }
+
+    private void HandleEditGroupButton(int userId)
+    {
+        if (selectedUserId != userId)
+        {
+            selectedUserId = userId;
+            ContainerStorage.SetSelectedRecordId(CurrentPath, userId);
+        }
+
+        NavigationManager.NavigateTo($"/usergroups/{userId}");
+    }
+
 }

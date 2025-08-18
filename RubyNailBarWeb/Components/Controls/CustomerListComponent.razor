@@ -14,7 +14,7 @@
     <thead>
         <tr >
             <th>
-                <button class="btn border-0 btn-sm"> Index </button>
+                <button type="button" class="btn border-0 btn-sm text-nowrap px-3" @onclick="@(() => ToggleSort("Index"))">Index  @GetSortIcon("Index")</button>
             </th>
             <th>
                 <button type="button" class="btn border-0 btn-sm text-nowrap px-3" @onclick="@(() => ToggleSort("Customer Name"))">Customer Name  @GetSortIcon("Customer Name")</button>
@@ -55,7 +55,7 @@
 
             @foreach (var customer in pagedListCustomers)
             {
-                <tr class="align-middle @(customer.CustomerId == this.selectedCustomerId ? "selected-row" : "") ">
+                <tr class="align-middle" style="background-color:  @(customer.CustomerId == this.selectedCustomerId ? "#d8dbf2" : "white")">
                     <td style="cursor:pointer" @onclick="@(e => ShowCustomerDetails(customer))">
                         @(listCustomers.FindIndex(c => c.CustomerId == customer.CustomerId) + 1)
                     </td>
@@ -92,10 +92,12 @@
                         @customer.LastVisitDatetime?.ToString("dd/MM/yyyy") 
                     </td>
                     <td>
-                        <a class="btn btn-outline-primary btn-sm px-2 py-0 text-nowrap" href="@($"/customer/{customer.CustomerId}")"> Edit </a>
+                        <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-0 text-nowrap" @onclick="(e) => HandleEditButton(customer.CustomerId)">Edit</button>
+
                     </td>
                     <td>
-                            <a class="btn btn-outline-primary btn-sm px-2 py-0 text-nowrap"> Invoices </a>
+                        <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-0 text-nowrap" @onclick="(e) => HandleInvoicesButton(customer.CustomerId)">Invoices</button>
+
                     </td>
                 </tr>
             }
@@ -220,6 +222,8 @@
 
 
 @code {
+    [Parameter]
+    public string CurrentPath { get; set; } = string.Empty;
 
     private int selectedCustomerId = 0;
 
@@ -229,8 +233,8 @@
     {
         selectedCustomer = customer;
         selectedCustomerId = customer.CustomerId;
-        ContainerStorage.SetSelectedRecordId(customer.CustomerId);
-
+        ContainerStorage.SetSelectedRecordId(CurrentPath, customer.CustomerId);
+        //ContainerStorage.SetOptionalData(CurrentPath, "SelectedMonth",)
         await Task.Delay(100);
 
         await JSRuntime.InvokeVoidAsync("bootstrapInterop.showModal", "#userDetailModal");
@@ -250,20 +254,20 @@
     public EventCallback OnSortingCallBack { get; set; }    
 
     [Parameter]
-    public string? FilteredCustomersData { get; set; }
+    public string? SeachingCustomersData { get; set; }
 
-    private int _selectedMonth = 0;
+    private int _selectedBirthdayMonth = 0;
 
     [Parameter]
-    public int SelectedMonthFilter
+    public int SelectedBirthdayMonthFilter
     {
-        get => _selectedMonth;
+        get => _selectedBirthdayMonth;
         set
         {
-            if(value >= 0 && value != _selectedMonth)
+            if (value >= 0 && value != _selectedBirthdayMonth)
             {
-                _selectedMonth = value;
-                ClearSorting();
+                _selectedBirthdayMonth = value;
+                //ClearSorting();
             }
         }
     }  
@@ -282,9 +286,9 @@
 
     private Dictionary<string, int> sortStates = new()
     {
+        { "Index",          0 },
         { "Customer Name",  0 },
         { "Phone No",       0 },
-        //{ "Email",          0 },
         { "Birthday",       0 },
         { "Points",         0 },
         { "Customer Level", 0 },
@@ -296,6 +300,9 @@
     {
         switch (sortingByColumn)
         {
+            case "Index":
+                ApplyLogicSort(u => u.CustomerId, sortingByColumn);
+                break;
             case "Customer Name":
                 ApplyLogicSort(u => u.Name, sortingByColumn);
                 break;
@@ -354,11 +361,13 @@
         {
             sortStates[key] = 0;
         }
+
         this.sortingByColumn = string.Empty;
+
         this.CurrentPage = 1;
         this.selectedCustomerId = 0;
-        ContainerStorage.SetCurrentPage(1);
-        ContainerStorage.SetSelectedRecordId(0);
+        ContainerStorage.SetCurrentPage(CurrentPath, 1);
+        ContainerStorage.SetSelectedRecordId(CurrentPath, 0);
     }
 
     private void ToggleSort(string column)
@@ -382,8 +391,8 @@
 
         this.CurrentPage = 1;
         this.selectedCustomerId = 0;
-        ContainerStorage.SetCurrentPage(1);
-        ContainerStorage.SetSelectedRecordId(0);
+        ContainerStorage.SetCurrentPage(CurrentPath,1);
+        ContainerStorage.SetSelectedRecordId(CurrentPath, 0);
         OnSortingCallBack.InvokeAsync();
 
 
@@ -416,9 +425,9 @@
         {
             case 0:
 
-                if (!string.IsNullOrWhiteSpace(this.FilteredCustomersData))
+                if (!string.IsNullOrWhiteSpace(this.SeachingCustomersData))
                 {
-                    listCustomers = CustomersService.SearchCustomerService(FilteredCustomersData);
+                    listCustomers = CustomersService.SearchCustomerService(SeachingCustomersData);
                 }
                 else
                 {
@@ -461,11 +470,11 @@
             {
                 previousTotalPage = _totalPage;
                 TotalPagesCallBack.InvokeAsync(_totalPage);
-                ContainerStorage.SetTotalPages(_totalPage);
+                ContainerStorage.SetTotalPages(CurrentPath, _totalPage);
             }
             else
             {
-                ContainerStorage.SetTotalPages(_totalPage);
+                ContainerStorage.SetTotalPages(CurrentPath, _totalPage);
 
             }
 
@@ -477,6 +486,12 @@
     {
         if (isFirstRender == false)
         {
+            this.SeachingCustomersData = ContainerStorage.GetLastSearchedText(CurrentPath);
+            if (ContainerStorage.GetOptionalData(CurrentPath).Count >= 0 && ContainerStorage.GetOptionalData(CurrentPath).Keys.Contains("SelectedBirthdayMonth"))
+            {
+                _selectedBirthdayMonth = ContainerStorage.GetOptionalData(CurrentPath)["SelectedBirthdayMonth"];
+
+            }
 
             if (listCustomers is not null && listCustomers?.Count >= 0)
             {
@@ -489,9 +504,9 @@
             }
         
 
-            if (listCustomers is not null && listCustomers.Count >= 0 && !string.IsNullOrWhiteSpace(FilteredCustomersData))
+            if (listCustomers is not null && listCustomers.Count >= 0 && !string.IsNullOrWhiteSpace(SeachingCustomersData))
             {
-                listCustomers = CustomersService.SearchCustomerService(FilteredCustomersData);
+                listCustomers = CustomersService.SearchCustomerService(SeachingCustomersData);
 
                 statusCustomerListView = "Data Is Loading...";
 
@@ -501,18 +516,18 @@
                 }
             }
 
-            if (listCustomers is not null && listCustomers.Count >= 0 && SelectedMonthFilter > 0)
+            if (listCustomers is not null && listCustomers.Count >= 0 && _selectedBirthdayMonth > 0)
             {
-                listCustomers = listCustomers.Where(c => c.Birthday?.Month == new DateOnly(2025, SelectedMonthFilter,1).Month).ToList();
+                listCustomers = listCustomers.Where(c => c.Birthday?.Month == new DateOnly(2025, _selectedBirthdayMonth, 1).Month).ToList();
                 if (listCustomers.Count == 0)
                 {
                     statusCustomerListView = "No Customer Found";
                 }
             }
 
-            this.PageSize = ContainerStorage.GetLastPageSize();
-            this.CurrentPage = ContainerStorage.GetLastCurrentPage();
-            this.selectedCustomerId = ContainerStorage.GetLastSelectedRecordId();
+            this.PageSize = ContainerStorage.GetLastPageSize(CurrentPath);
+            this.CurrentPage = ContainerStorage.GetLastCurrentPage(CurrentPath);
+            this.selectedCustomerId = ContainerStorage.GetLastSelectedRecordId(CurrentPath);
 
             UpdateCustomerSorting(sortingByColumn);
             UpdatePagedCustomers();
@@ -527,31 +542,76 @@
         {
 
             isFirstRender = false;
-            string currentPath = NavigationManager.ToBaseRelativePath(NavigationManager.Uri).Split('?', '#')[0];
-            ContainerStorage.ResetPaginationData(currentPath);
+            this.SeachingCustomersData = ContainerStorage.GetLastSearchedText(CurrentPath);
+            if (ContainerStorage.GetOptionalData(CurrentPath).Count >= 0 && ContainerStorage.GetOptionalData(CurrentPath).Keys.Contains("SelectedBirthdayMonth"))
+            {
+                // Test _selectBirthdayMonth
+                //this.SelectedBirthdayMonthFilter = ContainerStorage.GetOptionalData(CurrentPath)["SelectedBirthdayMonth"];
+                this._selectedBirthdayMonth = ContainerStorage.GetOptionalData(CurrentPath)["SelectedBirthdayMonth"];
+               
+            }
 
-            if (string.IsNullOrWhiteSpace(this.FilteredCustomersData))
+            if (listCustomers is not null && listCustomers?.Count >= 0)
             {
                 listCustomers = CustomersService.GetCustomersService();
+                statusCustomerListView = "Data Is Loading...";
             }
             else
             {
-                listCustomers = CustomersService.SearchCustomerService(FilteredCustomersData);
-                if (listCustomers is null || listCustomers.Count == 0)
-                {
-                    statusCustomerListView = "No User Found";
-                }
-
+                statusCustomerListView = "No User Found";
             }
 
-            this.CurrentPage = ContainerStorage.GetLastCurrentPage();
-            this.PageSize = ContainerStorage.GetLastPageSize();
-            this.selectedCustomerId = ContainerStorage.GetLastSelectedRecordId();
+
+            if (listCustomers is not null && listCustomers.Count >= 0 && !string.IsNullOrWhiteSpace(SeachingCustomersData))
+            {
+                listCustomers = CustomersService.SearchCustomerService(SeachingCustomersData);
+
+                statusCustomerListView = "Data Is Loading...";
+
+                if (listCustomers is null || listCustomers.Count == 0)
+                {
+                    statusCustomerListView = "No Customer Found";
+                }
+            }
+
+            if (listCustomers is not null && listCustomers.Count >= 0 && _selectedBirthdayMonth > 0)
+            {
+                listCustomers = listCustomers.Where(c => c.Birthday?.Month == new DateOnly(2025, _selectedBirthdayMonth, 1).Month).ToList();
+                if (listCustomers.Count == 0)
+                {
+                    statusCustomerListView = "No Customer Found";
+                }
+            }
+
+            this.CurrentPage = ContainerStorage.GetLastCurrentPage(CurrentPath);
+            this.PageSize = ContainerStorage.GetLastPageSize(CurrentPath);
+            this.selectedCustomerId = ContainerStorage.GetLastSelectedRecordId(CurrentPath);
 
             UpdatePagedCustomers();
             StateHasChanged();
         }
     }
 
+    private void HandleEditButton(int customerId)
+    {
+        if(selectedCustomerId != customerId)
+        {
+            selectedCustomerId = customerId;
+            ContainerStorage.SetSelectedRecordId(CurrentPath, customerId);
+        }
+
+        NavigationManager.NavigateTo($"/customer/{customerId}");
+        
+    }
+
+    private void HandleInvoicesButton(int customerId)
+    {
+        if (selectedCustomerId != customerId)
+        {
+            selectedCustomerId = customerId;
+            ContainerStorage.SetSelectedRecordId(CurrentPath,customerId);
+        }
+        //NavigationManager.NavigateTo($"/customer/invoices/{customerId}");
+    }
    
 }

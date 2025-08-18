@@ -29,12 +29,14 @@ builder.Services.AddScoped<ContainerStorage>();
 builder.Services.AddScoped<UsersRepository>();
 builder.Services.AddScoped<StoresRepository>();
 builder.Services.AddScoped<UserGroupRepository>();
-builder.Services.AddScoped<CustomersRepository>();  
+builder.Services.AddScoped<CustomersRepository>();
+builder.Services.AddScoped<InvoicesRepository>();
 
 builder.Services.AddTransient<IUsersService, UsersService>();
 builder.Services.AddTransient<IStoresService, StoresService>();
 builder.Services.AddTransient<IUserGroupService, UserGroupService>();
 builder.Services.AddTransient<ICustomersService, CustomersService>();
+builder.Services.AddTransient<IInvoicesService, InvoicesService>();    
 
 
 var app = builder.Build();

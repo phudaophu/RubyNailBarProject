@@ -15,6 +15,12 @@ namespace RubyNailBarWeb.Services
             this.usersRepository = _usersRepository;
         }
 
+        public List<User> getManagerListByStoreIdService(int storeId)
+        {
+            return usersRepository.getManagerListByStoreId(storeId);    
+        }
+
+
         // exclueedUserId is used to exclude the user from the check, useful when updating the user
         public bool IsUsernameExistsService(string username, int? excludedUserId = null)
         {

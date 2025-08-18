@@ -1,0 +1,146 @@
+﻿
+@inject IInvoicesService InvoicesService
+
+@inject IStoresService StoresService
+
+@inject IUsersService UsersService
+
+<table class="table table-striped table-hover">
+    <thead>
+        <tr>
+            <th>
+                <button type="button" class="btn border-0 btn-sm text-nowrap px-3" @onclick="@(() => ToggleSort("Index"))">Index @GetSortIcon("Index")</button>
+            </th>
+            <th>
+                <button type="button" class="btn border-0 btn-sm text-nowrap px-3" @onclick="@(() => ToggleSort("Store"))">Store @GetSortIcon("Store")</button>
+            </th>
+            <th>
+                <button type="button" class="btn border-0 btn-sm text-nowrap px-3" @onclick="@(() => ToggleSort("Invoice Date"))"> Invoice Date @GetSortIcon("Invoice Date")</button>
+            </th>
+            <th>
+                <button type="button" class="btn border-0 btn-sm text-nowrap px-3" @onclick="@(() => ToggleSort("Customer Name"))">Customer Name  @GetSortIcon("Customer Name")</button>
+            </th>
+            <th>
+                <button type="button" class="btn border-0 btn-sm text-nowrap px-3" @onclick="@(() => ToggleSort("Phone No"))"> Phone No  @GetSortIcon(" Phone No")</button>
+            </th>
+            <th>
+                <button type="button" class="btn border-0 btn-sm text-nowrap px-3" @onclick="@(() => ToggleSort("Bill Total"))">Bill Total  @GetSortIcon("Bill Total")</button>
+            </th>
+
+            <th>
+            </th>
+
+            <th>
+            </th>
+
+            <th>
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (listInvoices != null && listInvoices.Any())
+        {
+
+            @foreach (var invoice in listInvoices)
+            {
+                <tr class="align-middle" style="background-color:  @(invoice.InvoiceId == this.selectedInvoiceId ? "#d8dbf2" : "white")">
+
+                    <td style="cursor:pointer" @onclick="@(e => ShowInvoiceDetails(invoice))">
+                        @(listInvoices.FindIndex(i => i.InvoiceId == invoice.InvoiceId) + 1)
+                    </td>
+                    <td style="cursor:pointer" @onclick="@(e => ShowInvoiceDetails(invoice))">
+                        @listStores.FirstOrDefault(s => s.StoreId == invoice.StoreId)?.Name
+                    </td>
+
+                    <td style="cursor:pointer" @onclick="@(e => ShowInvoiceDetails(invoice))">
+                        @invoice.InvoiceDate
+                    </td>
+
+                    <td style="cursor:pointer" @onclick="@(e => ShowInvoiceDetails(invoice))">
+                        @listUsers.FirstOrDefault(u => u.UserId == invoice.CustomerId)?.FirstName @listUsers.FirstOrDefault(u => u.UserId == invoice.CustomerId)?.LastName
+                    </td>
+
+                    <td style="cursor:pointer" @onclick="@(e => ShowInvoiceDetails(invoice))">
+                        @listUsers.FirstOrDefault(u => u.UserId == invoice.CustomerId)?.PhoneNo
+                    </td>
+
+                    <td style="cursor:pointer" @onclick="@(e => ShowInvoiceDetails(invoice))">
+                        @(invoice.ServicesAmount + invoice.TaxAmount + invoice.TipAmount)
+                    </td>
+
+                    <td>
+                        <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-0 text-nowrap" @onclick="(e) => HandleEditButton(invoice.InvoiceId)">Edit</button>
+                    </td>
+
+                    <td>
+                        <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-0 text-nowrap" @onclick="(e) => HandleEditButton(invoice.InvoiceId)">Edit</button>
+                    </td>
+
+                    <td>
+                        <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-0 text-nowrap" @onclick="(e) => HandleEditButton(invoice.InvoiceId)">Edit</button>
+                    </td>
+
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td class="text-center text-black-50" colspan="9">
+                    @statusInvoiceListView
+                </td>
+            </tr>
+        }
+
+    </tbody>
+
+</table>
+
+@code {
+
+
+    private string statusInvoiceListView = string.Empty;
+
+    private int selectedInvoiceId = 0;
+
+    private List<Invoice> listInvoices = new List<Invoice>();
+
+    private List<Store>   listStores   = new List<Store>();
+
+    private List<User> listUsers = new List<User>();
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            listInvoices = InvoicesService.GetInvoicesService();
+            listStores   = StoresService.GetStoresService();
+            listUsers    = UsersService.GetUsersService();
+            StateHasChanged();
+        }
+    }
+
+    private void ToggleSort(string column)
+    {
+
+    }
+
+    private string GetSortIcon(string column)
+    {
+        return "";
+    }
+
+    private void ShowInvoiceDetails(Invoice invoice)
+    {
+
+    }
+    private void HandleEditButton(int invoiceId)
+    {
+        
+    }
+
+
+
+
+
+}

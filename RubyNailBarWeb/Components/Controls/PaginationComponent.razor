@@ -28,20 +28,22 @@
 
 
 @code {
-    // parameter output is pageSize, currentPage, totalPages
 
-    // parameter input is ListUsers.Count => cal totalPages
-    // private int currentPage = 1; 
+
+    [Parameter]
+    public string CurrentPath { get; set; } = string.Empty;
 
     private bool isFirstRender = true;
 
     [Parameter]
     public int CurrentPage { get; set; }
 
-    [Parameter]
-    public int TotalPages { get; set; }
+    //private int _totalPages = 1;
 
-    int _pageSize = 5; // default page size
+    [Parameter]
+    public int TotalPages {get; set;}
+
+    private int _pageSize = 5; // default page size
 
     [Parameter]
     public int PageSize 
@@ -52,7 +54,7 @@
             {
                 _pageSize = value;
                 CurrentPage  = 1;
-                ContainerStorage.SetPaginationData(CurrentPage, 0, value, 0);
+                ContainerStorage.SetPaginationData(CurrentPath, CurrentPage, 0, _pageSize, 0);
                 PageSizeCallBack.InvokeAsync(value);
             }
         }
@@ -77,9 +79,9 @@
 
     public void GetPaginationFromContainer()
     {
-        this._pageSize = ContainerStorage.GetLastPageSize();
-        CurrentPage = ContainerStorage.GetLastCurrentPage();
-        TotalPages = ContainerStorage.GetLastTotalPage();
+        this._pageSize = ContainerStorage.GetLastPageSize(CurrentPath);
+        CurrentPage = ContainerStorage.GetLastCurrentPage(CurrentPath);
+        TotalPages = ContainerStorage.GetLastTotalPage(CurrentPath);
     }
 
     private void PrevPage()
@@ -88,7 +90,7 @@
         {
 
             this.CurrentPage--;
-            ContainerStorage.SetPaginationData(CurrentPage, TotalPages, PageSize, 0);
+            ContainerStorage.SetPaginationData(CurrentPath, CurrentPage, TotalPages, PageSize);
             CurrentPageCallBack.InvokeAsync(CurrentPage);
             
         }
@@ -99,7 +101,7 @@
         if (this.CurrentPage < this.TotalPages)
         {
             CurrentPage++;
-            ContainerStorage.SetPaginationData(CurrentPage, TotalPages, PageSize, 0);
+            ContainerStorage.SetPaginationData(CurrentPath, CurrentPage, TotalPages, PageSize);
             CurrentPageCallBack.InvokeAsync(CurrentPage);
            
         }
@@ -109,8 +111,6 @@
     {
         if(!isFirstRender)
         {
-            // Ensure that the parameters are set correctly after the first render
-
             GetPaginationFromContainer();
             StateHasChanged();
         }
@@ -121,8 +121,6 @@
         if (firstRender)
         {
             isFirstRender = false;
-
-            //PageSize = ContainerStorage.getLastPageSize();
             GetPaginationFromContainer();
             StateHasChanged(); 
         }
