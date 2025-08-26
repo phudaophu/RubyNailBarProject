@@ -18,7 +18,10 @@ namespace RubyNailBarWeb.Services
         {
             return _invoicesRepository.AddInvoice(invoice);
         }
-
+        public List<Invoice> GetExistInvoicesOrderByCreatedDatetimeDescService()
+        {
+            return _invoicesRepository.GetExistInvoicesOrderByCreatedDatetimeDesc();
+        }
         public List<Invoice> GetInvoicesService()
         {
             return _invoicesRepository.GetInvoices();
@@ -36,6 +39,11 @@ namespace RubyNailBarWeb.Services
         public void UpdateInvoiceService(int invoiceId, Invoice invoice)
         {
              _invoicesRepository.UpdateInvoice(invoiceId, invoice);   
+        }
+
+        public  List<Invoice>? SearchInvoicesByCustomerInfoService(string keyString)
+        {
+            return _invoicesRepository.SearchInvoicesByCustomerInfo(keyString);
         }
 
         public List<Invoice>? SearchInvoicesByInvoiceDateService(DateOnly fromDate, DateOnly? toDate = null)

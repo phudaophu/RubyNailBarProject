@@ -1,11 +1,12 @@
 ﻿@page "/customer/{id:int?}"
-
+@page "/customer-back-from/{id:int?}"
 
 @rendermode InteractiveServer
 @inject FileUploadService FileUploadService
 @inject ICustomersService CustomerService
 @inject NavigationManager NavigationManager 
 @inject FileUploadService FileUploadService
+@inject ContainerStorage ContainerStorage
 
 @if (Id.HasValue)
 {
@@ -178,7 +179,8 @@ else
             </form>
         </div>
 
-        <a class="btn btn-primary" href="/customers"> Back </a>
+     @*    <a class="btn btn-primary" href="/customers"> Back </a> *@
+        <button class="btn btn-primary" type="button" @onclick="() => HandleBackButton()">Back</button>
         &nbsp;
         <button class="btn btn-primary" type="submit"> @(Id.HasValue==true?"Update":"Add") </button>
 
@@ -192,6 +194,7 @@ else
 
 @code {
 
+    private string currentPath = string.Empty;
 
     [Parameter]
     public int? Id { get; set; }
@@ -205,12 +208,32 @@ else
 
     private bool isDuplicateCustomerPhoneNo = false;
 
+    private void HandleBackButton()
+    {
+
+        if(currentPath.Contains("back-from",StringComparison.OrdinalIgnoreCase))
+        {
+            var previousPath = ContainerStorage.GetSavePaginaionPath();
+            NavigationManager.NavigateTo($"/{previousPath}");
+        }
+        else
+        {
+            NavigationManager.NavigateTo("/customers");
+        }
+    }
     private void ClearDuplicateCustomerNPhoneNoError()
     {
         isDuplicateCustomerPhoneNo = false;
         customerPhoneNoDuplicatedError = string.Empty;
     }
 
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if(firstRender)
+        {
+            currentPath = NavigationManager.ToBaseRelativePath(NavigationManager.Uri).Split('?', '#')[0];
+        }
+    }
 
     protected override void OnParametersSet()
     {
@@ -258,7 +281,18 @@ else
                 customer.CustomerLevel = "Silver";
                 int newCustomerId = CustomerService.AddCustomerService(customer);   
             }
-            NavigationManager.NavigateTo("/customers");
+            //NavigationManager.NavigateTo("/customers");
+
+
+            if (currentPath.Contains("back-from", StringComparison.OrdinalIgnoreCase))
+            {
+                var previousPath = ContainerStorage.GetSavePaginaionPath();
+                NavigationManager.NavigateTo($"/{previousPath}");
+            }
+            else
+            {
+                NavigationManager.NavigateTo("/customers");
+            }
         }
     }
 

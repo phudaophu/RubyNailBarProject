@@ -98,12 +98,6 @@ namespace RubyNailBarWeb.Repositories
                                                                                     (c.PhoneNo != null && c.PhoneNo.ToLower().IndexOf(keyString.ToLower()) >= 0));
             
 
-
-            //var customerList = db.Customers.Where(c =>
-            //        (c.Name != null && c.Name.ToLower().IndexOf(keyString.ToLower()) >= 0) ||
-            //        (c.Email != null && c.Email.ToLower().IndexOf(keyString.ToLower()) >= 0) ||
-            //        (c.PhoneNo != null && c.PhoneNo.ToLower().IndexOf(keyString.ToLower()) >= 0)).ToList();
-
             return customerQuery.OrderBy(cq => cq.CustomerId).ToList();
         }
     }

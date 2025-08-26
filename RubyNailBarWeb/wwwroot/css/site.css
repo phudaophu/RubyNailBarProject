@@ -4,6 +4,17 @@
     margin-top: 0.25rem;
 }
 
-/*table.table tbody tr.selected-row {
+.table-responsive thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2; /* keep header above rows */
+    background: #f8f9fa; /* Bootstrap's .table-light background */
+}
+    /*.table-responsive-custom {
+    max-height: 500px;  adjust the height as you want 
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+table.table tbody tr.selected-row {
     background-color: darkslateblue !important;
 }*/

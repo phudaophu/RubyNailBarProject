@@ -3,15 +3,16 @@
 
 @inject IStoresService StoresService
 @inject IUsersService UsersService
+@inject ContainerStorage ContainerStorage
+@inject NavigationManager NavigationManager
+
 @rendermode InteractiveServer
+
 
 <h3>Invoices</h3>
 
-<SearchBarComponent>
+<SearchBarComponent CurrentPath="@currentPath" SearchBarInfo="@searchLabel" SearchUsersCallBack="HandleSearchInvoice" OnClearSearchBarCallBack="HandleClearSearchBar" @ref="searchBarComponent">
     <SelectControl>
-
-@*      <InputSelect class="@( selectedStoreId==0? "text-secondary" : "text-danger border-danger")" ValueExpression="@(() => selectedStoreId)" Value="@selectedStoreId" ValueChanged="(int e) => { OnSelectStoreChanged(e); }">
- *@
         <InputSelect class=@($"form-control {(selectedStoreId == 0 ? "text-secondary border-secondary" : "text-danger border-danger")}")
                      @bind-Value="selectedStoreId">
             <option value="0">-- All Store --</option>
@@ -22,19 +23,10 @@
             }
 
         </InputSelect>
-        <InputDate class=@($"form-control {(!selectedStartDate.HasValue ? "text-secondary border-secondary" : "text-danger border-danger")}") @bind-Value="selectedStartDate"></InputDate>
-        <InputDate class=@($"form-control {(!selectedEndDate.HasValue   ? "text-secondary border-secondary" : "text-danger border-danger")}") @bind-Value="selectedEndDate"></InputDate>
-
-
-@*         <InputSelect class="@( selectedManagerId==0 ? "text-secondary" : "text-danger border-danger")" @bind-Value="selectedManagerId">
-            
-            <option value="0">-- All Manager --</option>
-
-            @foreach (var user in listManager)
-            {
-                <option value="@user.UserId" class="text-dark">@user.FirstName @user.LastName</option>
-            }
-        </InputSelect> *@
+        <InputDate  class=@($"form-control {(!selectedStartDate.HasValue ? "text-secondary border-secondary" : "text-danger border-danger")}")  
+                    ValueExpression="@(() => selectedStartDate)" Value="@selectedStartDate" ValueChanged="(DateOnly? sd) => { OnStartDateChange(sd); }"></InputDate>
+        <InputDate class=@($"form-control {(!selectedEndDate.HasValue ? "text-secondary border-secondary" : "text-danger border-danger")}")
+                   ValueExpression="@(() => selectedEndDate)" Value="@selectedEndDate" ValueChanged="(DateOnly? ed) => { OnEndDateChange(ed); }" disabled="@notAllowedChooseEndDate"></InputDate>
 
     </SelectControl>
     <ElementControl>
@@ -42,41 +34,240 @@
     </ElementControl>
 </SearchBarComponent>
 
-<InvoiceListComponent></InvoiceListComponent>
 
-<PaginationComponent></PaginationComponent>
+<InvoiceListComponent CurrentPath="@currentPath" SelectedEndDateFilter="@selectedEndDate" SelectedStartDateFilter="@selectedStartDate" SeachingInvoicesData="@searchedInvoices" PageSize="@pageSize" CurrentPage="@currentPage" TotalPagesCallBack="HandleTotalPage" OnSortingCallBack="HandleSorting" SelectedStoreIdFilter=@selectedStoreId @ref="invoiceListComponent"></InvoiceListComponent>
+
+<PaginationComponent CurrentPath="@currentPath" TotalPages="@totalPages" PageSizeCallBack="HandlePageSize" CurrentPageCallBack="HandleCurrentPage" @ref="paginationComponent"></PaginationComponent>
 
 
 @code {
-    //private bool isFirstRender = true;
-    private DateOnly? selectedStartDate { get; set; }
-    private DateOnly? selectedEndDate { get; set; } 
-    private int selectedStoreId { get; set; } = 0;
-    private int selectedManagerId { get; set; } = 0;
+
+    private string currentPath = string.Empty;
+
+    private bool isFirstRender = true;
+
+    private bool notAllowedChooseEndDate = true;
+
+    private DateOnly? _selectedStartDate;
+
+    private DateOnly? selectedStartDate
+    {
+        get => _selectedStartDate;
+        set
+        {
+            if (value != _selectedStartDate)
+            {
+                _selectedStartDate = value;
+                invoiceListComponent?.ClearSorting();
+                if (value.HasValue)
+                {
+                    var convertDatetoInt = int.Parse(value.Value.ToString("yyyyMMdd"));
+                    ContainerStorage.SetOptionalData(currentPath, "SelectedStartDate", convertDatetoInt);
+
+                }
+                else
+                {
+                    ContainerStorage.SetOptionalData(currentPath, "SelectedStartDate", 0);
+                }
+
+
+            }
+        }
+    }
+
+
+    private DateOnly? _selectedEndDate;
+
+    private DateOnly? selectedEndDate 
+    { 
+        get => _selectedEndDate;
+        set
+        {
+            if (value != _selectedEndDate)
+            {
+                _selectedEndDate = value;
+                invoiceListComponent?.ClearSorting();
+                if (value.HasValue)
+                {
+                    var convertDatetoInt = int.Parse(value.Value.ToString("yyyyMMdd"));
+                    ContainerStorage.SetOptionalData(currentPath, "SelectedEndDate", convertDatetoInt);
+
+                }
+                else
+                {
+                    ContainerStorage.SetOptionalData(currentPath, "SelectedEndDate", 0);
+                }
+            }
+        }
+    } 
+
     private List<Store> listStore = new List<Store>();
-    private List<User> listManager = new List<User>();
+
+
+
+    // SearchBar and Pagination 
+
+    private int _selectedStoreId = 0;
+
+    private int selectedStoreId
+    {
+        get => _selectedStoreId;
+        set
+        {
+            if (value >= 0 && value != _selectedStoreId)
+            {
+                _selectedStoreId = value;
+                invoiceListComponent?.ClearSorting();
+                ContainerStorage.SetOptionalData(currentPath, "SelectedStoreId", _selectedStoreId);
+
+            }
+        }
+    }
+
+
+    private string searchLabel = "Enter Customer Info";
+
+    private int totalPages;
+
+    private int pageSize;
+
+    private int currentPage;
+
+    private string? searchedInvoices = string.Empty;
+
+    private SearchBarComponent? searchBarComponent;
+
+    private PaginationComponent? paginationComponent;
+
+    private InvoiceListComponent? invoiceListComponent;
+
+
+    private void HandleCurrentPage(int currentPage)
+    {
+        this.currentPage = currentPage;
+    }
+
+    public void HandleClearSearchBar()
+    {
+        searchedInvoices = string.Empty;
+        ContainerStorage.SetSearchedText(currentPath, string.Empty);
+
+        selectedStoreId = 0;
+        ContainerStorage.SetOptionalData(currentPath, "SelectedStoreId", 0);
+
+        _selectedStartDate = null;
+        ContainerStorage.SetOptionalData(currentPath, "SelectedStartDate", 0);
+
+        _selectedEndDate = null;
+        ContainerStorage.SetOptionalData(currentPath, "SelectedEndDate", 0);
+
+        invoiceListComponent?.ClearSorting();
+    }
+
+    public void HandleSorting()
+    {
+        paginationComponent?.SetCurrentPage(1);
+        ContainerStorage.SetSelectedRecordId(currentPath, 0);
+
+    }
+
+    public void HandleSearchInvoice(string searchingInvoiceData)
+    {
+        currentPage = 1;
+        ContainerStorage.SetCurrentPage(currentPath, 1);
+        searchedInvoices = searchingInvoiceData;
+        ContainerStorage.SetSearchedText(currentPath, searchingInvoiceData);
+    }
+
+    private void HandleTotalPage(int totalPages)
+    {
+        this.totalPages = totalPages;
+
+    }
+
+    private void HandlePageSize(int pageSize)
+    {
+        this.pageSize = pageSize;
+        searchBarComponent?.ClearSearchBar();
+        invoiceListComponent?.ClearSorting();
+
+    }
 
 
     protected override void OnAfterRender(bool firstRender)
     {
         if (firstRender)
         {
+            currentPath = NavigationManager.ToBaseRelativePath(NavigationManager.Uri).Split('?', '#')[0];
+            ContainerStorage.ResetPaginationData(currentPath);
+
             listStore = StoresService.GetStoresService();
+            if (ContainerStorage.GetOptionalData(currentPath).Count > 0)
+            {
+                if (ContainerStorage.GetOptionalData(currentPath).Keys.Contains("SelectedStoreId"))
+                {
+                    _selectedStoreId = ContainerStorage.GetOptionalData(currentPath)["SelectedStoreId"];
+                }
+                if (ContainerStorage.GetOptionalData(currentPath).Keys.Contains("SelectedStartDate"))
+                {
+                    int startDateNumber = ContainerStorage.GetOptionalData(currentPath)["SelectedStartDate"];
+                    if (startDateNumber > 0)
+                    {
+                        _selectedStartDate = DateOnly.ParseExact(startDateNumber.ToString(), "yyyyMMdd");
+                        notAllowedChooseEndDate = false;
+                    }
+                }
+                if (ContainerStorage.GetOptionalData(currentPath).Keys.Contains("SelectedEndDate"))
+                {
+                    int endDateNumber = ContainerStorage.GetOptionalData(currentPath)["SelectedEndDate"];
+                    if (endDateNumber > 0)
+                    {
+                        _selectedEndDate = DateOnly.ParseExact(endDateNumber.ToString(), "yyyyMMdd");
+                    }
+                }
+            }
+          
             StateHasChanged();
         }
     }
 
-    // private void OnSelectStoreChanged(int e)
-    // {
-    //     this.selectedStoreId = e;
-    //     if(e > 0)
-    //     {
-    //         listManager = UsersService.getManagerListByStoreIdService(selectedStoreId);
-    //     }
-    //     else
-    //     {
-    //         listManager = new List<User>();
-    //     }
-    //     this.selectedManagerId = 0;
-    // }
+
+    private void OnStartDateChange(DateOnly? startDate)
+    {
+
+        if (startDate.HasValue)
+        {
+            selectedStartDate = startDate;
+            notAllowedChooseEndDate = false;
+            return;
+        }
+        else
+        {
+            selectedStartDate = null;
+            selectedEndDate = null;
+            notAllowedChooseEndDate = true;
+        }
+
+    }
+
+    private void OnEndDateChange(DateOnly? endDate)
+    {
+        if (endDate.HasValue)
+        {
+            if (endDate < this.selectedStartDate)
+            {
+                this.selectedEndDate = selectedStartDate;
+                this.selectedStartDate = endDate;
+            }
+            else
+            {
+                this.selectedEndDate = endDate;
+            }
+        }
+        else
+        {
+            selectedEndDate = null;
+        }
+    }
+
 }

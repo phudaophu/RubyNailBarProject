@@ -19,6 +19,16 @@ public partial class InvoiceDetail
 
     public DateTime? CreatedDatetime { get; set; }
 
+    public DateTime? ModifiedDatetime { get; set; }
+
+    public DateTime? StartDatetime { get; set; }
+
+    public DateTime? EndDatetime { get; set; }
+
+    public bool? IsDeleted { get; set; } = false;
+
+    public bool? IsFinished { get; set; } = false;
+
     public virtual Invoice? Invoice { get; set; }
 
     public virtual Service? Service { get; set; }

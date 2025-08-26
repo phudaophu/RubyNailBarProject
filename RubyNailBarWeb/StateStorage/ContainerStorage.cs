@@ -9,13 +9,15 @@ namespace RubyNailBarWeb.StateStorage
         
         public ContainerStorage() { }
 
+        private PaginationData paginationIndexPage { set; get; } = new PaginationData();
         private PaginationData paginationUsersPage { set; get; } = new PaginationData();
         private PaginationData paginationCustomersPage { set; get; } = new PaginationData();
         private PaginationData paginationInvoicesPage { set; get; } = new PaginationData();
-        private List<string> allowedToResetPaginationDataPathList { set; get; } = new List<string>() { "", "users", "customers" };
+        private List<string> allowedToResetPaginationDataPathList { set; get; } = new List<string>() { "", "users", "customers", "invoices" };
 
         private string savedPaginationPath { set; get; } = string.Empty;
 
+        
         private PaginationData PaginationSelector(string currentPath)
         {
             if (!string.IsNullOrEmpty(currentPath))
@@ -28,14 +30,35 @@ namespace RubyNailBarWeb.StateStorage
                         return paginationCustomersPage;
                     case var path when string.Equals(path, "invoices", StringComparison.OrdinalIgnoreCase):
                         return paginationInvoicesPage;
-                    default:
-                        throw new ArgumentException($"Loi: Pagination Data in {nameof(currentPath)} can not be found !!!");
+                    case var path when string.Equals(path, string.Empty):
+                        return paginationIndexPage;
+                        //default:
+                        //    throw new ArgumentException($"Loi: Pagination Data in {nameof(currentPath)} can not be found !!!");
                 }
             }
             return new PaginationData() { };
         }
        
+        public bool CheckOptionalDataExist(string currentPath)
+        {
+            var paginationData = PaginationSelector(currentPath);
+            if (paginationData.optionalFilterDataDict.Count > 0)
+            {
+                foreach (var key in paginationData.optionalFilterDataDict.Keys.ToList())
+                {
+                   if( paginationData.optionalFilterDataDict[key] > 0)
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;   
+        } 
 
+        public string GetSavePaginaionPath()
+        {
+            return this.savedPaginationPath;
+        }
         public void ResetPaginationData(string currentPath)
         {
             if ( !savedPaginationPath.Equals(currentPath, StringComparison.OrdinalIgnoreCase)

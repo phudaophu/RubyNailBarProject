@@ -67,6 +67,8 @@
 
     private CustomerListComponent? customerListComponent;
 
+
+
     protected override void OnAfterRender(bool firstRender)
     {
         if (firstRender)
@@ -87,9 +89,6 @@
     {
         return new DateTime(2025, selectedMonth, 1).ToString("MMMM"); // Get month namer
     }
-
-
-
 
 
     private void HandleCurrentPage(int currentPage)

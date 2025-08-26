@@ -1,4 +1,6 @@
 ﻿@page "/usergroups/{id:int?}"
+@page "/usergroups-back-from/{id:int?}"
+
 
 @inject IStoresService StoresService
 @inject IUserGroupService UserGroupService
@@ -114,8 +116,8 @@
 
 @if (this.listUserGroup != null && listUserGroup.Count > 0)
 {
-    <a class="btn btn-primary" href=@($"/user/{Id}")> Back </a>
-
+    @* <a class="btn btn-primary" href=@($"/user/{Id}")> Back </a> *@
+    <button class="btn btn-primary" type="button" @onclick="()=>HandleBackButton()">Back</button>
 }
 &nbsp
 
@@ -136,6 +138,8 @@
 
     private string statusUserListView = "Data Is Loading...";
 
+    private string currentPath = string.Empty;
+
     private List<UserGroup> listNewUserGroup = new List<UserGroup>();
 
     private List<Store> listStores = new List<Store>();
@@ -144,14 +148,25 @@
 
     private List<UserGroup>? listRenderUserGroup = new List<UserGroup>();
 
-
-
     private Dictionary<string, List<string>> dictGroupRole = new Dictionary<string, List<string>>
     {
         { "Manager", new List<string> { "Admin","Viewer" } },
         { "Staff", new List<string> { "Staff" } }
     };
 
+
+    private void HandleBackButton()
+    {
+        var currentPath = NavigationManager.ToBaseRelativePath(NavigationManager.Uri).Split('?', '#')[0];
+        if (currentPath.Contains("back-from", StringComparison.OrdinalIgnoreCase))
+        {
+            NavigationManager.NavigateTo($"/user-back-from/{Id}");
+        }
+        else
+        {
+            NavigationManager.NavigateTo($"/user/{Id}");
+        }
+    }
 
     protected override void OnParametersSet()
     {
@@ -231,7 +246,7 @@
 
                     }
                 }
-                updateRenderUserGroup();
+                UpdateRenderUserGroup();
                 StateHasChanged();
                 NavigationManager.NavigateTo("/users");
             }
@@ -284,8 +299,6 @@
                 }
             }
         }
-     
-
         return listInvalidUserGroup;
     }
 
@@ -332,14 +345,14 @@
             {
                 statusUserListView = "No User Group Found To Delete";
             }
-            updateRenderUserGroup();
+            UpdateRenderUserGroup();
             StateHasChanged();
 
         }
 
     }
 
-    private void updateRenderUserGroup()
+    private void UpdateRenderUserGroup()
     {
         if(listUserGroup != null && listUserGroup.Count > 0)
         {
@@ -364,7 +377,7 @@
 
             this.listNewUserGroup.Add(newUserGroup);
 
-            updateRenderUserGroup();
+            UpdateRenderUserGroup();
         }
         return;
 

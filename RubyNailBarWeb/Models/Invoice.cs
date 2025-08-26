@@ -1,18 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace RubyNailBarWeb.Models;
 
 public partial class Invoice
 {
     public int InvoiceId { get; set; }
-
+    [Required]
     public DateOnly? InvoiceDate { get; set; }
 
+    [Required]
     public int? StoreId { get; set; }
 
     public int? ManagerId { get; set; }
-
+    [Required]
     public int? CustomerId { get; set; }
 
     public decimal? ServicesAmount { get; set; }
@@ -25,6 +27,7 @@ public partial class Invoice
 
     public int? PaymentMethodId { get; set; }
 
+    public bool? IsDeleted { get; set; } = false;
     public virtual Customer? Customer { get; set; }
 
     public virtual ICollection<CustomerPointLog> CustomerPointLogs { get; set; } = new List<CustomerPointLog>();
