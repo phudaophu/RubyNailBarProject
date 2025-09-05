@@ -80,3 +80,9 @@ process: invoice details, edit invoice, edit services, services page, at startti
 process: invoice details
 8:41 AM 8/26/2025
 process: invoice details pop-up: add table of invoice details 
+
+9:12 PM 9/5/2025
+process: change Service table to CustomerService table, validate CustomerId in Add Edit Invoice page, create InvoiceDetail page in order to add Service
+complete: Add customer in AddEditInvoice
+
+

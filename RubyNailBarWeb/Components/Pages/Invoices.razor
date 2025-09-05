@@ -30,7 +30,7 @@
 
     </SelectControl>
     <ElementControl>
-        <button class="btn btn-outline-secondary">Add Inovice</button>
+        <button type="button" class="btn btn-outline-secondary" @onclick="()=>HandleAddInvoiceButton()">Add Inovice</button>
     </ElementControl>
 </SearchBarComponent>
 
@@ -140,6 +140,11 @@
     private PaginationComponent? paginationComponent;
 
     private InvoiceListComponent? invoiceListComponent;
+
+    private void HandleAddInvoiceButton()
+    {
+        NavigationManager.NavigateTo("/invoice");
+    }
 
 
     private void HandleCurrentPage(int currentPage)

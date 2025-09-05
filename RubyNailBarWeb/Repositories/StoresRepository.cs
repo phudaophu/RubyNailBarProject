@@ -30,7 +30,12 @@ namespace RubyNailBarWeb.Repositories
             return db.Stores.ToList();
         }
 
-
+        public List<Store> GetActiveStores()
+        {
+            using var db = this.contextFactory.CreateDbContext();
+            IQueryable<Store> storeQuery = db.Stores.AsNoTracking().Where(s => s != null && s.IsActive == true);
+            return storeQuery.ToList();
+        }
 
 
     }

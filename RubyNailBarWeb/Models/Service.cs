@@ -19,5 +19,9 @@ public partial class Service
 
     public bool? IsActive { get; set; }
 
+    public int? AdditionalParameterA { get; set; } = 0;
+
+    public string? FormularA { get; set; } = string.Empty;
+
     public virtual ICollection<InvoiceDetail> InvoiceDetails { get; set; } = new List<InvoiceDetail>();
 }

@@ -4,6 +4,11 @@ namespace RubyNailBarWeb.Services.Implements
 {
     public interface IInvoiceDetailsService
     {
+
+        int GetNumberOfFinishedInvoiceDetailsByInvoiceIdService(int invoiceId);
+
+        int GetNumberOfNotFinishedInvoiceDetailsByInvoiceIdService(int invoiceId);
+
         List<InvoiceDetail>? GetInvoiceDetailsByInvoiceIdService(int invoiceId);
 
         List<InvoiceDetail> GetValidInvoiceDetailsService();

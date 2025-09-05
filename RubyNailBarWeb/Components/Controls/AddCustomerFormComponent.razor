@@ -1,0 +1,124 @@
+﻿
+
+@inject ICustomersService CustomerService
+@inject NavigationManager NavigationManager
+
+<span><i class="bi bi-person">New Customer</i></span>
+@if(customer is not null)
+{
+    <EditForm Model="customer" FormName="addCustomerForm" OnValidSubmit="AddCustomerSubmitFunc">
+        <DataAnnotationsValidator></DataAnnotationsValidator>
+        <div class="container">
+                <div class="row">
+                    <div class="col-sm-12 col-sm-offset-1">
+                        <div class="row row-centered">
+
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>PhoneNo</th>
+                                        <th>Birthday</th>
+                                        <th>Notice</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+
+                                    <tr>
+                                        <td>
+                                        <InputText @bind-Value="customer.Name" placeholder="Enter customer name"></InputText>
+                                        </td>
+                                        <td>
+                                        <InputText @bind-Value="customer.PhoneNo" @onblur="ClearDuplicateCustomerNPhoneNoError" placeholder="Enter phone number"></InputText>
+                                        </td>
+                                        <td>
+                                            <InputDate @bind-Value="customer.Birthday"></InputDate>
+                                        </td>
+                                        <td>
+                                            <ValidationMessage For="() => customer.Name"></ValidationMessage>
+                                            <ValidationMessage For="() => customer.PhoneNo"></ValidationMessage>
+                                            @if (isDuplicateCustomerPhoneNo)
+                                            {
+                                                <div class="validation-message">@customerPhoneNoDuplicatedError</div>
+                                            }
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-primary" type="submit"> Add </button>
+                                        </td>
+                                    </tr>
+
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+        </div>
+
+
+
+
+    </EditForm>
+
+
+}
+
+
+
+
+
+@code {
+
+
+
+    [SupplyParameterFromForm]
+    private Customer? customer { get; set; }
+
+    [Parameter]
+    public EventCallback<int> NewCustomerIdCallBack { get; set; } 
+
+    private string customerPhoneNoDuplicatedError = string.Empty;
+
+    private bool isDuplicateCustomerPhoneNo = false;
+
+    protected override void OnInitialized()
+    {
+        customer = new Customer();
+    }
+
+
+    private void ClearDuplicateCustomerNPhoneNoError()
+    {
+        isDuplicateCustomerPhoneNo = false;
+        customerPhoneNoDuplicatedError = string.Empty;
+    }
+
+    private void AddCustomerSubmitFunc()
+    {
+        if (customer is not null && customer.PhoneNo is not null)
+        {
+            isDuplicateCustomerPhoneNo = CustomerService.IsCustomerPhoneNoExistService(customer.PhoneNo, customer.CustomerId);
+            if (isDuplicateCustomerPhoneNo)
+            {
+                customerPhoneNoDuplicatedError = "This phone number already exists.";
+                return;
+            }
+            else
+            {
+                customerPhoneNoDuplicatedError = string.Empty;
+            }
+
+            customer.CreatedDatetime = DateTime.Now;
+            customer.ModifiedDatetime = DateTime.Now;
+            customer.Points = 0;
+            customer.LifetimeSpend = 0;
+            customer.TransactionCount = 0;
+            customer.CustomerLevel = "Silver";
+            int newCustomerId = CustomerService.AddCustomerService(customer);
+            NewCustomerIdCallBack.InvokeAsync(newCustomerId);
+            //NavigationManager.NavigateTo("/customers");
+
+        }
+    }
+
+}

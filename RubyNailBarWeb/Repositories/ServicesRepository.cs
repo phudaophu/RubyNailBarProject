@@ -21,7 +21,5 @@ namespace RubyNailBarWeb.Repositories
 
 
 
-
-
     }
 }

@@ -28,6 +28,14 @@ namespace RubyNailBarWeb.Services
             return _invoiceDetailsRepository.GetInvoiceDetails();
         }
 
+        public int GetNumberOfNotFinishedInvoiceDetailsByInvoiceIdService(int invoiceId)
+        {
+            return 1;
+        }
+        public int GetNumberOfFinishedInvoiceDetailsByInvoiceIdService(int invoiceId)
+        {
+            return 1;
+        }
         public List<InvoiceDetail>? GetInvoiceDetailsByInvoiceIdService(int invoiceId) 
         {
             return _invoiceDetailsRepository.GetInvoiceDetailsByInvoiceId(invoiceId);

@@ -5,6 +5,8 @@ namespace RubyNailBarWeb.Services.Implements
     {
         Store GetStoreByIdService(int storeId);
         List<Store> GetStoresService();
+
+        List<Store> GetActiveStoresService();
     }
 
 }

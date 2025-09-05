@@ -26,5 +26,15 @@ namespace RubyNailBarWeb.Services
             }
             return stores;
         }
+
+        public List<Store> GetActiveStoresService()
+        {
+            var stores = storesRepository.GetActiveStores();
+            if (stores is null)
+            {
+                return new List<Store>();
+            }
+            return stores;
+        }
     }
 }

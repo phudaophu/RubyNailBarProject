@@ -13,6 +13,20 @@ namespace RubyNailBarWeb.Services
             this._invoicesRepository = invoicesRepository;
         }
 
+        public int GetNumberOfNotFinishedInvoiceDetailByInvoiceIdService(int invoiceId)
+        {
+            var invoice = _invoicesRepository.GetInvoiceById(invoiceId) ?? new Invoice();
+            if (invoice is null || invoice.InvoiceDetails.Count == 0 || !invoice.InvoiceDetails.Any(id => id.IsFinished == false)) return 0;
+            return invoice.InvoiceDetails.Where(id=>id.IsFinished == false).Count();
+
+        }
+        public int GetNumberOfInvoiceDetailByInvoiceIdService(int invoiceId)
+        {
+            var invoice = _invoicesRepository.GetInvoiceById(invoiceId) ?? new Invoice();
+            if (invoice is null || invoice.InvoiceDetails.Count == 0 ) return 0;
+            return invoice.InvoiceDetails.Count();
+
+        }
 
         public int AddInvoiceService(Invoice invoice)
         {

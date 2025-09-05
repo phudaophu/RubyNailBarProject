@@ -1,0 +1,410 @@
+﻿@page "/invoice/{id:int?}"
+@page "/invoice-back-from/{id:int?}"
+
+@inject IInvoicesService InvoicesService
+@inject IUsersService UsersService
+@inject IStoresService StoresService
+@inject ICustomersService CustomersService
+@inject NavigationManager NavigationManager
+
+@rendermode InteractiveServer
+
+@if (Id.HasValue)
+{
+    <h3>Edit Invoice</h3>
+}
+else
+{
+    <h3>Add Invoice</h3>
+}
+
+@if (invoice is not null)
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>
+                    Store
+                </th>
+                <th>
+                    Manager
+                </th>
+                <th>
+                    Customer
+                </th>
+                <th>
+                </th>
+                <th>
+                </th>
+                <th>
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>
+                    <InputSelect class="form-select" TValue="int?"
+                                 Value="invoice.StoreId"
+                                 ValueChanged="@( (int? e) => {OnSelectStoreChanged(e);} )"
+                                 ValueExpression="@(() => invoice.StoreId)">
+
+                        <option value="0" disabled selected>-- Select Store --</option>
+
+                        @if (listStores != null && listStores.Any())
+                        {
+                            @foreach(var store in listStores)
+                            {
+                                <option value="@store.StoreId" disabled="@Id.HasValue">@store.Name</option>
+
+                            }
+
+                        }
+                    </InputSelect>
+                </td>
+                <td>
+                    <InputSelect class="form-select" @bind-Value="invoice.ManagerId">
+                        <option value="0" disabled selected>--Select Manager--</option>
+                        @if (listManagers != null && listManagers.Any())
+                        {
+                            @foreach (var manager in listManagers)
+                            {
+                                <option value="@manager.UserId" disabled="@Id.HasValue">@manager.FirstName @manager.LastName</option>
+
+                            }
+
+                        }
+                    </InputSelect>
+                </td>
+                <td>
+                    <input type="text" class="form-control" placeholder="PhoneNo | Name" @bind="searchText" disabled="@Id.HasValue" />
+                    @if (listFoundCustomers?.Any() == true)
+                    {
+                        <ul class="list-group position-absolute mt-1" style="z-index:1000; width:300px">
+
+                            @foreach (var customer in listFoundCustomers)
+                            {
+                                <li class="list-group-item list-group-item-action" @onclick="() => HandleSelectCustomer(customer)"> @customer.Name - @customer.PhoneNo</li>
+                            }
+                        </ul>
+                     }
+                </td>
+
+                @if (Id.HasValue)
+                {
+                    <td colspan="3">
+                        <button type="button" title="Add Services" class="btn btn-outline-secondary">➕</button>
+                    </td>
+                }
+                else
+                {
+                    <td>
+                        @if (invoice.CustomerId > 0)
+                        {
+                            <button type="button" title="Discard Customer" class="btn btn-outline-secondary" @onclick="HandleClearCustomerSelectionButton" disabled="@Id.HasValue">❌</button>
+
+                        }
+                        else
+                        {
+                            <button type="button" title="Search Customer" class="btn btn-outline-secondary" @onclick="HandleSearchButton">🔍</button>
+
+                        }
+                    </td>
+                    <td>
+                        @if (activeAddCustomerSection)
+                        {
+                            <button type="button" title="Dont Add Customer" class="btn btn-outline-secondary" @onclick="HandleAddNewCustomerButton">🚫</button>
+
+                        }
+                        else
+                        {
+                            <button type="button" title="Add New Customer" class="btn btn-outline-secondary" @onclick="HandleAddNewCustomerButton">👤</button>
+
+                        }
+                    </td>
+                    <td>
+                        <button type="button" title="Add Services" class="btn btn-outline-secondary">➕</button>
+                    </td>
+                }
+
+
+            </tr>
+        </tbody>
+    </table>
+    <hr>
+
+    @if(activeAddCustomerSection == true)
+    {
+       <AddCustomerFormComponent NewCustomerIdCallBack="HandleNewCustomerId">
+       </AddCustomerFormComponent>
+        <hr>
+    }
+
+
+    @if (Id.HasValue)
+    {
+        <div class="row">
+            <div>
+                <span><i class="bi bi-person">Included Services</i></span>
+            </div>
+
+            <div class="table-responsive" style=" max-height: 150px; overflow-y: auto;">
+                <table class="table table-striped table-hover">
+                    <thead class="table-light">
+                        <tr style="position:sticky; top:0; z-index:2;">
+                            <th>
+                                <span> Id </span>
+                            </th>
+                            <th>
+                                <span>Service</span>
+                            </th>
+                            <th>
+                                <span>Staff</span>
+                            </th>
+                            <th>
+                                <span>Fee</span>
+                            </th>
+                            <th>
+                                <span>Tip</span>
+                            </th>
+                            <th>
+                                <span>Time</span>
+                            </th>
+                            <th>
+                                <span>Status</span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @*   @if (selectedInvoice.InvoiceDetails != null && selectedInvoice.InvoiceDetails.Any())
+                    {
+
+                        @foreach (var invoiceDetail in selectedInvoice.InvoiceDetails.OrderBy(id => id.IsFinished).OrderByDescending(id => id.InvoiceDetailId))
+                        {
+                            <tr class="align-middle">
+                                <td style="cursor:pointer">
+                                    @invoiceDetail.InvoiceDetailId
+                                </td>
+                                <td style="cursor:pointer">
+                                    @invoiceDetail.Service?.Name
+                                </td>
+                                <td style="cursor:pointer">
+                                    <a href=@($"/user-back-from/{invoiceDetail.User?.UserId}")>
+                                        @invoiceDetail.User?.FirstName @invoiceDetail.User?.LastName
+                                    </a>
+                                </td>
+                                <td style="cursor:pointer">
+                                    @if (invoiceDetail.ServiceFee != null)
+                                    {
+                                        @invoiceDetail.ServiceFee
+                                    }
+                                    else
+                                    {
+                                        <span class="fst-italic">N/A</span>
+                                    }
+                                </td>
+                                <td style="cursor:pointer">
+                                    @if (invoiceDetail.Tip != null)
+                                    {
+                                        @invoiceDetail.Tip
+                                    }
+                                    else
+                                    {
+                                        <span class="fst-italic">N/A</span>
+                                    }
+                                </td>
+                                <td style="cursor:pointer">
+                                    @if ((invoiceDetail?.EndDatetime - invoiceDetail?.StartDatetime)?.TotalMinutes >= 0)
+                                    {
+                                        @((invoiceDetail?.EndDatetime - invoiceDetail?.StartDatetime)?.TotalMinutes)
+                                    }
+                                    else
+                                    {
+                                        <span class="fst-italic">N/A</span>
+                                    }
+                                </td>
+                                <td style="cursor:pointer">
+                                    <span class=@($"badge border {(invoiceDetail?.IsFinished == true ? "border-success text-success" : "border-danger text-danger")}")>@(invoiceDetail?.IsFinished == true ? "Finished" : "Not Yet")</span>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td class="text-center text-black-50" colspan="9">
+                                No Data
+                            </td>
+                        </tr>
+                    } *@
+
+                    </tbody>
+
+                </table>
+            </div>
+        </div>
+    }
+
+ 
+}
+
+
+
+
+
+
+
+@code {
+
+    [Parameter]
+    public int? Id { get; set; }
+
+    //private bool isCustomerSelected = false;
+
+    private bool activeAddCustomerSection = false;
+
+    private Invoice? invoice { get; set; }
+
+    private List<User> listManagers = new List<User>();
+
+    private List<Store>? listStores = new List<Store>();
+
+    private string? searchText { get; set; } = string.Empty;
+
+    private Customer? selectedCustomerInfo = new Customer();
+
+    private List<Customer>? listFoundCustomers = new List<Customer>();
+
+    private void HandleNewCustomerId(int newCustomerId)
+    {
+        if(invoice is not null && newCustomerId > 0)
+        {
+
+            selectedCustomerInfo = CustomersService.GetCustomerByIdService(newCustomerId);
+            if(selectedCustomerInfo is not null)
+            {
+                invoice.CustomerId = selectedCustomerInfo.CustomerId;
+                searchText = $"{selectedCustomerInfo?.Name} - {selectedCustomerInfo?.PhoneNo}";
+                activeAddCustomerSection = false;
+            }
+
+        }
+    }
+
+    private void HandleAddNewCustomerButton()
+    {
+        activeAddCustomerSection = !activeAddCustomerSection;
+    }
+
+    private void HandleSearchButton()
+    {
+        if (string.IsNullOrWhiteSpace(searchText)) 
+        { 
+            listFoundCustomers?.Clear();
+        }
+        else
+        {
+            listFoundCustomers = CustomersService.SearchCustomerService(searchText);
+        }
+    }
+
+    private void HandleClearCustomerSelectionButton()
+    {
+        if (invoice?.CustomerId !=null && invoice?.CustomerId > 0)
+        {
+            searchText = string.Empty;
+            invoice.CustomerId = 0;
+            listFoundCustomers?.Clear();
+        }
+    }
+    private void HandleSelectCustomer(Customer customer)
+    { 
+        if (customer is not null && invoice is not null)
+        {
+            searchText = $"{customer.Name} - {customer.PhoneNo}";
+            invoice.CustomerId = customer.CustomerId;
+            listFoundCustomers?.Clear();
+        }
+
+
+    }
+
+
+    private void OnSelectStoreChanged(int? valueChanged)
+    {
+        if (valueChanged is not null && valueChanged.Value > 0 && valueChanged != invoice?.StoreId && invoice is not null)
+        {
+            invoice.StoreId = valueChanged.Value;
+            invoice.ManagerId = 0;
+            listManagers = UsersService.getManagerListByStoreIdService(valueChanged.Value);
+
+        }
+
+
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (this.Id.HasValue)
+        {
+
+            invoice ??= InvoicesService.GetInvoiceByIdService(this.Id.Value);
+            if (invoice is not null)
+            {
+                if (invoice.CustomerId.HasValue)
+                {
+                    selectedCustomerInfo = CustomersService.GetCustomerByIdService(invoice.CustomerId.Value);
+
+                    searchText = $"{selectedCustomerInfo?.Name} - {selectedCustomerInfo?.PhoneNo}";
+                }
+                if (invoice.StoreId.HasValue)
+                {
+                    listManagers = UsersService.getManagerListByStoreIdService(invoice.StoreId.Value);
+                }
+
+            }
+            
+        }
+        else
+        {
+            invoice ??= new Invoice() 
+            { 
+                InvoiceDate = DateOnly.FromDateTime(DateTime.Now),
+                StoreId = 0,
+                ServicesAmount = 0,
+                TaxAmount = 0,
+                TipAmount = 0,
+                CreatedDatetime = DateTime.Now,
+                PaymentMethodId = 1
+            };
+
+        }
+
+        listStores = StoresService.GetActiveStoresService();
+
+    }
+
+    private void HandleSearchCustomerButton()
+    {
+        
+    }
+
+    private void SubmitFunc()
+    {
+        
+    }
+
+
+    // private void OnSelectStoreChanged(int e)
+    // {
+    //     this.selectedStoreId = e;
+    //     if(e > 0)
+    //     {
+    //         listManagers = UsersService.getManagerListByStoreIdService(selectedStoreId);
+    //     }
+    //     else
+    //     {
+    //         listManagers = new List<User>();
+    //     }
+    //     this.selectedManagerId = 0;
+    // }
+}
