@@ -13,6 +13,11 @@ namespace RubyNailBarWeb.Services
             this._invoiceDetailsRepository = invoiceDetailsRepository;
         }
 
+        public InvoiceDetail? GetValidInvoiceDetailByIdService(int invoiceDetailId)
+        {
+            return _invoiceDetailsRepository.GetValidInvoiceDetailById(invoiceDetailId);
+        }
+
         public int AddInvoiceDetailService(InvoiceDetail invoiceDetail)
         {
             return _invoiceDetailsRepository.AddInvoiceDetail(invoiceDetail);

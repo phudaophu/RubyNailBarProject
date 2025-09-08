@@ -13,7 +13,10 @@ namespace RubyNailBarWeb.StateStorage
         private PaginationData paginationUsersPage { set; get; } = new PaginationData();
         private PaginationData paginationCustomersPage { set; get; } = new PaginationData();
         private PaginationData paginationInvoicesPage { set; get; } = new PaginationData();
-        private List<string> allowedToResetPaginationDataPathList { set; get; } = new List<string>() { "", "users", "customers", "invoices" };
+        private PaginationData paginationInvoicePage { set;get; } = new PaginationData();
+        private List<string> allowedToResetPaginationDataPathList { set; get; } = new List<string>() { "", "users", "customers", "invoices", "invoice" };
+
+        private List<string> subPathList { set; get; } = new List<string>() { "invoice" };
 
         private string savedPaginationPath { set; get; } = string.Empty;
 
@@ -30,10 +33,11 @@ namespace RubyNailBarWeb.StateStorage
                         return paginationCustomersPage;
                     case var path when string.Equals(path, "invoices", StringComparison.OrdinalIgnoreCase):
                         return paginationInvoicesPage;
+                    case var path when string.Equals(path, "invoice", StringComparison.OrdinalIgnoreCase):
+                        return paginationInvoicePage;
                     case var path when string.Equals(path, string.Empty):
                         return paginationIndexPage;
-                        //default:
-                        //    throw new ArgumentException($"Loi: Pagination Data in {nameof(currentPath)} can not be found !!!");
+
                 }
             }
             return new PaginationData() { };
@@ -53,16 +57,35 @@ namespace RubyNailBarWeb.StateStorage
                 }
             }
             return false;   
-        } 
+        }
+
+        public void SetSavePaginationPath(string currentPath)
+        {
+            if (!string.IsNullOrEmpty(currentPath) && !currentPath.Equals(this.savedPaginationPath,StringComparison.OrdinalIgnoreCase))
+            {
+                this.savedPaginationPath = currentPath;
+            }
+        }
 
         public string GetSavePaginaionPath()
         {
+
+            if (subPathList.Any(path => path.Equals(this.savedPaginationPath, StringComparison.OrdinalIgnoreCase)))
+            {
+                if (this.GetOptionalData(savedPaginationPath).Count >= 0 && this.GetOptionalData(savedPaginationPath).Keys.Contains("ObjectId"))
+                {
+                   var objectId = this.GetOptionalData(savedPaginationPath)["ObjectId"];
+                    return $"{savedPaginationPath}/{objectId}";
+                }
+            }
+
             return this.savedPaginationPath;
+            
         }
         public void ResetPaginationData(string currentPath)
         {
             if ( !savedPaginationPath.Equals(currentPath, StringComparison.OrdinalIgnoreCase)
-                    && allowedToResetPaginationDataPathList.Any(p => p.Contains(currentPath, StringComparison.OrdinalIgnoreCase)))
+                    && allowedToResetPaginationDataPathList.Any(p => p.Equals(currentPath, StringComparison.OrdinalIgnoreCase)))
             {
                 var paginationData = PaginationSelector(savedPaginationPath);
                 if (paginationData.optionalFilterDataDict.Count > 0)
@@ -184,7 +207,7 @@ namespace RubyNailBarWeb.StateStorage
 
     public class PaginationData
     {
-        public Dictionary<string,int> optionalFilterDataDict { get; set; } = new Dictionary<string, int>();
+        public Dictionary<string, int> optionalFilterDataDict { get; set; } = new Dictionary<string, int>();
         public string searchedText { get; set; } = string.Empty;
         public int selectedRecordId { get; set; } = 0;  
         public int currentPage { get; set; } = 1;

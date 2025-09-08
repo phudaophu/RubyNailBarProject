@@ -21,6 +21,14 @@
                                         <th>Birthday</th>
                                         <th>Notice</th>
                                         <th></th>
+                                        <th></th>
+                                        <th></th>
+                                        <th></th>
+                                        <th></th>
+                                        <th></th>
+                                        <th></th>
+                                        <th></th>
+                                        <th></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -30,12 +38,12 @@
                                         <InputText @bind-Value="customer.Name" placeholder="Enter customer name"></InputText>
                                         </td>
                                         <td>
-                                        <InputText @bind-Value="customer.PhoneNo" @onblur="ClearDuplicateCustomerNPhoneNoError" placeholder="Enter phone number"></InputText>
+                                        <InputText @bind-Value="customer.PhoneNo" @onblur="ClearDuplicateCustomerPhoneNoError" placeholder="Enter phone number"></InputText>
                                         </td>
                                         <td>
                                             <InputDate @bind-Value="customer.Birthday"></InputDate>
                                         </td>
-                                        <td>
+                                        <td colspan="8">
                                             <ValidationMessage For="() => customer.Name"></ValidationMessage>
                                             <ValidationMessage For="() => customer.PhoneNo"></ValidationMessage>
                                             @if (isDuplicateCustomerPhoneNo)
@@ -44,7 +52,10 @@
                                             }
                                         </td>
                                         <td>
-                                            <button class="btn btn-primary" type="submit"> Add </button>
+                                        <button class="btn btn-outline-secondary" type="submit">➕</button>
+                                        </td>
+                                        <td>
+                                        <button class="btn btn-outline-secondary" type="button" @onclick="HandleRemoveUserButton">🚫</button>
                                         </td>
                                     </tr>
 
@@ -75,6 +86,9 @@
     private Customer? customer { get; set; }
 
     [Parameter]
+    public EventCallback RemoveUserCallBack { get; set; }
+
+    [Parameter]
     public EventCallback<int> NewCustomerIdCallBack { get; set; } 
 
     private string customerPhoneNoDuplicatedError = string.Empty;
@@ -86,8 +100,12 @@
         customer = new Customer();
     }
 
+    private void HandleRemoveUserButton()
+    {
+        RemoveUserCallBack.InvokeAsync();
+    }
 
-    private void ClearDuplicateCustomerNPhoneNoError()
+    private void ClearDuplicateCustomerPhoneNoError()
     {
         isDuplicateCustomerPhoneNo = false;
         customerPhoneNoDuplicatedError = string.Empty;

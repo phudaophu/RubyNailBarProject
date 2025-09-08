@@ -3,9 +3,9 @@ using System.Collections.Generic;
 
 namespace RubyNailBarWeb.Models;
 
-public partial class Service
+public partial class CustomerService
 {
-    public int ServiceId { get; set; }
+    public int CustomerServiceId { get; set; }
 
     public string? Name { get; set; }
 
@@ -22,6 +22,8 @@ public partial class Service
     public int? AdditionalParameterA { get; set; } = 0;
 
     public string? FormularA { get; set; } = string.Empty;
+
+    public string? ServiceType { get; set; }    
 
     public virtual ICollection<InvoiceDetail> InvoiceDetails { get; set; } = new List<InvoiceDetail>();
 }

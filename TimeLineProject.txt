@@ -85,4 +85,11 @@ process: invoice details pop-up: add table of invoice details
 process: change Service table to CustomerService table, validate CustomerId in Add Edit Invoice page, create InvoiceDetail page in order to add Service
 complete: Add customer in AddEditInvoice
 
+6:15 PM 9/6/2025
+process: create InvoiceDetail page in order to add Service
+complete: change Service table to CustomerService table, validate CustomerId in Add Edit Invoice page
+
+5:06 PM 9/7/2025
+process: phone no do not allow character,  InvoiceDetail page get data from container storage with the value in optional data: ObjectId in form of invoice/{ObjectId}, save invoiceDetailId in selectedRecordId
+complete: deny-access in case invoice id violate by modifying url
 

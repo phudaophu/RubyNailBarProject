@@ -1,11 +1,12 @@
 ﻿@page "/invoice/{id:int?}"
-@page "/invoice-back-from/{id:int?}"
+@* @page "/invoice-back-from/{id:int?}" *@
 
 @inject IInvoicesService InvoicesService
 @inject IUsersService UsersService
 @inject IStoresService StoresService
 @inject ICustomersService CustomersService
 @inject NavigationManager NavigationManager
+@inject ContainerStorage ContainerStorage
 
 @rendermode InteractiveServer
 
@@ -76,14 +77,14 @@ else
                     </InputSelect>
                 </td>
                 <td>
-                    <input type="text" class="form-control" placeholder="PhoneNo | Name" @bind="searchText" disabled="@Id.HasValue" />
+                    <input type="text" class="form-control" placeholder="Enter PhoneNo | Name" @bind="searchText" disabled="@Id.HasValue" />
                     @if (listFoundCustomers?.Any() == true)
                     {
                         <ul class="list-group position-absolute mt-1" style="z-index:1000; width:300px">
 
                             @foreach (var customer in listFoundCustomers)
                             {
-                                <li class="list-group-item list-group-item-action" @onclick="() => HandleSelectCustomer(customer)"> @customer.Name - @customer.PhoneNo</li>
+                                <li class="list-group-item list-group-item-action" @onclick="() => HandleSelectCustomer(customer)"> @customer.Name - @customer.PhoneNo @($"{(customer.Birthday!=null? "- "+customer.Birthday?.ToString("MMM dd"): ""  )}")</li>
                             }
                         </ul>
                      }
@@ -92,7 +93,7 @@ else
                 @if (Id.HasValue)
                 {
                     <td colspan="3">
-                        <button type="button" title="Add Services" class="btn btn-outline-secondary">➕</button>
+                        <button type="button" title="Add Services" class="btn btn-outline-secondary" @onclick="HandleAddInvoiceDetailButton">➕</button>
                     </td>
                 }
                 else
@@ -122,7 +123,7 @@ else
                         }
                     </td>
                     <td>
-                        <button type="button" title="Add Services" class="btn btn-outline-secondary">➕</button>
+                        <button type="button" title="Add Invoice" class="btn btn-outline-secondary" @onclick="HandleAddInvoiceButton" disabled="@(invoice.CustomerId>0 && invoice.StoreId>0 && invoice.ManagerId >0 ?false:true)">✔️</button>
                     </td>
                 }
 
@@ -134,20 +135,24 @@ else
 
     @if(activeAddCustomerSection == true)
     {
-       <AddCustomerFormComponent NewCustomerIdCallBack="HandleNewCustomerId">
-       </AddCustomerFormComponent>
-        <hr>
+        <div class="ms-3">
+
+            <AddCustomerFormComponent NewCustomerIdCallBack="HandleNewCustomerId" RemoveUserCallBack="HandleRemoveAddUserSection">
+            </AddCustomerFormComponent>
+            <hr>
+        </div>
+
     }
 
 
     @if (Id.HasValue)
     {
-        <div class="row">
+        <div class="ms-3">
             <div>
                 <span><i class="bi bi-person">Included Services</i></span>
             </div>
 
-            <div class="table-responsive" style=" max-height: 150px; overflow-y: auto;">
+            <div class="table-responsive" style=" max-height: 350px; overflow-y: auto;">
                 <table class="table table-striped table-hover">
                     <thead class="table-light">
                         <tr style="position:sticky; top:0; z-index:2;">
@@ -167,25 +172,31 @@ else
                                 <span>Tip</span>
                             </th>
                             <th>
-                                <span>Time</span>
+                                <span>Minute</span>
                             </th>
                             <th>
                                 <span>Status</span>
                             </th>
+                            <th>
+                            </th>
+                            <th>
+                            </th>
+                            <th>
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
-                        @*   @if (selectedInvoice.InvoiceDetails != null && selectedInvoice.InvoiceDetails.Any())
+                    @if (invoice.InvoiceDetails != null && invoice.InvoiceDetails.Any())
                     {
 
-                        @foreach (var invoiceDetail in selectedInvoice.InvoiceDetails.OrderBy(id => id.IsFinished).OrderByDescending(id => id.InvoiceDetailId))
+                        @foreach (var invoiceDetail in invoice.InvoiceDetails.OrderBy(id => id.IsFinished).OrderByDescending(id => id.InvoiceDetailId))
                         {
                             <tr class="align-middle">
                                 <td style="cursor:pointer">
                                     @invoiceDetail.InvoiceDetailId
                                 </td>
                                 <td style="cursor:pointer">
-                                    @invoiceDetail.Service?.Name
+                                    @invoiceDetail.CustomerService?.Name
                                 </td>
                                 <td style="cursor:pointer">
                                     <a href=@($"/user-back-from/{invoiceDetail.User?.UserId}")>
@@ -225,6 +236,23 @@ else
                                 <td style="cursor:pointer">
                                     <span class=@($"badge border {(invoiceDetail?.IsFinished == true ? "border-success text-success" : "border-danger text-danger")}")>@(invoiceDetail?.IsFinished == true ? "Finished" : "Not Yet")</span>
                                 </td>
+                                <td>
+                                    @if (invoiceDetail?.IsFinished == false)
+                                    {
+                                            <button type="button" class="btn btn-outline-secondary">🚩</button>
+                                    }
+                                    else
+                                    {
+                                            <button type="button" class="btn btn-outline-secondary">♻️</button>
+
+                                    }
+                                </td>
+                                <td>
+                                        <button type="button" class="btn btn-outline-secondary" @onclick="() => { HandleEditInvoiceDetailButton(invoiceDetail?.InvoiceDetailId);}">✏️</button>
+                                </td>
+                                <td>
+                                        <button type="button" class="btn btn-outline-secondary">❌</button>
+                                </td>
                             </tr>
                         }
                     }
@@ -235,7 +263,7 @@ else
                                 No Data
                             </td>
                         </tr>
-                    } *@
+                    }
 
                     </tbody>
 
@@ -243,22 +271,23 @@ else
             </div>
         </div>
     }
+    <button type="button" class="btn btn-primary" @onclick="HandleBackButton">Back</button>
 
- 
 }
-
-
-
-
 
 
 
 @code {
 
     [Parameter]
+    public string? Path { get; set; }
+
+    [Parameter]
     public int? Id { get; set; }
 
-    //private bool isCustomerSelected = false;
+    private string currentPath = string.Empty;
+
+    private int selectedInvoiceId;
 
     private bool activeAddCustomerSection = false;
 
@@ -273,6 +302,51 @@ else
     private Customer? selectedCustomerInfo = new Customer();
 
     private List<Customer>? listFoundCustomers = new List<Customer>();
+
+    private void HandleAddInvoiceDetailButton()
+    {
+        NavigationManager.NavigateTo("invoice-detail");
+    }
+
+    private void HandleEditInvoiceDetailButton(int? invoiceDetailId)
+    {
+        if (invoiceDetailId > 0)
+        {
+            //Container Storage
+            NavigationManager.NavigateTo($"/invoice-detail/{invoiceDetailId}");
+        }
+    }
+
+    private void HandleBackButton()
+    {
+        if (currentPath.Contains("back-from", StringComparison.OrdinalIgnoreCase))
+        {
+            var previousPath = ContainerStorage.GetSavePaginaionPath();
+            NavigationManager.NavigateTo($"/{previousPath}");
+        }
+        else
+        {
+            NavigationManager.NavigateTo("/invoices");
+        }
+    }
+
+    private void HandleAddInvoiceButton()
+    {
+        if( invoice is not null && invoice.CustomerId > 0 && invoice.StoreId > 0 && invoice.ManagerId > 0)
+        {
+            int newInvoiceId = InvoicesService.AddInvoiceService(invoice);
+
+            ContainerStorage.ResetPaginationData(currentPath);
+            ContainerStorage.SetSelectedRecordId("invoices", newInvoiceId);
+
+            NavigationManager.NavigateTo($"/invoice/{newInvoiceId}");
+        }
+    }
+
+    private void HandleRemoveAddUserSection()
+    {
+        activeAddCustomerSection = false;
+    }
 
     private void HandleNewCustomerId(int newCustomerId)
     {
@@ -316,15 +390,16 @@ else
             listFoundCustomers?.Clear();
         }
     }
+
     private void HandleSelectCustomer(Customer customer)
     { 
         if (customer is not null && invoice is not null)
         {
             searchText = $"{customer.Name} - {customer.PhoneNo}";
+
             invoice.CustomerId = customer.CustomerId;
             listFoundCustomers?.Clear();
         }
-
 
     }
 
@@ -339,24 +414,46 @@ else
 
         }
 
-
     }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if(firstRender)
+        {
+            selectedInvoiceId = ContainerStorage.GetLastSelectedRecordId("invoices");
+
+            if (this.Id.HasValue && selectedInvoiceId > 0 && this.Id.Value != selectedInvoiceId)
+                NavigationManager.NavigateTo("/deny-access");
+
+            if (this.Id.HasValue)
+            {
+                currentPath = NavigationManager.ToBaseRelativePath(NavigationManager.Uri).Split('?', '#')[0];
+
+                ContainerStorage.SetSavePaginationPath(currentPath);
+
+                ContainerStorage.SetOptionalData(currentPath, "ObjectId", this.Id.Value);
+            }
+
+        }
+    }
+
+
+
 
     protected override void OnParametersSet()
     {
         if (this.Id.HasValue)
         {
-
             invoice ??= InvoicesService.GetInvoiceByIdService(this.Id.Value);
             if (invoice is not null)
             {
-                if (invoice.CustomerId.HasValue)
+                if (invoice.CustomerId > 0)
                 {
                     selectedCustomerInfo = CustomersService.GetCustomerByIdService(invoice.CustomerId.Value);
 
                     searchText = $"{selectedCustomerInfo?.Name} - {selectedCustomerInfo?.PhoneNo}";
                 }
-                if (invoice.StoreId.HasValue)
+                if (invoice.StoreId >0)
                 {
                     listManagers = UsersService.getManagerListByStoreIdService(invoice.StoreId.Value);
                 }
@@ -383,28 +480,6 @@ else
 
     }
 
-    private void HandleSearchCustomerButton()
-    {
-        
-    }
-
-    private void SubmitFunc()
-    {
-        
-    }
 
 
-    // private void OnSelectStoreChanged(int e)
-    // {
-    //     this.selectedStoreId = e;
-    //     if(e > 0)
-    //     {
-    //         listManagers = UsersService.getManagerListByStoreIdService(selectedStoreId);
-    //     }
-    //     else
-    //     {
-    //         listManagers = new List<User>();
-    //     }
-    //     this.selectedManagerId = 0;
-    // }
 }

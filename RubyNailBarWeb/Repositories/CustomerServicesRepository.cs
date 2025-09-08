@@ -3,19 +3,19 @@ using RubyNailBarWeb.Models;
 
 namespace RubyNailBarWeb.Repositories
 {
-    public class ServicesRepository
+    public class CustomerServicesRepository
     {
         private readonly IDbContextFactory<NailsDbContext> contextFactory;
 
-        public ServicesRepository(IDbContextFactory<NailsDbContext> _contextFactory)
+        public CustomerServicesRepository(IDbContextFactory<NailsDbContext> _contextFactory)
         {
             this.contextFactory = _contextFactory;
         }
 
-        public List<Service> GetServices()
+        public List<CustomerService> GetCustomerServices()
         {
             using var db = this.contextFactory.CreateDbContext();
-            return db.Services.ToList();
+            return db.CustomerServices.ToList();
         }
 
 

@@ -9,7 +9,7 @@ public partial class InvoiceDetail
 
     public int? InvoiceId { get; set; }
 
-    public int? ServiceId { get; set; }
+    public int? CustomerServiceId { get; set; }
 
     public int? UserId { get; set; }
 
@@ -31,7 +31,7 @@ public partial class InvoiceDetail
 
     public virtual Invoice? Invoice { get; set; }
 
-    public virtual Service? Service { get; set; }
+    public virtual CustomerService? CustomerService { get; set; }
 
     public virtual ICollection<TipLog> TipLogs { get; set; } = new List<TipLog>();
 

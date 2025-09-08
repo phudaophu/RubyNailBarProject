@@ -239,9 +239,8 @@ else
         }
         else
         {
-            customer ??= new Customer() { Points = 0, CreatedDatetime = DateTime.Now };
-            //isEditUserName = true;
-            //listStore = StoresService.GetStores().Where(x => x.IsActive == true).ToList();
+            //customer ??= new Customer() { Points = 0, CreatedDatetime = DateTime.Now };
+            customer ??= new Customer() { };
         }
     }
 

@@ -32,7 +32,7 @@ builder.Services.AddScoped<UserGroupRepository>();
 builder.Services.AddScoped<CustomersRepository>();
 builder.Services.AddScoped<InvoicesRepository>();
 builder.Services.AddScoped<InvoiceDetailsRepository>();
-builder.Services.AddScoped<ServicesRepository>();
+builder.Services.AddScoped<CustomerServicesRepository>();
                 
 builder.Services.AddTransient<IUsersService, UsersService>();
 builder.Services.AddTransient<IStoresService, StoresService>();

@@ -34,7 +34,7 @@ namespace RubyNailBarWeb.Repositories
                 .Include(i => i.Manager)
                 .Include(i => i.Store)
                 .Include(i => i.Customer)
-                .Include(i => i.InvoiceDetails).ThenInclude(i => i.Service)
+                .Include(i => i.InvoiceDetails).ThenInclude(i => i.CustomerService)
                 .Include(i => i.InvoiceDetails).ThenInclude(i => i.User)
                 .Where(i => i != null && i.IsDeleted == false)
                 .OrderByDescending(i => i.CreatedDatetime)
@@ -55,8 +55,14 @@ namespace RubyNailBarWeb.Repositories
         public Invoice? GetInvoiceById(int invoiceId)
         {
             using var db = this.contextFactory.CreateDbContext();
-            var invoice = db.Invoices.Find(invoiceId);
-            if (invoice is not null && invoice.IsDeleted == false)
+            var invoice = db.Invoices.Include(i => i.Manager)
+                                    .Include(i => i.Store)
+                                    .Include(i => i.Customer)
+                                    .Include(i => i.InvoiceDetails).ThenInclude(i => i.CustomerService)
+                                    .Include(i => i.InvoiceDetails).ThenInclude(i => i.User)
+                                    .SingleOrDefault(i => i.InvoiceId == invoiceId);
+            //  invoice.IsDeleted==false
+            if (invoice is not null)
             {
                 return invoice;
             }

@@ -1,0 +1,155 @@
+﻿@page "/invoice-detail/{id:int?}"
+
+
+@inject IInvoiceDetailsService InvoiceDetailsService
+@inject ContainerStorage ContainerStorage
+@inject IInvoicesService InvoicesService
+
+@if (this.Id.HasValue)
+{
+    <h3>Edit Invoice Detail</h3>
+}
+else
+{
+    <h3>Add New Invoice Detail </h3>
+}
+
+@if (invoiceDetail is not null)
+{
+    <EditForm Model="invoiceDetail" FormName="invoiceDetailForm" OnValidSubmit="SubmitFunc">
+        <DataAnnotationsValidator></DataAnnotationsValidator>
+        <div class="container">
+            <form class="form-horizontal">
+                <div class="row">
+                    <div class="col-sm-12 col-sm-offset-1">
+                        <div class="row row-centered">
+                            <div class="col-xs-12 col-sm-6 col-centered">
+                                <FieldComponent Label="Invoice Id">
+                                    <Control>
+                                        <InputNumber @bind-Value="invoiceDetail.InvoiceDetailId" disabled></InputNumber>
+                                    </Control>
+                                </FieldComponent>
+
+                                <FieldComponent Label="Store">
+                                    <Control>
+                                        @* <InputNumber @bind-Value="invoiceDetail.ServiceFee"></InputNumber> *@
+                                    </Control>
+                                </FieldComponent>
+                            </div>
+
+                            <div class="col-xs-12 col-sm-6 col-centered">
+                                <FieldComponent Label="Manager">
+                                    <Control>
+                                        @*  <InputNumber @bind-Value="invoiceDetail.ServiceFee"></InputNumber> *@
+                                    </Control>
+                                </FieldComponent>
+
+                                <FieldComponent Label="Customer">
+                                    <Control>
+                                        @*  <InputNumber @bind-Value="invoiceDetail.ServiceFee"></InputNumber> *@
+                                    </Control>
+                                </FieldComponent>
+                            </div>
+
+                        </div>
+                        <hr>
+                        <div class="row row-centered">
+                            <div class="col-xs-12 col-sm-6 col-centered">
+                                <FieldComponent Label="Service Type">
+                                    <Control>
+                                      @*   <InputNumber @bind-Value="invoiceDetail.CustomerService.ServiceType"></InputNumber> *@
+                                    </Control>
+                                </FieldComponent>
+
+                                <FieldComponent Label="Service Name">
+                                    <Control>
+@*                                         <InputNumber @bind-Value="invoiceDetail.CustomerService.Name"></InputNumber>
+ *@                                 </Control>
+                                </FieldComponent>
+
+                            </div>
+
+                            <div class="col-xs-12 col-sm-6 col-centered">
+                                <FieldComponent Label="Service Fee">
+                                    <Control>
+                                        <InputNumber @bind-Value="invoiceDetail.ServiceFee"></InputNumber>
+                                    </Control>
+                                </FieldComponent>
+
+                                <FieldComponent Label="Tip Fee">
+                                    <Control>
+                                        <InputNumber @bind-Value="invoiceDetail.Tip"></InputNumber>
+                                    </Control>
+                                </FieldComponent>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <button class="btn btn-primary" type="button" @onclick="() => HandleBackButton()">Back</button>
+        &nbsp;
+        <button class="btn btn-primary" type="submit"> @(Id.HasValue == true ? "Update" : "Add") </button>
+
+
+    </EditForm>
+
+}
+
+
+
+
+
+
+
+@code {
+    [Parameter]
+    public int? Id { get; set; }
+
+    [SupplyParameterFromForm]
+    public InvoiceDetail? invoiceDetail { get; set; }
+
+    private int invoiceId;
+
+
+    protected override void OnParametersSet()
+    {
+        if (this.Id.HasValue)
+        {
+            invoiceDetail = InvoiceDetailsService.GetValidInvoiceDetailByIdService(this.Id.Value);
+        }
+        else
+        {
+            invoiceDetail = new InvoiceDetail();
+        }
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if(firstRender)
+        {
+            if (ContainerStorage.GetOptionalData("invoice").Count >= 0 && ContainerStorage.GetOptionalData("invoice").Keys.Contains("ObjectId"))
+            {
+                invoiceId = ContainerStorage.GetOptionalData("invoice")["ObjectId"];
+            }
+            
+        }
+    }
+
+
+    private void HandleBackButton()
+    {
+        
+    }
+
+    private void SubmitFunc()
+    {
+        
+    }
+
+
+
+
+}

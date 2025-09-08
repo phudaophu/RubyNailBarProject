@@ -6,7 +6,7 @@
 @inject FileUploadService FileUploadService
 @inject ContainerStorage ContainerStorage
 @inject IJSRuntime JSRuntime
-
+@inject NavigationManager NavigationManager
 
 <div class="table-responsive" style=" max-height: 450px; overflow-y: auto;">
     <table class="table table-striped table-hover">
@@ -37,8 +37,7 @@
                 <th>
                 </th>
 
-                <th>
-                </th>
+
             </tr>
         </thead>
         <tbody>
@@ -73,11 +72,7 @@
                         </td>
 
                         <td>
-                            <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-0 text-nowrap" @onclick="(e) => HandleEditButton(invoice.InvoiceId)">Edit</button> 
-                        </td>
-
-                        <td>
-                            <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-0 text-nowrap" @onclick="(e) => HandleEditButton(invoice.InvoiceId)">Details</button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-0 text-nowrap" @onclick="(e) => HandleInvoiceDetailButton(invoice.InvoiceId)">Details</button>
                         </td>
 
                         <td>
@@ -225,7 +220,7 @@
                                                             @invoiceDetail.InvoiceDetailId
                                                         </td>
                                                         <td style="cursor:pointer">
-                                                            @invoiceDetail.Service?.Name
+                                                            @invoiceDetail.CustomerService?.Name
                                                         </td>
                                                         <td style="cursor:pointer">
                                                             <a href=@($"/user-back-from/{invoiceDetail.User?.UserId}")>
@@ -401,12 +396,19 @@
     private int selectedInvoiceId = 0;
 
 
-
-    private List<Store>   listStores   = new List<Store>();
+    private List<Store> listStores = new List<Store>();
 
     // -     -   -   -   -   -   -   -   -   //
 
-
+    private void HandleInvoiceDetailButton(int invoiceId)
+    {
+        if (invoiceId > 0)
+        {
+            selectedInvoiceId = invoiceId;
+            ContainerStorage.SetSelectedRecordId(CurrentPath, invoiceId);
+            NavigationManager.NavigateTo($"/invoice/{invoiceId}");
+        }
+    }
 
     protected override void OnParametersSet()
     {
@@ -588,6 +590,7 @@
             this.PageSize = ContainerStorage.GetLastPageSize(CurrentPath);
             this.CurrentPage = ContainerStorage.GetLastCurrentPage(CurrentPath);
             this.selectedInvoiceId = ContainerStorage.GetLastSelectedRecordId(CurrentPath);
+
 
             UpdateInvoiceSorting(sortingByColumn);
             UpdatePagedInvoices();

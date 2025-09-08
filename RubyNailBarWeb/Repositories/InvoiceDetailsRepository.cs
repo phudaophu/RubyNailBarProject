@@ -14,6 +14,25 @@ namespace RubyNailBarWeb.Repositories
             this.contextFactory = _contextFactory;
         }
 
+        public InvoiceDetail? GetValidInvoiceDetailById(int invoiceDetailId)
+        {
+            using var db = this.contextFactory.CreateDbContext();
+            var invoiceDetail = db.InvoiceDetails.Include(id => id.User)
+                                                 .Include(id => id.CustomerService)
+                                                .Where(id => id.IsDeleted == false)
+                                                .Where(id => id.InvoiceDetailId == invoiceDetailId)
+                                                .SingleOrDefault(id => id.InvoiceDetailId == invoiceDetailId);
+            if (invoiceDetail is not null)
+            {
+                return invoiceDetail;
+            }
+            else
+            {
+                return new InvoiceDetail();
+
+            }
+        }
+
         public int AddInvoiceDetail(InvoiceDetail invoiceDetail)
         {
             using var db = this.contextFactory.CreateDbContext();
@@ -36,7 +55,7 @@ namespace RubyNailBarWeb.Repositories
             if (invoiceDetailToUpdate != null)
             {
                 invoiceDetailToUpdate.InvoiceId  = invoiceDetail.InvoiceId;
-                invoiceDetailToUpdate.ServiceId  = invoiceDetail.ServiceId;
+                invoiceDetailToUpdate.CustomerServiceId  = invoiceDetail.CustomerServiceId;
                 invoiceDetailToUpdate.UserId     = invoiceDetail.UserId;
                 invoiceDetailToUpdate.ServiceFee = invoiceDetail.ServiceFee;
                 invoiceDetailToUpdate.Tip        = invoiceDetail.Tip;  
@@ -72,7 +91,7 @@ namespace RubyNailBarWeb.Repositories
             using var db = this.contextFactory.CreateDbContext();
             IQueryable<InvoiceDetail> invoiceQuery = db.InvoiceDetails.AsNoTracking()
                                                                         .Include(id => id.User)
-                                                                        .Include(id => id.Service)
+                                                                        .Include(id => id.CustomerService)
                                                                          .Where(id => id.IsDeleted == false)
                                                                           .Where(id => id.InvoiceId == invoiceId);
             return invoiceQuery.ToList();

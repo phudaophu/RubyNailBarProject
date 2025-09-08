@@ -31,7 +31,7 @@ public partial class NailsDbContext : DbContext
 
     public virtual DbSet<PaymentMethod> PaymentMethods { get; set; }
 
-    public virtual DbSet<Service> Services { get; set; }
+    public virtual DbSet<CustomerService> CustomerServices { get; set; }
 
     public virtual DbSet<Store> Stores { get; set; }
 
@@ -194,8 +194,8 @@ public partial class NailsDbContext : DbContext
                 .HasForeignKey(d => d.InvoiceId)
                 .HasConstraintName("FK__InvoiceDe__Invoi__37A5467C");
 
-            entity.HasOne(d => d.Service).WithMany(p => p.InvoiceDetails)
-                .HasForeignKey(d => d.ServiceId)
+            entity.HasOne(d => d.CustomerService).WithMany(p => p.InvoiceDetails)
+                .HasForeignKey(d => d.CustomerServiceId)
                 .HasConstraintName("FK__InvoiceDe__Servi__38996AB5");
 
             entity.HasOne(d => d.User).WithMany(p => p.InvoiceDetails)
@@ -212,11 +212,11 @@ public partial class NailsDbContext : DbContext
             entity.Property(e => e.Name).HasMaxLength(50);
         });
 
-        modelBuilder.Entity<Service>(entity =>
+        modelBuilder.Entity<CustomerService>(entity =>
         {
-            entity.HasKey(e => e.ServiceId).HasName("PK__Service__C51BB00A0C27E12C");
+            entity.HasKey(e => e.CustomerServiceId).HasName("PK__Service__C51BB00A0C27E12C");
 
-            entity.ToTable("Service");
+            entity.ToTable("CustomerService");
 
             entity.Property(e => e.Description)
                 .HasMaxLength(200)
@@ -224,6 +224,7 @@ public partial class NailsDbContext : DbContext
             entity.Property(e => e.Fee).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.Name).HasMaxLength(200);
             entity.Property(e => e.VnName).HasMaxLength(200);
+            entity.Property(e=>e.ServiceType).HasMaxLength(50);
         });
 
         modelBuilder.Entity<Store>(entity =>
