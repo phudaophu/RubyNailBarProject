@@ -242,7 +242,7 @@
         selectedCustomer = customer;
         selectedCustomerId = customer.CustomerId;
         ContainerStorage.SetSelectedRecordId(CurrentPath, customer.CustomerId);
-        
+
         await Task.Delay(100);
 
         await JSRuntime.InvokeVoidAsync("bootstrapInterop.showModal", "#userDetailModal");
@@ -495,11 +495,12 @@
         if (isFirstRender == false)
         {
             this.SeachingCustomersData = ContainerStorage.GetLastSearchedText(CurrentPath);
-            if (ContainerStorage.GetOptionalData(CurrentPath).Count >= 0 && ContainerStorage.GetOptionalData(CurrentPath).Keys.Contains("SelectedBirthdayMonth"))
-            {
-                _selectedBirthdayMonth = ContainerStorage.GetOptionalData(CurrentPath)["SelectedBirthdayMonth"];
 
+            if (ContainerStorage.CheckElementOptionalDataExist(CurrentPath, "SelectedBirthdayMonth"))
+            {
+                _selectedBirthdayMonth = ContainerStorage.GetElementOptionalData<int>(CurrentPath, "SelectedBirthdayMonth");
             }
+
 
             if (listCustomers is not null && listCustomers?.Count >= 0)
             {
@@ -551,11 +552,10 @@
 
             isFirstRender = false;
             this.SeachingCustomersData = ContainerStorage.GetLastSearchedText(CurrentPath);
-            if (ContainerStorage.GetOptionalData(CurrentPath).Count >= 0 && ContainerStorage.GetOptionalData(CurrentPath).Keys.Contains("SelectedBirthdayMonth"))
-            {
 
-                this._selectedBirthdayMonth = ContainerStorage.GetOptionalData(CurrentPath)["SelectedBirthdayMonth"];
-               
+            if (ContainerStorage.CheckElementOptionalDataExist(CurrentPath, "SelectedBirthdayMonth"))
+            {
+                _selectedBirthdayMonth = ContainerStorage.GetElementOptionalData<int>(CurrentPath, "SelectedBirthdayMonth");
             }
 
             if (listCustomers is not null && listCustomers?.Count >= 0)

@@ -93,3 +93,23 @@ complete: change Service table to CustomerService table, validate CustomerId in 
 process: phone no do not allow character,  InvoiceDetail page get data from container storage with the value in optional data: ObjectId in form of invoice/{ObjectId}, save invoiceDetailId in selectedRecordId
 complete: deny-access in case invoice id violate by modifying url
 
+1:21 AM 9/10/2025
+process: invoice detail page
+complete: add payment method selection to add edit invoice 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

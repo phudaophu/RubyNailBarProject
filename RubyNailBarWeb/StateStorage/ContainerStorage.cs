@@ -9,18 +9,21 @@ namespace RubyNailBarWeb.StateStorage
         
         public ContainerStorage() { }
 
-        private PaginationData paginationIndexPage { set; get; } = new PaginationData();
-        private PaginationData paginationUsersPage { set; get; } = new PaginationData();
-        private PaginationData paginationCustomersPage { set; get; } = new PaginationData();
-        private PaginationData paginationInvoicesPage { set; get; } = new PaginationData();
-        private PaginationData paginationInvoicePage { set;get; } = new PaginationData();
-        private List<string> allowedToResetPaginationDataPathList { set; get; } = new List<string>() { "", "users", "customers", "invoices", "invoice" };
+        private  PaginationData paginationIndexPage { set; get; } = new PaginationData();
+        private  PaginationData paginationUsersPage { set; get; } = new PaginationData();
+        private  PaginationData paginationCustomersPage { set; get; } = new PaginationData();
+        private  PaginationData paginationInvoicesPage { set; get; } = new PaginationData();
+        private  PaginationData paginationInvoicePage { set;get; } = new PaginationData();
+        private  List<string> allowedToResetPaginationDataPathList { set; get; } = new List<string>() { "", "users", "customers", "invoices", "invoice" };
 
-        private List<string> subPathList { set; get; } = new List<string>() { "invoice" };
+        private Dictionary<string, List<string>> subPathList { set; get; } = new Dictionary<string, List<string>>()
+        {
+            {"invoice", new List<string>(){ "invoices"} }
+
+        };
 
         private string savedPaginationPath { set; get; } = string.Empty;
 
-        
         private PaginationData PaginationSelector(string currentPath)
         {
             if (!string.IsNullOrEmpty(currentPath))
@@ -43,21 +46,27 @@ namespace RubyNailBarWeb.StateStorage
             return new PaginationData() { };
         }
        
-        public bool CheckOptionalDataExist(string currentPath)
+        public bool CheckAnyOptionalDataExist(string currentPath)
         {
             var paginationData = PaginationSelector(currentPath);
-            if (paginationData.optionalFilterDataDict.Count > 0)
+            if (paginationData.CheckAnyOptionalDataFromDictExist())
             {
-                foreach (var key in paginationData.optionalFilterDataDict.Keys.ToList())
-                {
-                   if( paginationData.optionalFilterDataDict[key] > 0)
-                    {
-                        return true;
-                    }
-                }
+
+                return true;
             }
             return false;   
         }
+
+        public bool CheckElementOptionalDataExist(string currentPath, string key)
+        {
+            var paginationData = PaginationSelector(currentPath);
+            if (paginationData.CheckElementOptionalDataFromDictExist(key))
+            {
+                return true;
+            }
+            return false;
+        }
+
 
         public void SetSavePaginationPath(string currentPath)
         {
@@ -70,13 +79,20 @@ namespace RubyNailBarWeb.StateStorage
         public string GetSavePaginaionPath()
         {
 
-            if (subPathList.Any(path => path.Equals(this.savedPaginationPath, StringComparison.OrdinalIgnoreCase)))
+            if (subPathList.Keys.Any(path => path.Equals(this.savedPaginationPath, StringComparison.OrdinalIgnoreCase)))
             {
-                if (this.GetOptionalData(savedPaginationPath).Count >= 0 && this.GetOptionalData(savedPaginationPath).Keys.Contains("ObjectId"))
+                //if (this.GetOptionalData(savedPaginationPath).Count >= 0 && this.GetOptionalData(savedPaginationPath).Keys.Contains("ObjectId"))
+                //{
+                //    var objectId = this.GetOptionalData(savedPaginationPath)["ObjectId"];
+                //    return $"{savedPaginationPath}/{objectId}";
+                //}
+
+                if(this.CheckElementOptionalDataExist(savedPaginationPath, "ObjectId"))
                 {
-                   var objectId = this.GetOptionalData(savedPaginationPath)["ObjectId"];
+                    var objectId = this.GetElementOptionalData<int>(savedPaginationPath, "ObjectId");
                     return $"{savedPaginationPath}/{objectId}";
                 }
+
             }
 
             return this.savedPaginationPath;
@@ -87,30 +103,36 @@ namespace RubyNailBarWeb.StateStorage
             if ( !savedPaginationPath.Equals(currentPath, StringComparison.OrdinalIgnoreCase)
                     && allowedToResetPaginationDataPathList.Any(p => p.Equals(currentPath, StringComparison.OrdinalIgnoreCase)))
             {
-                var paginationData = PaginationSelector(savedPaginationPath);
-                if (paginationData.optionalFilterDataDict.Count > 0)
-                {
-                    foreach (var key in paginationData.optionalFilterDataDict.Keys.ToList())
+                ResetDataFunction(savedPaginationPath);
+
+                if (subPathList.Keys.Any(s => s.Equals(savedPaginationPath, StringComparison.OrdinalIgnoreCase))
+                   && !subPathList[savedPaginationPath].Any(p =>p.Equals(currentPath, StringComparison.OrdinalIgnoreCase)))
                     {
-                        paginationData.optionalFilterDataDict[key] = 0;
+                        subPathList[savedPaginationPath].ForEach(ResetDataFunction);
                     }
-                }
-                paginationData.currentPage = 1;
-                paginationData.totalPages = 1;
-                paginationData.pageSize = 5;
-
-                if (!string.IsNullOrWhiteSpace(paginationData.searchedText))
-                    paginationData.searchedText = string.Empty;
-
-                if (paginationData.selectedRecordId != 0)
-                    paginationData.selectedRecordId = 0;
-
+   
                 this.savedPaginationPath = currentPath;
             }
         }
         
+        public void ResetDataFunction(string path)
+        {
+            var paginationData = PaginationSelector(path);
 
-        public void SetPaginationData(string currentPath ,int currentPage, int totalPages, int pageSize, int? selectedRecordId=null, string? searchedText = null, Dictionary<String,int>? optionalData = null )
+            paginationData.ResetOptionalDataFromDict();
+            paginationData.currentPage = 1;
+            paginationData.totalPages = 1;
+            paginationData.pageSize = 5;
+
+            if (!string.IsNullOrWhiteSpace(paginationData.searchedText))
+                paginationData.searchedText = string.Empty;
+
+            if (paginationData.selectedRecordId != 0)
+                paginationData.selectedRecordId = 0;
+        } 
+
+
+        public void SetPaginationData(string currentPath ,int currentPage, int totalPages, int pageSize, int? selectedRecordId=null, string? searchedText = null, Dictionary<String,Object?>? optionalData = null )
         {
             var paginationData = PaginationSelector(currentPath);
             paginationData.currentPage = currentPage;
@@ -126,27 +148,36 @@ namespace RubyNailBarWeb.StateStorage
             }
             if (optionalData != null) 
             {
-                paginationData.optionalFilterDataDict = optionalData;
+                //paginationData.optionalFilterDataDict = optionalData;
+                paginationData.SetOptionalFilterDataDict(optionalData);
             }
         }
 
-        public void SetOptionalData(string currentPath,string keyName, int value)
+        public void SetOptionalData(string currentPath,string keyName, Object? value)
         {
-            if (value >= 0)
+            if (value is not null)
             {
-                PaginationSelector(currentPath).optionalFilterDataDict[keyName] = value;
+                PaginationSelector(currentPath).SetOptionalDataFromDict(keyName, value);
             }
         }
 
-        public Dictionary<string,int> GetOptionalData(string currentPath)
+        
+        public T GetElementOptionalData<T>(string currentPath, string keyName)
         {
-            var optionalDataDict = PaginationSelector(currentPath).optionalFilterDataDict;
-            if (optionalDataDict.Count > 0)
-            {
-                return optionalDataDict;
-            }
-            return new Dictionary<string, int>();
+
+            var p = PaginationSelector(currentPath);
+
+            return p.TryGetElementOptionalDataFromDict<T>(keyName, out var value)
+                ? value
+                : default!;
+
         }
+
+        public Dictionary<string,Object?> GetOptionalData(string currentPath)
+        {
+            return PaginationSelector(currentPath).GetOptionalFilterDataDict();
+        }
+
 
 
         public void SetSearchedText(string currentPath, string keyword)
@@ -207,14 +238,17 @@ namespace RubyNailBarWeb.StateStorage
 
     public class PaginationData
     {
-        public Dictionary<string, int> optionalFilterDataDict { get; set; } = new Dictionary<string, int>();
+        //public Dictionary<string, int> optionalFilterDataDict { get; set; } = new Dictionary<string, int>();
+
+        private Dictionary<string, Object?> optionalFilterDataDict { get; set; } = new Dictionary<string, Object?>();
+
         public string searchedText { get; set; } = string.Empty;
         public int selectedRecordId { get; set; } = 0;  
         public int currentPage { get; set; } = 1;
         public int totalPages { get; set; } = 1;
         public int pageSize { get; set; } = 5;
         public PaginationData() { }
-        public PaginationData( int currentPage, int totalPages, int pageSize, int selectedRecordId,string searchedText, Dictionary<string,int> optionalFilterDataDict)
+        public PaginationData( int currentPage, int totalPages, int pageSize, int selectedRecordId,string searchedText, Dictionary<string,Object?> optionalFilterDataDict)
         {
             this.currentPage = currentPage;
             this.totalPages = totalPages;
@@ -223,5 +257,80 @@ namespace RubyNailBarWeb.StateStorage
             this.searchedText = searchedText;
             this.optionalFilterDataDict = optionalFilterDataDict;   
         }
+
+        public Dictionary<string, Object?> GetOptionalFilterDataDict()
+        {
+            if (CheckAnyOptionalDataFromDictExist())
+            {
+                return this.optionalFilterDataDict;
+
+            }
+            return new Dictionary<string, object?>();
+        }
+
+        public void SetOptionalFilterDataDict(Dictionary<string, Object?> optionalFilterDataDict)
+        {
+            this.optionalFilterDataDict = optionalFilterDataDict;
+        }
+
+        public void ResetOptionalDataFromDict()
+        {
+            if (this.CheckAnyOptionalDataFromDictExist())
+            {
+                // test Clear() method instead of Set each element null
+                //this.optionalFilterDataDict.Clear();
+                // 
+                foreach (var key in this.optionalFilterDataDict.Keys.ToList())
+                {
+                    this.optionalFilterDataDict[key] = null;
+                }
+            }
+        }
+
+        public bool CheckElementOptionalDataFromDictExist(string key)
+        {
+            if (CheckAnyOptionalDataFromDictExist())
+            {
+                if (!String.IsNullOrEmpty(key) && this.optionalFilterDataDict.Keys.Contains(key))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public bool CheckAnyOptionalDataFromDictExist()
+        {
+            if (this.optionalFilterDataDict != null && this.optionalFilterDataDict.Count > 0)
+            {
+                return true;
+            }
+            return false;
+        }
+
+        public void SetOptionalDataFromDict<T>(string key, T value) => this.optionalFilterDataDict[key] = value;
+
+        public T GetElementOptionalDataFromDict<T>(string keyName, out T value)
+        {
+            if (this.optionalFilterDataDict.TryGetValue(keyName, out var obj) && obj is T t)
+            {
+                value = t;
+                return value;
+            }
+            value = default!;
+            return value;
+
+        }
+        public bool TryGetElementOptionalDataFromDict<T>(string keyName, out T value)
+        {
+            if (this.optionalFilterDataDict.TryGetValue(keyName, out var obj) && obj is T t)
+            {
+                value = t;
+                return true;
+            }
+            value = default!;
+            return false;
+        }
+
     }
 }

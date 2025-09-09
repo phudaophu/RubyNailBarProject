@@ -76,10 +76,17 @@
             currentPath = NavigationManager.ToBaseRelativePath(NavigationManager.Uri).Split('?', '#')[0];
             ContainerStorage.ResetPaginationData(currentPath);
 
-            if (ContainerStorage.GetOptionalData(currentPath).Count >= 0 && ContainerStorage.GetOptionalData(currentPath).Keys.Contains("SelectedBirthdayMonth"))
+            // if (ContainerStorage.GetOptionalData(currentPath).Count >= 0 && ContainerStorage.GetOptionalData(currentPath).Keys.Contains("SelectedBirthdayMonth"))
+            // {
+            //     _selectedBirthdayMonth = ContainerStorage.GetOptionalData(currentPath)["SelectedBirthdayMonth"];
+            // }
+
+            if (ContainerStorage.CheckElementOptionalDataExist(currentPath, "SelectedBirthdayMonth"))
             {
-                _selectedBirthdayMonth = ContainerStorage.GetOptionalData(currentPath)["SelectedBirthdayMonth"];
+                _selectedBirthdayMonth = ContainerStorage.GetElementOptionalData<int>(currentPath, "SelectedBirthdayMonth");
             }
+            
+
             StateHasChanged();
 
         }

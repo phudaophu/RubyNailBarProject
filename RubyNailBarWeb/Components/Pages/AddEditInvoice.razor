@@ -7,8 +7,10 @@
 @inject ICustomersService CustomersService
 @inject NavigationManager NavigationManager
 @inject ContainerStorage ContainerStorage
-
+@inject IPaymentMethodsService PaymentMethodsService
 @rendermode InteractiveServer
+
+
 
 @if (Id.HasValue)
 {
@@ -29,6 +31,9 @@ else
                 </th>
                 <th>
                     Manager
+                </th>
+                <th>
+                    Payment
                 </th>
                 <th>
                     Customer
@@ -63,14 +68,36 @@ else
                     </InputSelect>
                 </td>
                 <td>
-                    <InputSelect class="form-select" @bind-Value="invoice.ManagerId">
+                  @*   <InputSelect class="form-select" @bind-Value="invoice.ManagerId"> *@
+                        <InputSelect class="form-select" TValue="int?"
+                                 Value="invoice.ManagerId"
+                                     ValueChanged="@( (int? e) => {OnSelectManagerChanged(e);} )"
+                                     ValueExpression="@(() => invoice.ManagerId)">
+
                         <option value="0" disabled selected>--Select Manager--</option>
                         @if (listManagers != null && listManagers.Any())
                         {
                             @foreach (var manager in listManagers)
                             {
-                                <option value="@manager.UserId" disabled="@Id.HasValue">@manager.FirstName @manager.LastName</option>
+                                <option value="@manager.UserId">@manager.FirstName @manager.LastName</option>
 
+                            }
+
+                        }
+                    </InputSelect>
+                </td>
+                <td>
+@*                     <InputSelect class="form-select" @bind-Value="invoice.PaymentMethodId">
+ *@                        <InputSelect class="form-select" TValue="int?"
+                                     Value="invoice.PaymentMethodId"
+                                     ValueChanged="@( (int? e) => {OnSelectPaymentMethodChanged(e);} )"
+                                     ValueExpression="@(() => invoice.PaymentMethodId)">
+
+                        @if (listPaymentMethod != null && listPaymentMethod.Any())
+                        {
+                            @foreach (var paymentMethod in listPaymentMethod)
+                            {
+                                <option value="@paymentMethod.PaymentMethodId">@paymentMethod.Name</option>
                             }
 
                         }
@@ -92,9 +119,20 @@ else
 
                 @if (Id.HasValue)
                 {
-                    <td colspan="3">
-                        <button type="button" title="Add Services" class="btn btn-outline-secondary" @onclick="HandleAddInvoiceDetailButton">➕</button>
-                    </td>
+                    @if (isManagerChanged || isPaymentMethodChanged)
+                    {
+                        <td colspan="3">
+                            <button type="button" title="Update Invoice" class="btn btn-outline-secondary" @onclick="HandleUpdateInvoiceButton">💾</button>
+                        </td>
+                    }
+                    else
+                    {
+                        <td colspan="3">
+                            <button type="button" title="Add Services" class="btn btn-outline-secondary" @onclick="HandleAddInvoiceDetailButton">➕</button>
+                        </td>
+                    }
+
+
                 }
                 else
                 {
@@ -248,7 +286,7 @@ else
                                     }
                                 </td>
                                 <td>
-                                        <button type="button" class="btn btn-outline-secondary" @onclick="() => { HandleEditInvoiceDetailButton(invoiceDetail?.InvoiceDetailId);}">✏️</button>
+                                        <button type="button" class="btn btn-outline-secondary" @onclick="() => { HandleEditInvoiceDetailButton(invoiceDetail);}">✏️</button>
                                 </td>
                                 <td>
                                         <button type="button" class="btn btn-outline-secondary">❌</button>
@@ -297,23 +335,62 @@ else
 
     private List<Store>? listStores = new List<Store>();
 
+    private List<PaymentMethod>? listPaymentMethod = new List<PaymentMethod>();
+
     private string? searchText { get; set; } = string.Empty;
 
     private Customer? selectedCustomerInfo = new Customer();
 
     private List<Customer>? listFoundCustomers = new List<Customer>();
 
+    private bool isPaymentMethodChanged = false;
+
+    private bool isManagerChanged = false; 
+
+    private void OnSelectPaymentMethodChanged(int? valueChanged)
+    {
+        if (valueChanged is not null && valueChanged.Value > 0 && valueChanged != invoice?.PaymentMethodId && invoice is not null)
+        {
+            invoice.PaymentMethodId = valueChanged.Value;
+            isPaymentMethodChanged = true;
+        }
+    }
+
+    private void OnSelectManagerChanged(int? valueChanged)
+    {
+        if (valueChanged is not null && valueChanged.Value > 0 && valueChanged != invoice?.ManagerId && invoice is not null)
+        {
+            invoice.ManagerId = valueChanged.Value;
+            isManagerChanged = true;
+        }
+    }
+
+    private void HandleUpdateInvoiceButton()
+    {
+        if(invoice is not null)
+        {
+            InvoicesService.UpdateInvoiceService(invoice.InvoiceId, invoice);
+            isManagerChanged = false;
+            isPaymentMethodChanged = false;
+        }
+    }
+
     private void HandleAddInvoiceDetailButton()
     {
         NavigationManager.NavigateTo("invoice-detail");
     }
 
-    private void HandleEditInvoiceDetailButton(int? invoiceDetailId)
+    private void HandleEditInvoiceDetailButton(InvoiceDetail? invoiceDetail)
     {
-        if (invoiceDetailId > 0)
+        if (invoiceDetail is not null)
         {
             //Container Storage
-            NavigationManager.NavigateTo($"/invoice-detail/{invoiceDetailId}");
+
+            ContainerStorage.SetSelectedRecordId(currentPath, invoiceDetail.InvoiceDetailId);
+
+            ContainerStorage.SetOptionalData(currentPath, "InvoiceDetail", invoiceDetail);
+
+            NavigationManager.NavigateTo($"/invoice-detail/{invoiceDetail.InvoiceDetailId}");
         }
     }
 
@@ -418,25 +495,16 @@ else
 
     protected override void OnAfterRender(bool firstRender)
     {
-        if(firstRender)
+        if(firstRender && this.Id.HasValue)
         {
             selectedInvoiceId = ContainerStorage.GetLastSelectedRecordId("invoices");
 
-            if (this.Id.HasValue && selectedInvoiceId > 0 && this.Id.Value != selectedInvoiceId)
+            if ( selectedInvoiceId == 0 && this.Id.Value != selectedInvoiceId)
                 NavigationManager.NavigateTo("/deny-access");
 
-            if (this.Id.HasValue)
-            {
-                currentPath = NavigationManager.ToBaseRelativePath(NavigationManager.Uri).Split('?', '#')[0];
-
-                ContainerStorage.SetSavePaginationPath(currentPath);
-
-                ContainerStorage.SetOptionalData(currentPath, "ObjectId", this.Id.Value);
-            }
 
         }
     }
-
 
 
 
@@ -458,6 +526,14 @@ else
                     listManagers = UsersService.getManagerListByStoreIdService(invoice.StoreId.Value);
                 }
 
+
+                currentPath = NavigationManager.ToBaseRelativePath(NavigationManager.Uri).Split('?', '#','/')[0];
+
+                ContainerStorage.SetSavePaginationPath(currentPath);
+
+                ContainerStorage.SetOptionalData(currentPath, "Invoice", invoice);
+
+                ContainerStorage.SetOptionalData(currentPath, "ObjectId", invoice.InvoiceId);
             }
             
         }
@@ -477,6 +553,8 @@ else
         }
 
         listStores = StoresService.GetActiveStoresService();
+        listPaymentMethod = PaymentMethodsService.GetPaymentMethodsService();
+
 
     }
 

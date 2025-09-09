@@ -207,30 +207,55 @@
             ContainerStorage.ResetPaginationData(currentPath);
 
             listStore = StoresService.GetStoresService();
-            if (ContainerStorage.GetOptionalData(currentPath).Count > 0)
+
+            if (ContainerStorage.CheckElementOptionalDataExist(currentPath, "SelectedStoreId"))
             {
-                if (ContainerStorage.GetOptionalData(currentPath).Keys.Contains("SelectedStoreId"))
+                _selectedStoreId = ContainerStorage.GetElementOptionalData<int>(currentPath, "SelectedStoreId");
+            }
+
+            if (ContainerStorage.CheckElementOptionalDataExist(currentPath, "SelectedStartDate"))
+            {
+                int startDateNumber = ContainerStorage.GetElementOptionalData<int>(currentPath, "SelectedStartDate");
+                if (startDateNumber > 0)
                 {
-                    _selectedStoreId = ContainerStorage.GetOptionalData(currentPath)["SelectedStoreId"];
-                }
-                if (ContainerStorage.GetOptionalData(currentPath).Keys.Contains("SelectedStartDate"))
-                {
-                    int startDateNumber = ContainerStorage.GetOptionalData(currentPath)["SelectedStartDate"];
-                    if (startDateNumber > 0)
-                    {
-                        _selectedStartDate = DateOnly.ParseExact(startDateNumber.ToString(), "yyyyMMdd");
-                        notAllowedChooseEndDate = false;
-                    }
-                }
-                if (ContainerStorage.GetOptionalData(currentPath).Keys.Contains("SelectedEndDate"))
-                {
-                    int endDateNumber = ContainerStorage.GetOptionalData(currentPath)["SelectedEndDate"];
-                    if (endDateNumber > 0)
-                    {
-                        _selectedEndDate = DateOnly.ParseExact(endDateNumber.ToString(), "yyyyMMdd");
-                    }
+                    _selectedStartDate = DateOnly.ParseExact(startDateNumber.ToString(), "yyyyMMdd");
+                    notAllowedChooseEndDate = false;
                 }
             }
+
+            if (ContainerStorage.CheckElementOptionalDataExist(currentPath, "SelectedEndDate"))
+            {
+                int endDateNumber = ContainerStorage.GetElementOptionalData<int>(currentPath, "SelectedEndDate");
+                if (endDateNumber > 0)
+                {
+                    _selectedEndDate = DateOnly.ParseExact(endDateNumber.ToString(), "yyyyMMdd");
+                }
+            }
+
+            // if (ContainerStorage.GetOptionalData(currentPath).Count > 0)
+            // {
+            //     if (ContainerStorage.GetOptionalData(currentPath).Keys.Contains("SelectedStoreId"))
+            //     {
+            //         _selectedStoreId = ContainerStorage.GetOptionalData(currentPath)["SelectedStoreId"];
+            //     }
+            //     if (ContainerStorage.GetOptionalData(currentPath).Keys.Contains("SelectedStartDate"))
+            //     {
+            //         int startDateNumber = ContainerStorage.GetOptionalData(currentPath)["SelectedStartDate"];
+            //         if (startDateNumber > 0)
+            //         {
+            //             _selectedStartDate = DateOnly.ParseExact(startDateNumber.ToString(), "yyyyMMdd");
+            //             notAllowedChooseEndDate = false;
+            //         }
+            //     }
+            //     if (ContainerStorage.GetOptionalData(currentPath).Keys.Contains("SelectedEndDate"))
+            //     {
+            //         int endDateNumber = ContainerStorage.GetOptionalData(currentPath)["SelectedEndDate"];
+            //         if (endDateNumber > 0)
+            //         {
+            //             _selectedEndDate = DateOnly.ParseExact(endDateNumber.ToString(), "yyyyMMdd");
+            //         }
+            //     }
+            // }
           
             StateHasChanged();
         }

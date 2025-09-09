@@ -497,10 +497,17 @@
 
 
             this.SearchingUsersData = ContainerStorage.GetLastSearchedText(CurrentPath);
-            if (ContainerStorage.GetOptionalData(CurrentPath).Count >= 0 && ContainerStorage.GetOptionalData(CurrentPath).Keys.Contains("SelectedStoreId"))
+
+            // if (ContainerStorage.GetOptionalData(CurrentPath).Count >= 0 && ContainerStorage.GetOptionalData(CurrentPath).Keys.Contains("SelectedStoreId"))
+            // {
+            //     _selectedStoreId = ContainerStorage.GetOptionalData(CurrentPath)["SelectedStoreId"];
+            // }
+
+            if (ContainerStorage.CheckElementOptionalDataExist(CurrentPath, "SelectedStoreId"))
             {
-                _selectedStoreId = ContainerStorage.GetOptionalData(CurrentPath)["SelectedStoreId"];
+                _selectedStoreId = ContainerStorage.GetElementOptionalData<int>(CurrentPath, "SelectedStoreId");
             }
+
 
             if (listUsers is not null || listUsers?.Count >= 0)
             {
@@ -553,9 +560,10 @@
         {
             isFirstRender = false;
             this.SearchingUsersData = ContainerStorage.GetLastSearchedText(CurrentPath);
-            if (ContainerStorage.GetOptionalData(CurrentPath).Count >= 0 && ContainerStorage.GetOptionalData(CurrentPath).Keys.Contains("SelectedStoreId"))
+
+            if (ContainerStorage.CheckElementOptionalDataExist(CurrentPath, "SelectedStoreId"))
             {
-                this.SelectedStoreIdFilter = ContainerStorage.GetOptionalData(CurrentPath)["SelectedStoreId"];
+                _selectedStoreId = ContainerStorage.GetElementOptionalData<int>(CurrentPath, "SelectedStoreId");
             }
 
 

@@ -389,8 +389,6 @@
 
     //  -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   - //
 
-
-
     private Invoice? selectedInvoice;
 
     private int selectedInvoiceId = 0;
@@ -416,30 +414,31 @@
         {
 
             this.SeachingInvoicesData = ContainerStorage.GetLastSearchedText(CurrentPath);
-            if (ContainerStorage.GetOptionalData(CurrentPath).Count >= 0 && ContainerStorage.GetOptionalData(CurrentPath).Keys.Contains("SelectedStoreId"))
-            {
-                _selectedStoreId = ContainerStorage.GetOptionalData(CurrentPath)["SelectedStoreId"];
 
+            if (ContainerStorage.CheckElementOptionalDataExist(CurrentPath, "SelectedStoreId"))
+            {
+                _selectedStoreId = ContainerStorage.GetElementOptionalData<int>(CurrentPath, "SelectedStoreId");
             }
 
-            if (ContainerStorage.GetOptionalData(CurrentPath).Count >= 0 && ContainerStorage.GetOptionalData(CurrentPath).Keys.Contains("SelectedStartDate"))
+            if (ContainerStorage.CheckElementOptionalDataExist(CurrentPath, "SelectedStartDate"))
             {
-                int startDateNumber = ContainerStorage.GetOptionalData(CurrentPath)["SelectedStartDate"];
+                int startDateNumber = ContainerStorage.GetElementOptionalData<int>(CurrentPath, "SelectedStartDate");
                 if (startDateNumber > 0)
                 {
                     _selectedStartDateFilter = DateOnly.ParseExact(startDateNumber.ToString(), "yyyyMMdd");
                 }
             }
 
-            if (ContainerStorage.GetOptionalData(CurrentPath).Count >= 0 && ContainerStorage.GetOptionalData(CurrentPath).Keys.Contains("SelectedEndDate"))
+            if (ContainerStorage.CheckElementOptionalDataExist(CurrentPath, "SelectedEndDate"))
             {
-                int endDateNumber = ContainerStorage.GetOptionalData(CurrentPath)["SelectedEndDate"];
+                int endDateNumber = ContainerStorage.GetElementOptionalData<int>(CurrentPath, "SelectedEndDate");
                 if (endDateNumber > 0)
                 {
                     _selectedEndDateFilter = DateOnly.ParseExact(endDateNumber.ToString(), "yyyyMMdd");
 
                 }
             }
+
 
             if (listInvoices is not null && listInvoices?.Count >= 0)
             {
@@ -509,25 +508,23 @@
 
             this.SeachingInvoicesData = ContainerStorage.GetLastSearchedText(CurrentPath);
 
-            if (ContainerStorage.GetOptionalData(CurrentPath).Count >= 0 && ContainerStorage.GetOptionalData(CurrentPath).Keys.Contains("SelectedStoreId"))
+            if (ContainerStorage.CheckElementOptionalDataExist(CurrentPath, "SelectedStoreId"))
             {
-                _selectedStoreId = ContainerStorage.GetOptionalData(CurrentPath)["SelectedStoreId"];
-
+                _selectedStoreId = ContainerStorage.GetElementOptionalData<int>(CurrentPath, "SelectedStoreId");
             }
 
-            if (ContainerStorage.GetOptionalData(CurrentPath).Count >= 0 && ContainerStorage.GetOptionalData(CurrentPath).Keys.Contains("SelectedStartDate"))
+            if (ContainerStorage.CheckElementOptionalDataExist(CurrentPath, "SelectedStartDate"))
             {
-                int startDateNumber = ContainerStorage.GetOptionalData(CurrentPath)["SelectedStartDate"];
+                int startDateNumber = ContainerStorage.GetElementOptionalData<int>(CurrentPath, "SelectedStartDate");
                 if (startDateNumber > 0)
                 {
                     _selectedStartDateFilter = DateOnly.ParseExact(startDateNumber.ToString(), "yyyyMMdd");
-
                 }
             }
 
-            if (ContainerStorage.GetOptionalData(CurrentPath).Count >= 0 && ContainerStorage.GetOptionalData(CurrentPath).Keys.Contains("SelectedEndDate"))
+            if (ContainerStorage.CheckElementOptionalDataExist(CurrentPath, "SelectedEndDate"))
             {
-                int endDateNumber = ContainerStorage.GetOptionalData(CurrentPath)["SelectedEndDate"];
+                int endDateNumber = ContainerStorage.GetElementOptionalData<int>(CurrentPath, "SelectedEndDate");
                 if (endDateNumber > 0)
                 {
                     _selectedEndDateFilter = DateOnly.ParseExact(endDateNumber.ToString(), "yyyyMMdd");

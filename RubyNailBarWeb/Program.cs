@@ -33,13 +33,18 @@ builder.Services.AddScoped<CustomersRepository>();
 builder.Services.AddScoped<InvoicesRepository>();
 builder.Services.AddScoped<InvoiceDetailsRepository>();
 builder.Services.AddScoped<CustomerServicesRepository>();
-                
+builder.Services.AddScoped<PaymentMethodRepository>();
+
+
 builder.Services.AddTransient<IUsersService, UsersService>();
 builder.Services.AddTransient<IStoresService, StoresService>();
 builder.Services.AddTransient<IUserGroupService, UserGroupService>();
 builder.Services.AddTransient<ICustomersService, CustomersService>();
 builder.Services.AddTransient<IInvoicesService, InvoicesService>();
 builder.Services.AddTransient<IInvoiceDetailsService, InvoiceDetailsService>();
+builder.Services.AddTransient<ICustomerServicesService, CustomerServicesService>();
+builder.Services.AddTransient<IPaymentMethodsService, PaymentMethodsService>();
+
 
 var app = builder.Build();
 

@@ -1,9 +1,11 @@
 ﻿@page "/invoice-detail/{id:int?}"
 
-
+@rendermode InteractiveServer
 @inject IInvoiceDetailsService InvoiceDetailsService
 @inject ContainerStorage ContainerStorage
 @inject IInvoicesService InvoicesService
+@inject NavigationManager NavigationManager
+
 
 @if (this.Id.HasValue)
 {
@@ -23,41 +25,103 @@ else
                 <div class="row">
                     <div class="col-sm-12 col-sm-offset-1">
                         <div class="row row-centered">
-                            <div class="col-xs-12 col-sm-6 col-centered">
-                                <FieldComponent Label="Invoice Id">
-                                    <Control>
-                                        <InputNumber @bind-Value="invoiceDetail.InvoiceDetailId" disabled></InputNumber>
-                                    </Control>
-                                </FieldComponent>
 
-                                <FieldComponent Label="Store">
-                                    <Control>
-                                        @* <InputNumber @bind-Value="invoiceDetail.ServiceFee"></InputNumber> *@
-                                    </Control>
-                                </FieldComponent>
+                            <div class="col-xs-4 col-sm-4 col-centered">
+                                @if (invoice is not null)
+                                {
+                                    <HorizonListComponent Label="Invoice Id">
+                                        <Control>
+                                            <InputNumber @bind-Value="invoice.InvoiceId" disabled></InputNumber>
+                                        </Control>
+                                    </HorizonListComponent>
+
+                                    <HorizonListComponent Label="Invoice Date">
+                                        <Control>
+                                            <input type="datetime" value=@(invoice.InvoiceDate?.ToString("yyyy-MM-dd")) disabled>
+                                        </Control>
+                                    </HorizonListComponent>
+                                    @if (invoice.PaymentMethod is not null)
+                                    {
+                                        <HorizonListComponent Label="Payment">
+                                            <Control>
+                                                <InputText @bind-Value="invoice.PaymentMethod.Name" disabled="true"></InputText>
+                                            </Control>
+                                        </HorizonListComponent>
+                                    }
+                                }
                             </div>
 
-                            <div class="col-xs-12 col-sm-6 col-centered">
-                                <FieldComponent Label="Manager">
-                                    <Control>
-                                        @*  <InputNumber @bind-Value="invoiceDetail.ServiceFee"></InputNumber> *@
-                                    </Control>
-                                </FieldComponent>
+                            <div class="col-xs-4 col-sm-4 col-centered">
+                                @if (invoice is not null && invoice.Store is not null && invoice.Manager is not null && invoice.Customer is not null)
+                                {
+                                    <HorizonListComponent Label="Store">
+                                        <Control>
+                                            <InputText @bind-Value="invoice.Store.Name" disabled="true"></InputText>
+                                        </Control>
+                                    </HorizonListComponent>
 
-                                <FieldComponent Label="Customer">
-                                    <Control>
-                                        @*  <InputNumber @bind-Value="invoiceDetail.ServiceFee"></InputNumber> *@
-                                    </Control>
-                                </FieldComponent>
+                                    <HorizonListComponent Label="Manager">
+                                        <Control>
+                                            <input type="text" value=@($"{invoice.Manager.FirstName} {invoice.Manager.LastName}") disabled>
+                                        </Control>
+                                    </HorizonListComponent>
+
+                                    <HorizonListComponent Label="Customer">
+                                        <Control>
+                                            <input type="text" value=@($"{invoice.Customer.Name}") disabled>
+                                        </Control>
+                                    </HorizonListComponent>
+                                }
                             </div>
 
+                            <div class="col-xs-4 col-sm-4 col-centered">
+                                @if (invoice is not null && invoice.Store is not null && invoice.Manager is not null && invoice.Customer is not null)
+                                {
+                                    <HorizonListComponent Label="Store">
+                                        <Control>
+                                            <InputNumber @bind-Value="invoice.ServicesAmount" disabled="true"></InputNumber>
+                                        </Control>
+                                    </HorizonListComponent>
+
+                                    <HorizonListComponent Label="Manager">
+                                        <Control>
+                                            <InputNumber @bind-Value="invoice.TipAmount" disabled="true"></InputNumber>
+                                        </Control>
+                                    </HorizonListComponent>
+
+                                    <HorizonListComponent Label="Customer">
+                                        <Control>
+                                            <InputNumber @bind-Value="invoice.TaxAmount" disabled="true"></InputNumber>
+                                        </Control>
+                                    </HorizonListComponent>
+                                }
+                            </div>
+
+  
+                            
                         </div>
                         <hr>
                         <div class="row row-centered">
                             <div class="col-xs-12 col-sm-6 col-centered">
+
+                                <HorizonListComponent Label="InvoiceDetail Id">
+                                    <Control>
+                                        <InputNumber @bind-Value="invoiceDetail.InvoiceDetailId" disabled></InputNumber>
+                                    </Control>
+                                </HorizonListComponent>
+
                                 <FieldComponent Label="Service Type">
                                     <Control>
-                                      @*   <InputNumber @bind-Value="invoiceDetail.CustomerService.ServiceType"></InputNumber> *@
+                                        <InputSelect class="form-select" ValueExpression="@(() => selectedCustomerService.ServiceType)"
+                                                     Value="@selectedCustomerService.ServiceType"
+                                                     ValueChanged="(string e) => { OnServiceTypeChanged(e); }">
+
+                                            <option value="" disabled selected>-- Select Services --</option>
+                                            @foreach (var service in listCustomerServices)
+                                            {
+                                                <option value="@service.ServiceType">@service.ServiceType</option>
+                                            }
+                                        </InputSelect>
                                     </Control>
                                 </FieldComponent>
 
@@ -70,6 +134,14 @@ else
                             </div>
 
                             <div class="col-xs-12 col-sm-6 col-centered">
+
+                                <FieldComponent Label="Staff">
+                                    <Control>
+                                        <InputSelect @bind-Value="invoiceDetail.UserId">
+                                            
+                                        </InputSelect>
+                                    </Control>
+                                </FieldComponent>
                                 <FieldComponent Label="Service Fee">
                                     <Control>
                                         <InputNumber @bind-Value="invoiceDetail.ServiceFee"></InputNumber>
@@ -93,14 +165,8 @@ else
         &nbsp;
         <button class="btn btn-primary" type="submit"> @(Id.HasValue == true ? "Update" : "Add") </button>
 
-
     </EditForm>
-
 }
-
-
-
-
 
 
 
@@ -111,8 +177,17 @@ else
     [SupplyParameterFromForm]
     public InvoiceDetail? invoiceDetail { get; set; }
 
-    private int invoiceId;
+    private List<User>? listUsers { get; set; }
 
+    private Invoice? invoice;
+
+    private CustomerService selectedCustomerService { get; set; } = new CustomerService();
+
+    private string selectedCustomerServicesType { get; set; } = string.Empty;
+
+    private List<CustomerService> listCustomerServices = new List<CustomerService>();
+
+    private string currentPath = string.Empty;
 
     protected override void OnParametersSet()
     {
@@ -130,18 +205,42 @@ else
     {
         if(firstRender)
         {
-            if (ContainerStorage.GetOptionalData("invoice").Count >= 0 && ContainerStorage.GetOptionalData("invoice").Keys.Contains("ObjectId"))
+
+            if (ContainerStorage.CheckElementOptionalDataExist("invoice", "Invoice"))
             {
-                invoiceId = ContainerStorage.GetOptionalData("invoice")["ObjectId"];
+                invoice = ContainerStorage.GetElementOptionalData<Invoice>("invoice", "Invoice") ?? new Invoice();
             }
-            
+
+            if (ContainerStorage.CheckElementOptionalDataExist("invoice", "InvoiceDetail"))
+            {
+                invoiceDetail = ContainerStorage.GetElementOptionalData<InvoiceDetail>("invoice", "InvoiceDetail") ?? new InvoiceDetail();
+            }
+
+
+
+            StateHasChanged();
         }
+    }
+
+    private void OnServiceTypeChanged(string e)
+    {
+        selectedCustomerService.ServiceType = e?.ToString();
+        //listCustomerServices = 
+        
     }
 
 
     private void HandleBackButton()
     {
-        
+        if (currentPath.Contains("back-from", StringComparison.OrdinalIgnoreCase))
+        {
+            var previousPath = ContainerStorage.GetSavePaginaionPath();
+            NavigationManager.NavigateTo($"/{previousPath}");
+        }
+        else
+        {
+            NavigationManager.NavigateTo("/invoices");
+        }
     }
 
     private void SubmitFunc()

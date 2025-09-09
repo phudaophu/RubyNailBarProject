@@ -54,7 +54,7 @@
 
     public void ClearSearchBar()
     {
-        bool checkOptionalDataExit = ContainerStorage.CheckOptionalDataExist(CurrentPath);
+        bool checkOptionalDataExit = ContainerStorage.CheckAnyOptionalDataExist(CurrentPath);
 
         if (!string.IsNullOrWhiteSpace(elementFilter) || checkOptionalDataExit)
         {

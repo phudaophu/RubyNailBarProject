@@ -34,6 +34,7 @@ namespace RubyNailBarWeb.Repositories
                 .Include(i => i.Manager)
                 .Include(i => i.Store)
                 .Include(i => i.Customer)
+                .Include(i => i.PaymentMethod)
                 .Include(i => i.InvoiceDetails).ThenInclude(i => i.CustomerService)
                 .Include(i => i.InvoiceDetails).ThenInclude(i => i.User)
                 .Where(i => i != null && i.IsDeleted == false)

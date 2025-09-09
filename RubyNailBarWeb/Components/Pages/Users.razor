@@ -83,9 +83,10 @@
             ContainerStorage.ResetPaginationData(currentPath);
 
             listStore = StoresService.GetStoresService().Where(s => s.IsActive == true).ToList();
-            if (ContainerStorage.GetOptionalData(currentPath).Count > 0 && ContainerStorage.GetOptionalData(currentPath).Keys.Contains("SelectedStoreId"))
+
+            if (ContainerStorage.CheckElementOptionalDataExist(currentPath, "SelectedStoreId"))
             {
-                _selectedStoreId = ContainerStorage.GetOptionalData(currentPath)["SelectedStoreId"];
+                _selectedStoreId = ContainerStorage.GetElementOptionalData<int>(currentPath, "SelectedStoreId");
             }
             StateHasChanged();
         }

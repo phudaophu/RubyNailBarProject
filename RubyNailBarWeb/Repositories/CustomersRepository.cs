@@ -100,5 +100,7 @@ namespace RubyNailBarWeb.Repositories
 
             return customerQuery.OrderBy(cq => cq.CustomerId).ToList();
         }
+
+
     }
 }
