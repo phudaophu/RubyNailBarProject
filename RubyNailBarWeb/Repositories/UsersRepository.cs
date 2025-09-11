@@ -13,11 +13,31 @@ namespace RubyNailBarWeb.Repositories
             this.contextFactory = _contextFactory;  
         }
 
-        public List<User> getManagerListByStoreId(int storeId)
+        public List<User> GetStaffListByStoreId(int storeId)
         {
             using var db = this.contextFactory.CreateDbContext();
 
-            if (storeId == 0) { throw new ArgumentException("Loi: Please input store id > 0"); }
+            if (storeId <= 0) { throw new ArgumentException("Loi: Please input store id > 0"); }
+
+            IQueryable<User> userQuery = db.Users.AsNoTracking().Where(u => u.UserGroups.Any(ug => ug.StoreId == storeId));
+
+            userQuery = userQuery.Where(u => u.UserGroups.Any(ug => ug.GroupName != null && ug.GroupName == "Staff"));
+
+            userQuery = userQuery.Where(u => u.UserGroups.Any(ug => ug.RoleName != null && ug.RoleName == "Staff"));
+
+            if (userQuery.Count() > 0)
+            {
+                return userQuery.ToList();
+            }
+
+            return new List<User>();
+        }
+
+        public List<User> GetManagerListByStoreId(int storeId)
+        {
+            using var db = this.contextFactory.CreateDbContext();
+
+            if (storeId <= 0) { throw new ArgumentException("Loi: Please input store id > 0"); }
 
             IQueryable<User> userQuery = db.Users.AsNoTracking().Where(u => u.UserGroups.Any(ug => ug.StoreId == storeId));
 
@@ -114,18 +134,6 @@ namespace RubyNailBarWeb.Repositories
                                              u.PhoneNo.ToLower().IndexOf(keyString.ToLower()) >= 0)
                                                                                                         ).Include(u => u.UserGroups);
 
-            //var userList = db.Users.Where(x =>
-            //                            (x.Username != null &&
-            //                             x.Username.ToLower().IndexOf(keyString.ToLower()) >= 0)  ||
-            //                            (x.FirstName != null &&
-            //                             x.FirstName.ToLower().IndexOf(keyString.ToLower()) >= 0) ||
-            //                            (x.LastName != null &&
-            //                             x.LastName.ToLower().IndexOf(keyString.ToLower()) >= 0)  ||
-            //                            (x.Email != null &&
-            //                             x.Email.ToLower().IndexOf(keyString.ToLower()) >= 0)     ||
-            //                            (x.PhoneNo != null &&
-            //                             x.PhoneNo.ToLower().IndexOf(keyString.ToLower()) >= 0)
-            //                                                                                            ).Include(user => user.UserGroups).ToList();
             
             return userQuery.OrderBy(u => u.UserId).ToList();
         }

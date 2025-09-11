@@ -59,6 +59,7 @@ namespace RubyNailBarWeb.Repositories
             var invoice = db.Invoices.Include(i => i.Manager)
                                     .Include(i => i.Store)
                                     .Include(i => i.Customer)
+                                    .Include(i => i.PaymentMethod)
                                     .Include(i => i.InvoiceDetails).ThenInclude(i => i.CustomerService)
                                     .Include(i => i.InvoiceDetails).ThenInclude(i => i.User)
                                     .SingleOrDefault(i => i.InvoiceId == invoiceId);

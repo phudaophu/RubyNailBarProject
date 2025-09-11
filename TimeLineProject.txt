@@ -98,17 +98,21 @@ process: invoice detail page
 complete: add payment method selection to add edit invoice 
 
 
+1:14 AM 9/11/2025
+process: edit invoice detail page 
+
+2:41 PM 9/11/2025
+process: 
+- handle button go to user page with store, nav to users-back-from, do not reset data pagination, and then nav to invoices
+- setup a function(storied,userid) that return pagination data
 
 
 
+5:35 PM 9/11/2025
+complete: setup a function(storied,userid) that return pagination data
+- page addeditinvoice setup table-responsive for the invoice list
 
-
-
-
-
-
-
-
+process: save the invoice-detail id
 
 
 

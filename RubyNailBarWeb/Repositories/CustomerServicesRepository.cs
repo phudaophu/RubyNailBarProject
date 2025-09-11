@@ -13,7 +13,6 @@ namespace RubyNailBarWeb.Repositories
             this.contextFactory = _contextFactory;
         }
 
-
         public void UpdateCustomerService(int customerServiceId, CustomerService customerService)
         {
             if (customerService is null)
@@ -52,6 +51,21 @@ namespace RubyNailBarWeb.Repositories
             return db.CustomerServices.ToList();
         }
 
+        public List<string> GetCustomerServiceTypes()
+        {
+            using var db = this.contextFactory.CreateDbContext();
+
+            return db.CustomerServices.AsNoTracking()
+                                    .Where(cs => cs.ServiceType != null)           
+                                    .Select(cs => cs.ServiceType!.Trim())           
+                                    .Where(s => s != "")                            
+                                    .Distinct()                                    
+                                    .OrderBy(s => s)                                
+                                    .ToList();
+        }
+
+
+
         public List<CustomerService> GetActiveCustomerServices()
         {
             using var db = this.contextFactory.CreateDbContext();
@@ -76,22 +90,33 @@ namespace RubyNailBarWeb.Repositories
             }
         }
 
-        public List<CustomerService> GetCustomerServicesByType(string serviceType) 
+        //public List<CustomerService> GetCustomerServicesByType(string serviceType) 
+        //{
+        //    using var db = this.contextFactory.CreateDbContext();
+        //    if (string.IsNullOrEmpty(serviceType)) return new List<CustomerService>();
+
+
+        //    IQueryable<CustomerService> customerServiceQuery = db.CustomerServices.AsNoTracking()
+        //                                                        .Where(cs => cs.ServiceType != null
+        //                                                                && cs.ServiceType == serviceType)
+        //                                                         .Where(cs => cs.IsActive == true);
+
+
+        //    return customerServiceQuery.ToList();
+        //}
+
+        public List<CustomerService>? GetCustomerServicesByType(string customerServiceType)
         {
             using var db = this.contextFactory.CreateDbContext();
-            if (string.IsNullOrEmpty(serviceType)) return new List<CustomerService>();
-
+            if (string.IsNullOrEmpty(customerServiceType)) return new List<CustomerService>();
 
             IQueryable<CustomerService> customerServiceQuery = db.CustomerServices.AsNoTracking()
-                                                                .Where(cs => cs.ServiceType != null
-                                                                        && cs.ServiceType.Equals(serviceType, StringComparison.OrdinalIgnoreCase))
-                                                                 .Where(cs => cs.IsActive == true);
+                                                                                    .Where(cs => (cs.ServiceType != null && cs.ServiceType.ToLower().IndexOf(customerServiceType.ToLower()) >= 0))
+                                                                                    .Where(cs => cs.IsActive == true);
 
 
             return customerServiceQuery.ToList();
         }
-
-
 
         public List<CustomerService>? SearchCustomerService(string keyString)
         {
@@ -100,6 +125,7 @@ namespace RubyNailBarWeb.Repositories
 
             IQueryable<CustomerService> customerServiceQuery = db.CustomerServices.AsNoTracking()
                                                                                     .Where(cs => (cs.Name != null && cs.Name.ToLower().IndexOf(keyString.ToLower()) >= 0))
+                                                                                    .Where(cs => (cs.ServiceType != null && cs.ServiceType.ToLower().IndexOf(keyString.ToLower()) >= 0))
                                                                                     .Where (cs => cs.IsActive == true);    
 
 

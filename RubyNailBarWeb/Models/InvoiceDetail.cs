@@ -25,9 +25,9 @@ public partial class InvoiceDetail
 
     public DateTime? EndDatetime { get; set; }
 
-    public bool? IsDeleted { get; set; } = false;
+    public bool IsDeleted { get; set; } = false;
 
-    public bool? IsFinished { get; set; } = false;
+    public bool IsFinished { get; set; } = false;
 
     public virtual Invoice? Invoice { get; set; }
 

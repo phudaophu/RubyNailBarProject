@@ -4,7 +4,9 @@ namespace RubyNailBarWeb.Services.Implements
 {
     public interface IUsersService
     {
-        List<User> getManagerListByStoreIdService(int storeId);  
+        (int CurrentPage, int TotalPage) GetCurrentPageAndTotalPageService(int pageSize, int selectedUserId, int? selectedStoreId = null);
+        List<User> GetStaffListByStoreIdService(int storeId);
+        List<User> GetManagerListByStoreIdService(int storeId);  
         bool IsUsernameExistsService(string username, int? excludedUserId = null); 
         int AddUserService(User user);  
         User? GetUserByIdService(int userId);

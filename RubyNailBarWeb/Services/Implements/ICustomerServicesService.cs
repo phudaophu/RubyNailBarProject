@@ -4,11 +4,12 @@ namespace RubyNailBarWeb.Services.Implements
 {
     public interface ICustomerServicesService
     {
-        List<CustomerService> GetActiveCustomerServices();
-        CustomerService? GetCustomerServiceById(int customerServiceId);
-        List<CustomerService> GetCustomerServices();
-        List<CustomerService> GetCustomerServicesByType(string serviceType);
-        List<CustomerService>? SearchCustomerService(string keyString);
-        void UpdateCustomerService(int customerServiceId, CustomerService customerService);
+        List<CustomerService>? GetCustomerServiceByTypeService(string customerServiceType);
+        List<string> GetCustomerServiceTypeService();
+        List<CustomerService> GetActiveCustomerServicesService();
+        CustomerService? GetCustomerServiceByIdService(int customerServiceId);
+        List<CustomerService> GetCustomerServicesService();
+        List<CustomerService>? SearchCustomerServiceService(string keyString);
+        void UpdateCustomerServiceService(int customerServiceId, CustomerService customerService);
     }
 }
