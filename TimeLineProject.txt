@@ -104,15 +104,27 @@ process: edit invoice detail page
 2:41 PM 9/11/2025
 process: 
 - handle button go to user page with store, nav to users-back-from, do not reset data pagination, and then nav to invoices
-- setup a function(storied,userid) that return pagination data
-
+- setup a function(storeid,userid) that return pagination data
+- select invoice detail model
 
 
 5:35 PM 9/11/2025
 complete: setup a function(storied,userid) that return pagination data
-- page addeditinvoice setup table-responsive for the invoice list
+	- page addeditinvoice setup table-responsive for the invoice list
 
 process: save the invoice-detail id
+
+
+1:45 AM 9/12/2025
+process: button set end time 
+
+2:09 PM 9/12/2025
+complete: button set end time in addedit invoicedetail
+process: validate by JSruntime pop-up when add a new invoice detail and add/update button in invoice detail
+
+
+
+
 
 
 

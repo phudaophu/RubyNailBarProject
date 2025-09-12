@@ -7,7 +7,7 @@
 @inject NavigationManager NavigationManager
 @inject ICustomerServicesService CustomerServicesService
 @inject IUsersService UsersService
-
+@inject IJSRuntime JSRuntime
 
 @if (invoiceDetail is not null)
 {
@@ -132,7 +132,6 @@
                             </HorizonListComponent>
                         }
 
-
                         <HorizonListComponent Label="Service Type">
                             <Control>
                                 <InputSelect class="form-select" ValueExpression="@(() => selectedServiceTypes)"
@@ -146,10 +145,12 @@
                                 </InputSelect>
                             </Control>
                         </HorizonListComponent>
-
+                        
                         <HorizonListComponent Label="Service Name">
                             <Control>
-                                <InputSelect class="form-select" @bind-Value="invoiceDetail.CustomerServiceId">
+                                <InputSelect class="form-select" TValue="int?" ValueExpression="@(() => invoiceDetail.CustomerServiceId)"
+                                             Value="@invoiceDetail.CustomerServiceId"
+                                             ValueChanged="(int? e) => { OnCustomerServiceChanged(e); }">
                                     <option value="0" disabled>- Select Service -</option>
                                     @foreach (var service in listCustomerServices)
                                     {
@@ -162,9 +163,7 @@
                         <HorizonListComponent Label="Staff">
                             <ElementControl>
                                 <button type="button" style="margin-left: 1.5rem" title="Go to User Page"
-                                        class="bg-transparent border-2 border-light p-0" @onclick="HandleNavigateToUserInStore"
-                                        disabled="@((invoiceDetail?.UserId ?? 0) <= 0)">
-                                    @emojiSearchUser
+                                        class="bg-transparent border-2 border-light p-0" @onclick="HandleNavigateToUserInStore">@emojiSearchUser
                                 </button>
                             </ElementControl>
                             <Control>
@@ -173,7 +172,7 @@
                                     @foreach (var staff in listActiveStaffsByStoreId)
                                     {
                                         <option value="@staff.UserId" disabled="@(!staff.IsActive)"
-                                                class="@(staff.IsActive ? "text-success" : "text-danger")">@(staff.IsActive ? "🔔 " : "🔕 ") @staff.FirstName @staff.LastName @staff.Username </option>
+                                                class="@(staff.IsActive ? "text-success" : "text-danger")">@(staff.IsActive ? "🔔 " : "🔕 ") @staff.FirstName @staff.LastName┃@staff.Username </option>
                                     }
                                 </InputSelect>
                                 
@@ -194,7 +193,10 @@
 
                         <HorizonListComponent Label="Finished">
                             <Control>
-                                <InputCheckbox @bind-Value="invoiceDetail.IsFinished" ></InputCheckbox>
+                                <InputCheckbox TValue="bool" ValueExpression="@(() => invoiceDetail.IsFinished)"
+                                               Value="@invoiceDetail.IsFinished"
+                                               ValueChanged="(bool e) => {OnIsFinishedCheckBoxChanged(e); }" 
+                                               disabled="@(!invoiceDetail.StartDatetime.HasValue)"></InputCheckbox>
                             </Control>
                         </HorizonListComponent>
 
@@ -208,20 +210,42 @@
 
                     <div class="col-12 col-lg-4">
 
-                        <HorizonListComponent Label="⏰ Created">
+                        <HorizonListComponent Label="Started">
+                            <ElementControl>
+                                <button type="button" class="bg-transparent border-2 border-light p-0" @onclick="HandleUpdateStartTime">@GetEmojiStartTime()</button>
+                            </ElementControl>
                             <Control>
-                                <input type="datetime" value="@invoiceDetail.CreatedDatetime?.ToString("yyyy-MM-dd HH:mm:ss")" class="form-control" disabled>
-                            </Control>
-                        </HorizonListComponent>
-                        <HorizonListComponent Label="🚩 Started">
-                            <Control>
-                                <input type="datetime" value="@invoiceDetail.StartDatetime?.ToString("yyyy-MM-dd HH:mm:ss")" class="form-control" disabled>
+                                <input type="datetime" value="@invoiceDetail.StartDatetime?.ToString("yyyy-MM-dd HH:mm:ss")" class="form-control">
                             </Control>
                         </HorizonListComponent>
 
-                        <HorizonListComponent Label=" 🏁 Ended">
+                        <HorizonListComponent Label="Ended󠀠󠀠󠀠️">
+                            <ElementControl>
+                                <button type="button" style="margin-left: 0.2rem" class=" bg-transparent border-2 border-light p-0" 
+                                                        @onclick="HandleUpdateEndTime" disabled="@(!invoiceDetail.StartDatetime.HasValue)">@GetEmojiEndTime()</button>
+                            </ElementControl>
                             <Control>
-                                <input type="datetime" value="@invoiceDetail.EndDatetime?.ToString("yyyy-MM-dd HH:mm:ss")" class="form-control" disabled>
+                                <input type="datetime" value="@invoiceDetail.EndDatetime?.ToString("yyyy-MM-dd HH:mm:ss")" class="form-control">
+                            </Control>
+                        </HorizonListComponent>
+
+                        <HorizonListComponent Label="Fee">
+                            <Control>
+                                <InputNumber @bind-Value="invoiceDetail.ServiceFee" class="form-control" step="1"></InputNumber>
+                            </Control>
+                        </HorizonListComponent>
+
+                        <HorizonListComponent Label="Tip">
+                            <Control>
+                                <InputNumber @bind-Value="invoiceDetail.Tip" class="form-control" step="0.5"></InputNumber>
+                            </Control>
+                        </HorizonListComponent>
+
+
+@* 
+                        <HorizonListComponent Label="⏰ Created">
+                            <Control>
+                                <input type="datetime" value="@invoiceDetail.CreatedDatetime?.ToString("yyyy-MM-dd HH:mm:ss")" class="form-control" disabled>
                             </Control>
                         </HorizonListComponent>
 
@@ -229,7 +253,7 @@
                             <Control>
                                 <input type="datetime" value="@invoiceDetail.ModifiedDatetime?.ToString("yyyy-MM-dd HH:mm:ss")" class="form-control" disabled>
                             </Control>
-                        </HorizonListComponent>
+                        </HorizonListComponent> *@
 
                     </div>
 
@@ -245,6 +269,11 @@
         </form>
     </div>
 }
+
+
+@* show model *@
+
+
 
 
 
@@ -274,12 +303,115 @@
 
     private const string emojiSearchUser = "🔎";
 
+    private string GetEmojiStartTime()
+    {
+        if(invoiceDetail is not null)
+        {
+            if (invoiceDetail.StartDatetime is null)
+                return  "🚩";
+            else return "❌";
+        }
+        return "";
+    }
+
+    private string GetEmojiEndTime()
+    {
+        if (invoiceDetail is not null)
+        {
+            if (invoiceDetail.EndDatetime is null)
+                return  "🏁";
+            else return "❌";
+        }
+        return "";
+    }
+
+    private void OnIsFinishedCheckBoxChanged(bool changedValue)
+    {
+        if(invoiceDetail is not null)
+        {
+            invoiceDetail.IsFinished = changedValue;
+            if(invoiceDetail.IsFinished)
+            {
+                invoiceDetail.EndDatetime = DateTime.Now;
+            }
+            else
+            {
+                invoiceDetail.EndDatetime = null;
+            }
+        }
+    }
+
+    private void OnCustomerServiceChanged(int? changedValue)
+    {
+        if (invoiceDetail is not null && changedValue > 0)
+        {
+            invoiceDetail.CustomerServiceId = changedValue;
+            var selectedCustomerService = listCustomerServices.FirstOrDefault(cs => cs.CustomerServiceId == changedValue);
+            if (selectedCustomerService is not null)
+            {
+                invoiceDetail.ServiceFee = selectedCustomerService.Fee;
+                invoiceDetail.Tip = 0;
+            }
+        }
+    }
+
+    private void HandleUpdateStartTime()
+    {
+        if(invoiceDetail is not null )
+        {
+            if(invoiceDetail.StartDatetime is null)
+            {
+                invoiceDetail.StartDatetime = DateTime.Now;
+                if (invoiceDetail.EndDatetime is not null)
+                {
+                    invoiceDetail.EndDatetime = null;
+                }
+
+            }
+            else
+            {
+                invoiceDetail.StartDatetime = null;
+                if (invoiceDetail.EndDatetime is not null)
+                {
+                    invoiceDetail.EndDatetime = null;
+                    invoiceDetail.IsFinished = false;
+                }
+      
+            }
+
+        }
+    }
+
+    private void HandleUpdateEndTime()
+    {
+        if (invoiceDetail is not null && invoiceDetail.StartDatetime is not null)
+        {
+            if(invoiceDetail.EndDatetime is null)
+            {
+                if (invoiceDetail.StartDatetime.HasValue)
+                {
+                    invoiceDetail.EndDatetime = DateTime.Now;
+                    invoiceDetail.IsFinished = true;
+                    
+                }
+
+            }
+            else
+            {
+                invoiceDetail.EndDatetime = null;
+                invoiceDetail.IsFinished = false;
+                
+            }
+
+        }
+    }
+
     private void HandleNavigateToUserInStore()
     {
         if(invoice is not null && invoice.StoreId > 0)
         {
             ContainerStorage.SetOptionalData("users", "SelectedStoreId", invoice.StoreId);
-            if (this.Id.HasValue && invoiceDetail is not null && invoiceDetail.UserId > 0)
+            if (invoiceDetail is not null && invoiceDetail.UserId > 0)
             {
                 int pageSize = 5;
 
@@ -332,7 +464,6 @@
             invoiceDetail = new InvoiceDetail() {CustomerServiceId = 0, UserId = 0};
         }
 
-        // StateHasChanged();
     }
 
     protected override void OnAfterRender(bool firstRender)
@@ -354,24 +485,7 @@
 
             if (invoice is not null && invoice.StoreId > 0)
             {
-                // if (this.Id.HasValue)
-                // {
-                //     listActiveStaffsByStoreId = UsersService.GetStaffListByStoreIdService(invoice.StoreId.Value)
-                //                                             .Where(s => s.IsActive == true).ToList();
-                //     if(invoiceDetail is not null && invoiceDetail.User is not null && !listActiveStaffsByStoreId.Any(s=>s.UserId != invoiceDetail.UserId))
-                //     {
-                //         listActiveStaffsByStoreId.Add(invoiceDetail.User);
-                //     }
-                // }
-                // else
-                // {
-                //     listActiveStaffsByStoreId = UsersService.GetStaffListByStoreIdService(invoice.StoreId.Value)
-                //                                             .Where(s => s.IsActive == true).ToList();
-                // }
-
-                listActiveStaffsByStoreId = UsersService.GetStaffListByStoreIdService(invoice.StoreId.Value);
-
-
+                listActiveStaffsByStoreId = UsersService.GetStaffListByStoreIdService(invoice.StoreId.Value).OrderBy(u => !u.IsActive).ToList();
             }
 
             StateHasChanged();
@@ -390,7 +504,6 @@
         {
             listCustomerServices = CustomerServicesService.GetCustomerServiceByTypeService(selectedServiceTypes) ?? new();
         }
-
     }
 
 
@@ -407,31 +520,48 @@
             NavigationManager.NavigateTo("/invoices");
         }
 
-
     }
 
-    private void SubmitFunc()
+    private async Task SubmitFunc()
     {
-        if (invoice is not null && invoiceDetail is not null && invoiceDetail.CustomerServiceId > 0 && invoiceDetail.UserId  > 0)
+        // Validate data in form before submit 
+        if (invoice is null || invoiceDetail is null)
         {
+            await JSRuntime.InvokeVoidAsync("alert", $"⛔ No Information About Invoice and Service, please back to Invoices page ❗");
+            NavigationManager.NavigateTo("/invoices");
+        }
+        if (invoiceDetail?.CustomerServiceId is null || invoiceDetail?.UserId is null ||
+                        invoiceDetail?.CustomerServiceId <= 0 || invoiceDetail?.UserId <= 0)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"ℹ️ Please select Service Type, Service Name and Staff ❗");
+            return;
+        }
+        if (invoiceDetail is not null && invoiceDetail.StartDatetime.HasValue && invoiceDetail.EndDatetime.HasValue 
+                                        && invoiceDetail.StartDatetime >  invoiceDetail.EndDatetime)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"⛔ Start time cannot be later than end time ❗");
+            return;
+        }
+        // 
+        if (invoice is not null && invoiceDetail is not null 
+                && invoiceDetail.CustomerServiceId > 0 && invoiceDetail.UserId  > 0)
+        {
+
+            invoiceDetail.ModifiedDatetime = DateTime.Now;
+            if(invoiceDetail.ServiceFee < 0) invoiceDetail.ServiceFee = 0;
+            if (invoiceDetail.Tip < 0) invoiceDetail.Tip = 0;
+            
+
             if (this.Id.HasValue)
             {
-                // update invoice detail 
-                invoiceDetail.ModifiedDatetime = DateTime.Now;
-
                 InvoiceDetailsService.UpdateInvoiceDetailService(invoiceDetail.InvoiceDetailId, invoiceDetail);
-
             }
             else
             {
                 // add invoice detail 
                 invoiceDetail.CreatedDatetime = DateTime.Now;
-                invoiceDetail.ModifiedDatetime = DateTime.Now;
                 invoiceDetail.InvoiceId = invoice.InvoiceId;
-
-
                 // select customer service
-
 
                 var newInvoiceDetailId = InvoiceDetailsService.AddInvoiceDetailService(invoiceDetail);
             }

@@ -8,6 +8,7 @@
 @inject NavigationManager NavigationManager
 @inject ContainerStorage ContainerStorage
 @inject IPaymentMethodsService PaymentMethodsService
+@inject IInvoiceDetailsService InvoiceDetailsService
 @rendermode InteractiveServer
 
 
@@ -163,7 +164,8 @@ else
                         }
                     </td>
                     <td class="align-middle">
-                        <button type="button" title="Add Invoice" class="bg-transparent border-2 border-light p-0" @onclick="HandleAddInvoiceButton" disabled="@(invoice.CustomerId > 0 && invoice.StoreId > 0 && invoice.ManagerId > 0 ? false : true)">✔️</button>
+                        <button type="button" title="Add Invoice" class="bg-transparent border-2 border-light p-0" @onclick="HandleAddInvoiceButton" 
+                                        disabled="@(invoice.CustomerId > 0 && invoice.StoreId > 0 && invoice.ManagerId > 0 ? false : true)">✔️</button>
                     </td>
                 }
 
@@ -226,10 +228,11 @@ else
                         </tr>
                     </thead>
                     <tbody>
-                    @if (invoice.InvoiceDetails != null && invoice.InvoiceDetails.Any())
+                        @if (invoice.InvoiceDetails != null && invoice.InvoiceDetails.Any() 
+                                    && listInvoiceDetails is not null && listInvoiceDetails.Any())
                     {
 
-                        @foreach (var invoiceDetail in invoice.InvoiceDetails.OrderBy(id => id.IsFinished).OrderByDescending(id => id.InvoiceDetailId))
+                        @foreach (var invoiceDetail in listInvoiceDetails)
                         {
                             <tr class="align-middle">
                                 <td style="cursor:pointer">
@@ -244,48 +247,45 @@ else
                                     </a>
                                 </td>
                                 <td style="cursor:pointer">
-                                    @if (invoiceDetail.ServiceFee != null)
+                                    @if (invoiceDetail.ServiceFee != null && invoiceDetail.ServiceFee > 0)
                                     {
                                         @invoiceDetail.ServiceFee
                                     }
                                     else
                                     {
-                                        <span class="fst-italic">- -</span>
+                                        <span class="fst-italic">····</span>
                                     }
                                 </td>
                                 <td style="cursor:pointer">
-                                    @if (invoiceDetail.Tip != null)
+                                        @if (invoiceDetail.Tip != null && invoiceDetail.Tip.Value > 0.1m)
                                     {
                                         @invoiceDetail.Tip
                                     }
                                     else
                                     {
-                                        <span class="fst-italic">- -</span>
+                                        <span class="fst-italic">····</span>
                                     }
                                 </td>
                                 <td style="cursor:pointer">
-                                    @if ((invoiceDetail?.EndDatetime - invoiceDetail?.StartDatetime)?.TotalMinutes >= 0)
+                                    @if ( invoiceDetail is not null && (invoiceDetail?.EndDatetime - invoiceDetail?.StartDatetime)?.TotalMinutes > 0)
                                     {
-                                        @((invoiceDetail?.EndDatetime - invoiceDetail?.StartDatetime)?.TotalMinutes)
+                                            //(int)Math.Ceiling((double)
+                                            var tempTime = (invoiceDetail?.EndDatetime - invoiceDetail?.StartDatetime)?.TotalMinutes;
+                                            @((int)Math.Ceiling((double)(tempTime??0)))
                                     }
                                     else
                                     {
-                                        <span class="fst-italic">- -</span>
+                                        <span class="fst-italic">····</span>
                                     }
                                 </td>
                                 <td style="cursor:pointer">
-                                    <span class=@($"badge border {(invoiceDetail?.IsFinished == true ? "border-success text-success" : "border-danger text-danger")}")>@(invoiceDetail?.IsFinished == true ? "Finished" : "Not Yet")</span>
+                                        <span class=@($"badge border {(CheckInvoieDetailStatus(invoiceDetail) == "Completed" ? "border-success text-success" : (CheckInvoieDetailStatus(invoiceDetail) == "Running" ? "border-danger text-danger" : "border-secondary text-secondary"))}")>
+                                                                            @CheckInvoieDetailStatus(invoiceDetail)</span>
                                 </td>
                                 <td class="align-middle">
-                                    @if (invoiceDetail?.IsFinished == false)
-                                    {
-                                            <button type="button" class="bg-transparent border-2 border-light p-0">🚩</button>
-                                    }
-                                    else
-                                    {
-                                            <button type="button" class="bg-transparent border-2 border-light p-0">♻️</button>
 
-                                    }
+                                        <button type="button" title="Switch Status" class="bg-transparent border-2 border-light p-0" @onclick="()=>{HandleChangeInvoiceDetailStatusButton(invoiceDetail);}"> @GetEmojiByInvoieDetailStatus(invoiceDetail)</button>
+                                             
                                 </td>
                                 <td class ="align-middle">
                                         <button type="button" class="bg-transparent border-2 border-light p-0" @onclick="() => { HandleEditInvoiceDetailButton(invoiceDetail); }">✏️</button>
@@ -299,7 +299,7 @@ else
                     else
                     {
                         <tr>
-                            <td class="text-center text-black-50" colspan="9">
+                            <td class="text-center text-black-50" colspan="10">
                                 No Data
                             </td>
                         </tr>
@@ -313,6 +313,9 @@ else
     }
     
     <button type="button" class="btn btn-primary mt-2" @onclick="HandleBackButton">Back</button>
+   
+    
+    <button type="button" class="ms-2 btn btn-primary mt-2">Print</button>
 
 }
 
@@ -334,6 +337,8 @@ else
 
     private Invoice? invoice { get; set; }
 
+    private List<InvoiceDetail>? listInvoiceDetails = new List<InvoiceDetail>();
+
     private List<User> listManagers = new List<User>();
 
     private List<Store>? listStores = new List<Store>();
@@ -352,7 +357,124 @@ else
 
     private bool isPaymentMethodChanged = false;
 
-    private bool isManagerChanged = false; 
+    private bool isManagerChanged = false;
+
+    private void HandleUpdateStartTime(InvoiceDetail invoiceDetail)
+    {
+        if (invoiceDetail is not null)
+        {
+            if (invoiceDetail.StartDatetime is null)
+            {
+                invoiceDetail.StartDatetime = DateTime.Now;
+                if (invoiceDetail.EndDatetime is not null)
+                {
+                    invoiceDetail.EndDatetime = null;
+                }
+
+            }
+            else
+            {
+                invoiceDetail.StartDatetime = null;
+                if (invoiceDetail.EndDatetime is not null)
+                {
+                    invoiceDetail.EndDatetime = null;
+                    invoiceDetail.IsFinished = false;
+                }
+
+            }
+
+            InvoiceDetailsService.UpdateInvoiceDetailService(invoiceDetail.InvoiceDetailId, invoiceDetail);
+
+        }
+    }
+
+    private void HandleUpdateEndTime(InvoiceDetail invoiceDetail)
+    {
+        if (invoiceDetail is not null && invoiceDetail.StartDatetime is not null)
+        {
+            if (invoiceDetail.EndDatetime is null)
+            {
+                if (invoiceDetail.StartDatetime.HasValue)
+                {
+                    invoiceDetail.EndDatetime = DateTime.Now;
+                    invoiceDetail.IsFinished = true;
+
+                }
+
+            }
+            else
+            {
+                invoiceDetail.EndDatetime = null;
+                invoiceDetail.IsFinished = false;
+
+            }
+
+            InvoiceDetailsService.UpdateInvoiceDetailService(invoiceDetail.InvoiceDetailId, invoiceDetail);
+        }
+    }
+
+    private void HandleChangeInvoiceDetailStatusButton(InvoiceDetail? invoiceDetail)
+    {
+        if (invoiceDetail is not null)
+        {
+            if (invoiceDetail.StartDatetime is null && invoiceDetail.EndDatetime is null)
+            {
+                HandleUpdateStartTime(invoiceDetail);
+            }
+            else if ((invoiceDetail.StartDatetime is not null) && (invoiceDetail.EndDatetime is null))
+            {
+                HandleUpdateEndTime(invoiceDetail);
+            }
+            else if (invoiceDetail.StartDatetime is not null && invoiceDetail.EndDatetime is not null)
+            {
+                HandleUpdateStartTime(invoiceDetail);
+
+            }
+        }
+
+
+    }
+
+    private string CheckInvoieDetailStatus(InvoiceDetail? invoiceDetail)
+    {
+        if (invoiceDetail is not null)
+        {
+            if (invoiceDetail.StartDatetime is null && invoiceDetail.EndDatetime is null)
+            {
+                return "Created";
+            }
+            else if ((invoiceDetail.StartDatetime is not null) && (invoiceDetail.EndDatetime is null))
+            {
+                return "Running";
+            }
+            else if (invoiceDetail.StartDatetime is not null && invoiceDetail.EndDatetime is not null)
+            {
+                return "Completed";
+            }
+        }
+
+        return string.Empty;
+    }
+    private string GetEmojiByInvoieDetailStatus(InvoiceDetail? invoiceDetail)
+    {
+        if (invoiceDetail is not null)
+        {
+            if (invoiceDetail.StartDatetime is null && invoiceDetail.EndDatetime is null)
+            {
+                return "🚩";
+            }
+            else if ((invoiceDetail.StartDatetime is not null) && (invoiceDetail.EndDatetime is null))
+            {
+                return "🏁";
+            }
+            else if (invoiceDetail.StartDatetime is not null && invoiceDetail.EndDatetime is not null)
+            {
+                return "♻️";
+            }
+        }
+
+        return string.Empty;
+    }
 
     private void OnSelectPaymentMethodChanged(int? valueChanged)
     {
@@ -529,6 +651,21 @@ else
         }
     }
 
+    private static int GetRankInvoiceDetailStatus(string status)
+    {
+        switch (status)
+        {
+            case "Created":
+                return 1;
+            case "Running":
+                return 2;
+            case "Completed":
+                return 3;
+            default:
+                return 0;
+        }
+    }
+
     protected override void OnParametersSet()
     {
         if (this.Id.HasValue)
@@ -546,7 +683,15 @@ else
                 {
                     listManagers = UsersService.GetManagerListByStoreIdService(invoice.StoreId.Value);
                 }
-                
+
+                if(invoice.InvoiceDetails is not null)
+                {
+                    listInvoiceDetails = invoice.InvoiceDetails.Where(id => !id.IsDeleted)
+                                                                .OrderBy(id => GetRankInvoiceDetailStatus(CheckInvoieDetailStatus(id)))
+                                                                .ThenByDescending(id => id.ModifiedDatetime)
+                                                                 .ToList();
+                }
+
                 snapshotPaymentMethodId = invoice.PaymentMethodId;
 
                 snapshotManagerId = invoice.ManagerId;
