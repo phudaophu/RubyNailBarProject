@@ -4,6 +4,10 @@ namespace RubyNailBarWeb.Services.Implements
 {
     public interface IInvoicesService
     {
+        public decimal GetGoodsAndServicesTaxValue();
+
+        public decimal GetProvincialSalesTaxValue();
+
         int GetNumberOfInvoiceDetailByInvoiceIdService(int invoiceId);
         int GetNumberOfNotFinishedInvoiceDetailByInvoiceIdService(int invoiceId);
         List<Invoice> GetExistInvoicesOrderByCreatedDatetimeDescService();

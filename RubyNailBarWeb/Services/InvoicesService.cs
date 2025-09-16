@@ -1,17 +1,24 @@
-﻿using RubyNailBarWeb.Models;
+﻿using Microsoft.Extensions.Options;
+using RubyNailBarWeb.Models;
 using RubyNailBarWeb.Repositories;
 using RubyNailBarWeb.Services.Implements;
+using RubyNailBarWeb.Utilities;
 
 namespace RubyNailBarWeb.Services
 {
     public class InvoicesService :IInvoicesService  
     {
-
-        private readonly InvoicesRepository _invoicesRepository; 
-        public InvoicesService(InvoicesRepository invoicesRepository)
+        private readonly InvoiceSettings _invoiceSettings;
+        private readonly InvoicesRepository _invoicesRepository;
+        public InvoicesService(InvoicesRepository invoicesRepository, IOptions<InvoiceSettings> invoiceSettings)
         {
             this._invoicesRepository = invoicesRepository;
+            this._invoiceSettings = invoiceSettings.Value;   
         }
+
+        public decimal GetGoodsAndServicesTaxValue() => _invoiceSettings.GoodsAndServicesTax;
+
+        public decimal GetProvincialSalesTaxValue() => _invoiceSettings.ProvincialSalesTax;
 
         public int GetNumberOfNotFinishedInvoiceDetailByInvoiceIdService(int invoiceId)
         {

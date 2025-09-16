@@ -32,11 +32,14 @@
                 </th>
 
                 <th>
+                    <button type="button" class="btn border-0 btn-sm text-nowrap px-3" @onclick="@(() => ToggleSort("Bill Total"))">Status  @GetSortIcon("Bill Total")</button>
                 </th>
 
                 <th>
                 </th>
 
+                <th>
+                </th>
 
             </tr>
         </thead>
@@ -56,7 +59,7 @@
                         </td>
 
                         <td style="cursor:pointer" @onclick="@(e => ShowInvoiceDetails(invoice))">
-                            @invoice.InvoiceDate?.ToString("MMM dd yyyy")
+                            @invoice.InvoiceDate?.ToString("yyyy-MM-dd")
                         </td>
 
                         <td style="cursor:pointer" @onclick="@(e => ShowInvoiceDetails(invoice))">
@@ -70,6 +73,9 @@
                         <td style="cursor:pointer" @onclick="@(e => ShowInvoiceDetails(invoice))">
                             @(invoice.ServicesAmount + invoice.TaxAmount + invoice.TipAmount)
                         </td>
+                        <td>
+                            @invoice.Store?.Name
+                        </td>
 
                         <td>
                             <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-0 text-nowrap" @onclick="(e) => HandleInvoiceDetailButton(invoice.InvoiceId)">Details</button>
@@ -78,6 +84,7 @@
                         <td>
                             <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-0 text-nowrap" @onclick="(e) => HandleDeleteButton(invoice)">Delete</button>
                         </td>
+                        
 
                     </tr>
                 }
@@ -129,7 +136,7 @@
                                     <div><strong>Customer Name:</strong> <a href=@($"/customer-back-from/{selectedInvoice.Customer?.CustomerId}")> @selectedInvoice.Customer?.Name</a> </div>
                                     <div><strong>PhoneNo:</strong> @selectedInvoice.Customer?.PhoneNo</div>
                                     <div><strong>Birthday:</strong> @selectedInvoice.Customer?.Birthday?.ToString("MMM dd")</div>
-                                    <div><strong>Last Visit</strong> @selectedInvoice.Customer?.LastVisitDatetime?.ToString("MMM dd yyyy HH:mm:ss")</div>
+                                    <div><strong>Last Visit</strong> @selectedInvoice.Customer?.LastVisitDatetime?.ToString("yyyy-MM-dd HH:mm")</div>
 
                                     <div class="mt-2"><strong>Points:</strong> @selectedInvoice.Customer?.Points</div>
                                     <div>
@@ -164,7 +171,7 @@
                                     <div><strong>Store:</strong> @selectedInvoice.Store?.Name</div>
                                     <div><strong>Manager:</strong> <a href=@($"/user-back-from/{selectedInvoice.Manager?.UserId}")> @selectedInvoice.Manager?.FirstName @selectedInvoice.Manager?.LastName</a> </div>
                                     <div><strong>Total Bill:</strong> @(selectedInvoice.ServicesAmount + selectedInvoice.TaxAmount + selectedInvoice.TipAmount)</div>
-                                    <div><strong>Datetime:</strong> @(selectedInvoice.CreatedDatetime?.ToString("MMM dd yyyy HH:mm:ss"))</div>
+                                    <div><strong>Datetime:</strong> @(selectedInvoice.CreatedDatetime?.ToString("yyyy-MM-dd HH:mm"))</div>
 
                                     <div class="mt-2"><strong>Service Amount:</strong> @selectedInvoice.ServicesAmount</div>
                                     <div><strong>Tax Amount:</strong> @selectedInvoice.TaxAmount</div>
@@ -204,67 +211,80 @@
                                                     <span>Tip</span>
                                                 </th>
                                                 <th>
-                                                    <span>Time</span>
+                                                    <span>Minutes</span>
                                                 </th>
                                                 <th>
                                                     <span>Status</span>
                                                 </th>
+                                                <th>
+                                                </th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            @if (selectedInvoice.InvoiceDetails != null && selectedInvoice.InvoiceDetails.Any())
+                                        @if (listInvoiceDetails is not null && listInvoiceDetails.Any())
                                             {
-
-                                                @foreach (var invoiceDetail in selectedInvoice.InvoiceDetails.OrderBy( id => id.IsFinished).OrderByDescending( id => id.InvoiceDetailId))
+                                                @foreach (var invoiceDetail in listInvoiceDetails)
                                                 {
-                                                    <tr class="align-middle">
-                                                        <td style="cursor:pointer">
-                                                            @invoiceDetail.InvoiceDetailId
-                                                        </td>
-                                                        <td style="cursor:pointer">
-                                                            @invoiceDetail.CustomerService?.Name
-                                                        </td>
-                                                        <td style="cursor:pointer">
-                                                            <a href=@($"/user-back-from/{invoiceDetail.User?.UserId}")>
-                                                                @invoiceDetail.User?.FirstName @invoiceDetail.User?.LastName
-                                                            </a>
-                                                        </td>
-                                                        <td style="cursor:pointer">
-                                                            @if (invoiceDetail.ServiceFee != null)
-                                                            {
-                                                                @invoiceDetail.ServiceFee
-                                                            }
-                                                            else
-                                                            {
-                                                                <span class="fst-italic">- -</span>
-                                                            }   
-                                                        </td>
-                                                         <td style="cursor:pointer">
-                                                            @if (invoiceDetail.Tip != null)
-                                                            {
-                                                                @invoiceDetail.Tip
-                                                            }
-                                                            else
-                                                            {
-                                                                <span class="fst-italic">- -</span>
-                                                            }
-                                                        </td>
-                                                        <td style="cursor:pointer">
-                                                            @if((invoiceDetail?.EndDatetime - invoiceDetail?.StartDatetime)?.TotalMinutes >= 0)
-                                                            {
-                                                                @((invoiceDetail?.EndDatetime - invoiceDetail?.StartDatetime)?.TotalMinutes)
-                                                            }
-                                                            else
-                                                            {
-                                                                <span class="fst-italic">- -</span>
-                                                            }
-                                                        </td>
-                                                        <td style="cursor:pointer">
-                                                            <span class=@($"badge border {(invoiceDetail?.IsFinished == true ? "border-success text-success" : "border-danger text-danger")}")>@(invoiceDetail?.IsFinished == true ? "Finished" : "Not Yet")</span>
-                                                        </td>
-                                                    </tr>
+                                                    if(invoiceDetail is not null)
+                                                    {
+                                                        <tr class="align-middle">
+                                                            <td style="cursor:pointer">
+                                                                @invoiceDetail.InvoiceDetailId
+                                                            </td>
+                                                            <td style="cursor:pointer">
+                                                                @invoiceDetail.CustomerService?.Name
+                                                            </td>
+                                                            <td style="cursor:pointer">
+                                                                <a href=@($"/user-back-from/{invoiceDetail.User?.UserId}")>
+                                                                    @invoiceDetail.User?.FirstName @invoiceDetail.User?.LastName
+                                                                </a>
+                                                            </td>
+                                                            <td style="cursor:pointer">
+                                                                @if (invoiceDetail.ServiceFee != null)
+                                                                {
+                                                                    @invoiceDetail.ServiceFee
+                                                                }
+                                                                else
+                                                                {
+                                                                    <span>····</span>
+                                                                }
+                                                            </td>
+                                                            <td style="cursor:pointer">
+                                                                @if (invoiceDetail.Tip != null)
+                                                                {
+                                                                    @invoiceDetail.Tip
+                                                                }
+                                                                else
+                                                                {
+                                                                    <span>····</span>
+                                                                }
+                                                            </td>
+                                                            <td style="cursor:pointer">
+
+                                                                @{
+                                                                    var serviceTime = CalculateTotalServiceTime(invoiceDetail?.StartDatetime, invoiceDetail?.EndDatetime);
+                                                                }
+                                                                @(serviceTime > 0 ? serviceTime.ToString() : "····")
+
+                                                            </td>
+                                                                @{
+                                                                    var status = CheckInvoieDetailStatus(invoiceDetail).status;
+                                                                    var badgeClass =  status == "Completed" ? "border-success text-success"
+                                                                                    : status == "Running" ? "border-danger text-danger"
+                                                                                    : "border-secondary text-secondary";
+                                                                }
+                                                            <td style="cursor:pointer">
+                                                                <span class=@($"badge border {badgeClass}")>@status</span>
+                                                            </td>
+                                                            <td>
+                                                                <button class="bg-transparent border-2 border-light p-0" @onclick="() => { HandleEditInvoiceDetailButton(invoiceDetail); }">✏️</button>
+                                                            </td>
+                                                        </tr>
+                                                    }
+                                            
                                                 }
                                             }
+                                           
                                             else
                                             {
                                                 <tr>
@@ -286,7 +306,50 @@
                 }
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <div class="w-100 d-flex align-items-center font-monospace">
+                    <section class="d-flex flex-wrap gap-3 btn border-dark">
+
+                        @if(ContainerStorage.CountValidInvoiceDetailByStatus(selectedInvoice, "Created") > 0)
+                        {
+                            <span class="text-secondary">CRE: @ContainerStorage.CountValidInvoiceDetailByStatus(selectedInvoice, "Created")</span>
+
+                        }
+                        @if (ContainerStorage.CountValidInvoiceDetailByStatus(selectedInvoice, "Running") >0 )
+                        {
+                            <span class="text-danger">RUN: @ContainerStorage.CountValidInvoiceDetailByStatus(selectedInvoice, "Running")</span>
+
+                        }
+                        @if (ContainerStorage.CountValidInvoiceDetailByStatus(selectedInvoice, "Completed") >0)
+                        {
+                            <span class="text-success">CPL: @ContainerStorage.CountValidInvoiceDetailByStatus(selectedInvoice, "Completed")</span>
+                        }
+                        @if (ContainerStorage.CountValidInvoiceDetailByStatus(selectedInvoice, "Created") <= 0
+                            && ContainerStorage.CountValidInvoiceDetailByStatus(selectedInvoice, "Running") <= 0
+                            && ContainerStorage.CountValidInvoiceDetailByStatus(selectedInvoice, "Completed") <= 0)
+                        {
+                            <span class="text-secondary">No Services</span>
+                        }
+
+                    </section>
+                    <section class="ms-auto d-flex align-items-center gap-2">
+
+                        <span class="btn border-dark text-black">
+                            Total: @(selectedInvoice?.ServicesAmount + selectedInvoice?.TaxAmount + selectedInvoice?.TipAmount)
+                        </span>
+                        @{
+                            var totalMinutes = selectedInvoice?.InvoiceDetails.Where(id => id.IsDeleted == false)
+                                                .Sum(id => CalculateTotalServiceTime(id.StartDatetime, id.EndDatetime));
+                        }
+                        @if (totalMinutes > 0)
+                        {
+                            <span class="btn border-dark text-black">
+                                @totalMinutes Min
+                            </span>
+                        }
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </section>
+                </div>
+
             </div>
         </div>
     </div>
@@ -370,7 +433,7 @@
 
     private bool isFirstRender = true;
 
-    private string statusInvoiceListView = "Customer data is loading";
+    private string statusInvoiceListView = "Invoice data is loading";
 
     private List<Invoice>? listInvoices = new List<Invoice>();
 
@@ -399,6 +462,39 @@
     private List<Store> listStores = new List<Store>();
 
     // -     -   -   -   -   -   -   -   -   //
+
+    private int CalculateTotalServiceTime(DateTime? startDatetime, DateTime? endDatetime)
+    {
+        
+        if (startDatetime is not null && endDatetime is not null )
+        {
+            var totalServiceTime = (endDatetime - startDatetime)?.TotalMinutes;
+            if (totalServiceTime > 0)
+                return (int)Math.Ceiling((double)(totalServiceTime ?? 0));
+        }
+        return 0;
+    }
+
+    private void HandleEditInvoiceDetailButton(InvoiceDetail? invoiceDetail)
+    {
+        if (invoiceDetail is not null)
+        {
+            //Container Storage
+
+            ContainerStorage.SetSelectedRecordId("invoice", invoiceDetail.InvoiceDetailId);
+
+            ContainerStorage.SetOptionalData("invoice", "InvoiceDetail", invoiceDetail);
+
+            NavigationManager.NavigateTo($"/invoice-detail/{invoiceDetail.InvoiceDetailId}");
+        }
+    }
+
+ 
+
+    private (string status, string emoji, int rank) CheckInvoieDetailStatus(InvoiceDetail? invoiceDetail)
+    {
+        return ContainerStorage.CheckInvoieDetailStatus(invoiceDetail);
+    }
 
     private void HandleInvoiceDetailButton(int invoiceId)
     {
@@ -753,13 +849,23 @@
 
     private async Task ShowInvoiceDetails(Invoice invoice)
     {
-        selectedInvoice = invoice;
-        selectedInvoiceId = invoice.InvoiceId;
-        ContainerStorage.SetSelectedRecordId(CurrentPath, invoice.InvoiceId);
+        if(invoice is not null)
+        {
+            selectedInvoice = invoice;
+            selectedInvoiceId = invoice.InvoiceId;
+            listInvoiceDetails = listInvoiceDetails = invoice.InvoiceDetails.Where(id => !id.IsDeleted)
+                                                                             .OrderBy(id => CheckInvoieDetailStatus(id).rank)
+                                                                             .ThenByDescending(id => id.ModifiedDatetime)
+                                                                             .ToList();
 
-        await Task.Delay(100);
-        await JSRuntime.InvokeVoidAsync("bootstrapInterop.showModal", "#userDetailModal");
+            ContainerStorage.SetSelectedRecordId(CurrentPath, invoice.InvoiceId);
+            await Task.Delay(100);
+            await JSRuntime.InvokeVoidAsync("bootstrapInterop.showModal", "#userDetailModal");
+        }
+
     }
+
+
 
     private void HandleEditButton(int invoiceId)
     {

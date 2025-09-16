@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.EntityFrameworkCore.Query.Internal;
 using Microsoft.Identity.Client;
+using RubyNailBarWeb.Models;
 
 namespace RubyNailBarWeb.StateStorage
 {
@@ -45,7 +46,40 @@ namespace RubyNailBarWeb.StateStorage
             }
             return new PaginationData() { };
         }
-       
+
+        public int CountValidInvoiceDetailByStatus(Invoice? invoice, string status)
+        {
+            if (invoice is not null)
+            {
+                return invoice.InvoiceDetails.Where(id => !id.IsDeleted)
+                                       .Count(id => CheckInvoieDetailStatus(id).status.Equals(status, StringComparison.OrdinalIgnoreCase));
+            }
+            return 0;
+        }
+
+
+        public (string status, string emoji, int rank) CheckInvoieDetailStatus(InvoiceDetail? invoiceDetail)
+        {
+            if (invoiceDetail is not null)
+            {
+                if (invoiceDetail.StartDatetime is null && invoiceDetail.EndDatetime is null)
+                {
+                    return ("Created", "🚩", 1);
+                }
+                else if ((invoiceDetail.StartDatetime is not null) && (invoiceDetail.EndDatetime is null))
+                {
+                    return ("Running", "🏁", 2);
+                }
+                else if (invoiceDetail.StartDatetime is not null && invoiceDetail.EndDatetime is not null)
+                {
+                    return ("Completed", "♻️", 3);
+                }
+            }
+            return ("", "", 0);
+        }
+
+
+
         public bool CheckAnyOptionalDataExist(string currentPath)
         {
             var paginationData = PaginationSelector(currentPath);

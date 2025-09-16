@@ -120,12 +120,31 @@ process: button set end time
 
 2:09 PM 9/12/2025
 complete: button set end time in addedit invoicedetail
-process: validate by JSruntime pop-up when add a new invoice detail and add/update button in invoice detail
+	- validate by JSruntime pop-up when add a new invoice detail and add/update button in invoice detail
 
 
+6:05 PM 9/12/2025
+process: delete button in invoices page/ invoice detail 
 
 
+12:32 AM 9/13/2025
+require: Add more columns in invoice table such as: invoice type (appointment, walking), description, IsNoted (bool), 
+	 Create a another record named invoice-info in NAV bar, so we could manage more data about invoices  
+	 Payment is null => not paid yet
+
+5:25 PM 9/14/2025
+
+require: Add count total row, number of filter row in pagination component.
+ 	 Add go to first and last page to pagination component.
+	 Design print template
+	 Add download and print invoice function. 
 
 
+12:58 AM 9/15/2025
+process: handle pending in payment, create JS Runtime to validate 
 
+12:57 AM 9/16/2025
+complete: calculate total time, add function to save total 
+
+require: Configure 1 invoice-detail - 1 list of users (staffs > 1) 
 

@@ -23,6 +23,10 @@ builder.Services.AddDbContextFactory<NailsDbContext>(options =>
 builder.Services.Configure<FileUploadSettings>(
     builder.Configuration.GetSection("FileUploadSettings"));
 
+builder.Services.Configure<InvoiceSettings>(
+    builder.Configuration.GetSection("InvoiceSettings"));
+
+
 builder.Services.AddScoped<FileUploadService>();
 builder.Services.AddScoped<ContainerStorage>();
 

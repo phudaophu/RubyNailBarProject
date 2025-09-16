@@ -13,6 +13,11 @@ namespace RubyNailBarWeb.Services
             this._paymentMethodRepository = paymentMethodRepository;
         }
 
+        public List<PaymentMethod> GetPendingPaymentsService()
+        {
+            return _paymentMethodRepository.GetPendingPayments();
+        }
+
         public List<PaymentMethod> GetPaymentMethodsService()
         {
             return _paymentMethodRepository.GetPaymentMethods();

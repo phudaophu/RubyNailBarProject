@@ -96,7 +96,9 @@ namespace RubyNailBarWeb.Repositories
                 invoiceToUpdate.TaxAmount = invoice.TaxAmount;
                 invoiceToUpdate.TipAmount = invoice.TipAmount;
                 invoiceToUpdate.PaymentMethodId = invoice.PaymentMethodId;
-                invoiceToUpdate.IsDeleted = invoice.IsDeleted;    
+                invoiceToUpdate.IsDeleted = invoice.IsDeleted;
+                invoiceToUpdate.IsImportant = invoice.IsImportant;
+                invoiceToUpdate.Description = invoice.Description;
                 db.SaveChanges();
             }
         }

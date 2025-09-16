@@ -13,10 +13,18 @@ namespace RubyNailBarWeb.Repositories
             this.contextFactory = _contextFactory;
         }
 
+        public List<PaymentMethod> GetPendingPayments()
+        {
+            using var db = this.contextFactory.CreateDbContext();
+            IQueryable <PaymentMethod> paymentQuery = db.PaymentMethods.AsNoTracking()
+                                                          .Where(p => p.IsPayment == true);
+            return paymentQuery.ToList();   
+        }
+
         public List<PaymentMethod> GetPaymentMethods() 
         {
             using var db = this.contextFactory.CreateDbContext();
-            return db.PaymentMethods.ToList();
+            return db.PaymentMethods.OrderBy(p=>p.IsPayment).ToList();
         }
 
         public PaymentMethod? GetPaymentMethodById(int paymentMethodId) 

@@ -162,6 +162,7 @@ public partial class NailsDbContext : DbContext
             entity.Property(e => e.ServicesAmount).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.TaxAmount).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.TipAmount).HasColumnType("decimal(10, 2)");
+            entity.Property(e => e.Description).HasMaxLength(512);
 
             entity.HasOne(d => d.Customer).WithMany(p => p.Invoices)
                 .HasForeignKey(d => d.CustomerId)

@@ -27,7 +27,12 @@ public partial class Invoice
 
     public int? PaymentMethodId { get; set; }
 
-    public bool? IsDeleted { get; set; } = false;
+    public bool IsDeleted { get; set; } = false;
+
+    public bool IsImportant { get; set; } = false;
+
+    public string? Description { get; set; }
+
     public virtual Customer? Customer { get; set; }
 
     public virtual ICollection<CustomerPointLog> CustomerPointLogs { get; set; } = new List<CustomerPointLog>();

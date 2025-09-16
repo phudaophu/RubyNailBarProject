@@ -7,6 +7,7 @@
 @inject NavigationManager NavigationManager
 @inject ICustomerServicesService CustomerServicesService
 @inject IUsersService UsersService
+@inject IPaymentMethodsService PaymentMethodsService
 @inject IJSRuntime JSRuntime
 
 @if (invoiceDetail is not null)
@@ -212,7 +213,7 @@
 
                         <HorizonListComponent Label="Started">
                             <ElementControl>
-                                <button type="button" class="bg-transparent border-2 border-light p-0" @onclick="HandleUpdateStartTime">@GetEmojiStartTime()</button>
+                                <button type="button" class="bg-transparent border-2 border-light p-0" @onclick="async ()=> {await HandleUpdateStartTime();}">@GetEmojiStartTime()</button>
                             </ElementControl>
                             <Control>
                                 <input type="datetime" value="@invoiceDetail.StartDatetime?.ToString("yyyy-MM-dd HH:mm:ss")" class="form-control">
@@ -291,6 +292,8 @@
 
     private List<CustomerService> listCustomerServices = new List<CustomerService>();
 
+    private List<PaymentMethod> listPaymentMethod = new List<PaymentMethod>();
+
     private List<User>? listUsers { get; set; }
 
     private Invoice? invoice;
@@ -303,27 +306,56 @@
 
     private const string emojiSearchUser = "🔎";
 
-    private string GetEmojiStartTime()
-    {
-        if(invoiceDetail is not null)
-        {
-            if (invoiceDetail.StartDatetime is null)
-                return  "🚩";
-            else return "❌";
-        }
-        return "";
-    }
 
-    private string GetEmojiEndTime()
+    private RenderFragment GetEmojiStartTime() => builder =>
     {
+        string icon = "";
+
         if (invoiceDetail is not null)
         {
-            if (invoiceDetail.EndDatetime is null)
-                return  "🏁";
-            else return "❌";
+            if (invoiceDetail.StartDatetime is null)
+                 icon = "🚩";
+            else icon = "❌";
         }
-        return "";
-    }
+
+        builder.AddContent(0, icon);
+    };
+
+    // private string GetEmojiStartTime()
+    // {
+    //     if(invoiceDetail is not null)
+    //     {
+    //         if (invoiceDetail.StartDatetime is null)
+    //             return  "🚩";
+    //         else return "❌";
+    //     }
+    //     return "";
+    // }
+
+    private RenderFragment GetEmojiEndTime() => builder =>
+     {
+         string icon = "";
+
+         if (invoiceDetail is not null)
+         {
+             if (invoiceDetail.EndDatetime is null)
+                  icon = "🏁";
+             else icon = "❌";
+         }
+
+         builder.AddContent(0, icon);
+     };
+
+    // private string GetEmojiEndTime()
+    // {
+    //     if (invoiceDetail is not null)
+    //     {
+    //         if (invoiceDetail.EndDatetime is null)
+    //             return  "🏁";
+    //         else return "❌";
+    //     }
+    //     return "";
+    // }
 
     private void OnIsFinishedCheckBoxChanged(bool changedValue)
     {
@@ -355,9 +387,24 @@
         }
     }
 
-    private void HandleUpdateStartTime()
+    private void ChangeInvoicePaymentMethodToPending(Invoice invoice)
     {
-        if(invoiceDetail is not null )
+        if (invoice is not null && invoice.PaymentMethod is not null)
+        {
+            bool? checkSelectedPaymentIsFinished = listPaymentMethod?.Where(p => p.IsPayment == true).Any(p => p.PaymentMethodId == invoice.PaymentMethodId);
+            if (checkSelectedPaymentIsFinished == true)
+            {
+                invoice.PaymentMethod = listPaymentMethod?.Where(p => p.IsPayment == false).FirstOrDefault();
+                invoice.PaymentMethodId = listPaymentMethod?.Where(p => p.IsPayment == false).FirstOrDefault()?.PaymentMethodId;
+                InvoicesService.UpdateInvoiceService(invoice.InvoiceId, invoice);
+            }
+        }
+    }
+
+
+    private async Task HandleUpdateStartTime()
+    {
+        if(invoice is not null && invoiceDetail is not null )
         {
             if(invoiceDetail.StartDatetime is null)
             {
@@ -370,15 +417,19 @@
             }
             else
             {
-                invoiceDetail.StartDatetime = null;
-                if (invoiceDetail.EndDatetime is not null)
+                var isConfirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"ℹ️ Click OK to reset the time and change payment method to PENDING, Are you sure ?");
+                if (isConfirmed)
                 {
-                    invoiceDetail.EndDatetime = null;
-                    invoiceDetail.IsFinished = false;
+                    invoiceDetail.StartDatetime = null;
+                    if (invoiceDetail.EndDatetime is not null)
+                    {
+                        invoiceDetail.EndDatetime = null;
+                        invoiceDetail.IsFinished = false;
+                    }
+                    ChangeInvoicePaymentMethodToPending(invoice);
+                    
                 }
-      
             }
-
         }
     }
 
@@ -488,6 +539,8 @@
                 listActiveStaffsByStoreId = UsersService.GetStaffListByStoreIdService(invoice.StoreId.Value).OrderBy(u => !u.IsActive).ToList();
             }
 
+            listPaymentMethod = PaymentMethodsService.GetPaymentMethodsService();
+
             StateHasChanged();
         }
     }
@@ -564,6 +617,11 @@
                 // select customer service
 
                 var newInvoiceDetailId = InvoiceDetailsService.AddInvoiceDetailService(invoiceDetail);
+
+                ContainerStorage.SetSelectedRecordId("invoice", newInvoiceDetailId);
+
+
+
             }
             HandleBackButton();
         }
