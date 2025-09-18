@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore.Query.Internal;
 using Microsoft.Identity.Client;
 using RubyNailBarWeb.Models;
+using System.Runtime.CompilerServices;
 
 namespace RubyNailBarWeb.StateStorage
 {
@@ -45,6 +46,29 @@ namespace RubyNailBarWeb.StateStorage
                 }
             }
             return new PaginationData() { };
+        }
+        public int CalculateTotalServiceTime(DateTime? startDatetime, DateTime? endDatetime)
+        {
+
+            if (startDatetime is not null && endDatetime is not null)
+            {
+                var totalServiceTime = (endDatetime - startDatetime)?.TotalMinutes;
+                if (totalServiceTime > 0)
+                    return (int)Math.Ceiling((double)(totalServiceTime ?? 0));
+            }
+            return 0;
+        }
+
+        public decimal CalculateInvoiceTotalBill(Invoice? invoice)
+        {
+            if (invoice is not null)
+            {
+                var tax = (1 + invoice?.GSTax / 100 + invoice?.PSTax / 100);
+                var totalServices = ((invoice?.ServicesAmount + invoice?.TipAmount));
+                var totalBill = tax * totalServices;
+                return Decimal.Round(totalBill??0, 2); 
+            }
+            return 0;
         }
 
         public int CountValidInvoiceDetailByStatus(Invoice? invoice, string status)
@@ -342,8 +366,10 @@ namespace RubyNailBarWeb.StateStorage
             return false;
         }
 
-        public void SetOptionalDataFromDict<T>(string key, T value) => this.optionalFilterDataDict[key] = value;
-
+        public void SetOptionalDataFromDict<T>(string key, T value)
+        {
+            this.optionalFilterDataDict[key] = value;
+        }
         public T GetElementOptionalDataFromDict<T>(string keyName, out T value)
         {
             if (this.optionalFilterDataDict.TryGetValue(keyName, out var obj) && obj is T t)

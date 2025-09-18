@@ -9,6 +9,6 @@ public partial class PaymentMethod
 
     public string? Name { get; set; }
 
-    public bool? IsPayment { get; set; }    
+    public bool IsPayment { get; set; }    
     public virtual ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
 }

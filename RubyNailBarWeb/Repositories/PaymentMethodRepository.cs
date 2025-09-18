@@ -13,6 +13,7 @@ namespace RubyNailBarWeb.Repositories
             this.contextFactory = _contextFactory;
         }
 
+
         public List<PaymentMethod> GetPendingPayments()
         {
             using var db = this.contextFactory.CreateDbContext();

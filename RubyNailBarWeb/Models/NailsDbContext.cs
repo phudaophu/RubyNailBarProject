@@ -160,7 +160,8 @@ public partial class NailsDbContext : DbContext
 
             entity.Property(e => e.CreatedDatetime).HasColumnType("datetime");
             entity.Property(e => e.ServicesAmount).HasColumnType("decimal(10, 2)");
-            entity.Property(e => e.TaxAmount).HasColumnType("decimal(10, 2)");
+            entity.Property(e => e.PSTax).HasColumnType("decimal(10, 2)");
+            entity.Property(e => e.GSTax).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.TipAmount).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.Description).HasMaxLength(512);
 

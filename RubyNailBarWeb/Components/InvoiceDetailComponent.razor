@@ -1,0 +1,325 @@
+﻿@inject ContainerStorage ContainerStorage
+@inject IJSRuntime JSRuntime
+@inject IInvoiceDetailsService InvoiceDetailsService
+@inject IInvoicesService InvoicesService
+@inject NavigationManager NavigationManager
+
+@if (this.Invoice is not null && this.Invoice.InvoiceId > 0)
+{
+    <div class="ms-3">
+        <div>
+            <span><i class="bi bi-person">Included Services</i></span>
+        </div>
+
+        <div class="table-responsive" style="overflow-y: auto; max-height: @(activeAddAdvacedSettingsSection == true ? "35vh;" : "48vh;")">
+            <table class="table table-striped table-hover">
+                <thead class="bg-white">
+                    <tr style="position:sticky; top:0; z-index:2;">
+                        <th class="fw-normal">
+                            <span> Id </span>
+                        </th>
+                        <th class="fw-normal">
+                            <span>Service</span>
+                        </th>
+                        <th class="fw-normal">
+                            <span>Staff</span>
+                        </th>
+                        <th class="fw-normal">
+                            <span>Fee</span>
+                        </th>
+                        <th class="fw-normal">
+                            <span>Tip</span>
+                        </th>
+                        <th class="fw-normal">
+                            <span>Minute</span>
+                        </th>
+                        <th class="fw-normal">
+                            <span>Status</span>
+                        </th>
+                        <th>
+                        </th>
+                        <th>
+                        </th>
+                        <th>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (this.Invoice is not null && this.Invoice.InvoiceDetails != null && this.Invoice.InvoiceDetails.Any()
+                                    && listInvoiceDetails is not null && listInvoiceDetails.Any())
+                    {
+
+                        @foreach (var invoiceDetail in listInvoiceDetails)
+                        {
+                            <tr class="align-middle" style="background-color:@(invoiceDetail.InvoiceDetailId == selectedInvoiceDetailId ? "#d8dbf2" : "white")">
+                                <td style="cursor:pointer">
+                                    @invoiceDetail.InvoiceDetailId
+                                </td>
+                                <td style="cursor:pointer">
+                                    @invoiceDetail.CustomerService?.Name
+                                </td>
+                                <td style="cursor:pointer">
+
+                                    <button type="button" class="btn btn-link p-0 text-decoration-none text-primary text-start" @onclick="() => { HandleNavigateToSelectedStaff(invoiceDetail); }"> @invoiceDetail.User?.FirstName @invoiceDetail.User?.LastName </button>
+                                </td>
+                                <td style="cursor:pointer">
+                                    @if (invoiceDetail.ServiceFee != null && invoiceDetail.ServiceFee > 0)
+                                    {
+                                        @invoiceDetail.ServiceFee
+                                    }
+                                    else
+                                    {
+                                        <span>····</span>
+                                    }
+                                </td>
+                                <td style="cursor:pointer">
+                                    @if (invoiceDetail.Tip != null && invoiceDetail.Tip.Value > 0.01m)
+                                    {
+                                        @invoiceDetail.Tip
+                                    }
+                                    else
+                                    {
+                                        <span>····</span>
+                                    }
+                                </td>
+                                <td style="cursor:pointer">
+                                    @if (invoiceDetail is not null && (invoiceDetail?.EndDatetime - invoiceDetail?.StartDatetime)?.TotalMinutes > 0)
+                                    {
+                                        //(int)Math.Ceiling((double)
+                                        var tempTime = (invoiceDetail?.EndDatetime - invoiceDetail?.StartDatetime)?.TotalMinutes;
+                                        @((int)Math.Ceiling((double)(tempTime ?? 0)))
+                                    }
+                                    else
+                                    {
+                                        <span>····</span>
+                                    }
+                                </td>
+                                <td style="cursor:pointer">
+                                    <span class=@($"badge border {(CheckInvoieDetailStatus(invoiceDetail).status == "Completed" ? "border-success text-success" : (CheckInvoieDetailStatus(invoiceDetail).status == "Running" ? "border-danger text-danger" : "border-secondary text-secondary"))}")>
+                                        @CheckInvoieDetailStatus(invoiceDetail).status
+                                    </span>
+                                </td>
+                                <td class="align-middle">
+
+                                    <button type="button" title="Switch Status" class="bg-transparent border-2 border-light p-0" @onclick="async () => { await HandleChangeInvoiceDetailStatusButton(invoiceDetail); }"> @CheckInvoieDetailStatus(invoiceDetail).emoji </button>
+
+                                </td>
+                                <td class="align-middle">
+                                    <button type="button" class="bg-transparent border-2 border-light p-0" @onclick="() => { HandleEditInvoiceDetailButton(invoiceDetail); }">✏️</button>
+                                </td>
+                                <td class="align-middle">
+                                    <button type="button" class="bg-transparent border-2 border-light p-0" @onclick=" async()=>{ await HandleDeleteInvoiceDetailButton(invoiceDetail);}">❌</button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td class="text-center text-black-50" colspan="10">
+                                No Data
+                            </td>
+                        </tr>
+                    }
+
+                </tbody>
+
+            </table>
+        </div>
+    </div>
+
+
+}
+
+
+
+
+
+
+@code {
+
+    [Parameter]
+    public Invoice? Invoice { get; set; }
+
+    [Parameter]
+    public EventCallback OnChangeInvoicePaymentMethodToPendingCallBack { get; set; }
+
+    private bool activeAddAdvacedSettingsSection = false;
+
+    private int selectedInvoiceDetailId;
+
+    private int? snapshotPaymentMethodId;
+
+    [Parameter]
+    public string CurrentPath  { get; set; } = string.Empty;
+
+    private List<InvoiceDetail> listInvoiceDetails = new List<InvoiceDetail>();
+
+    private List<PaymentMethod> listPaymentMethod = new List<PaymentMethod>();
+
+
+
+    protected override void OnParametersSet()
+    {
+        if (Invoice is not null && Invoice.InvoiceId > 0)
+        {
+            if (Invoice.InvoiceDetails is not null)
+            {
+                listInvoiceDetails = Invoice.InvoiceDetails.Where(id => !id.IsDeleted)
+                                                            .OrderBy(id => CheckInvoieDetailStatus(id).rank)
+                                                            .ThenByDescending(id => id.ModifiedDatetime)
+                                                             .ToList();
+            }
+
+            this.selectedInvoiceDetailId = ContainerStorage.GetLastSelectedRecordId(CurrentPath);
+        }
+
+
+    }
+
+
+    private void HandleNavigateToSelectedStaff(InvoiceDetail invoiceDetail)
+    {
+        if (invoiceDetail is not null && invoiceDetail.User is not null)
+        {
+
+            selectedInvoiceDetailId = invoiceDetail.InvoiceDetailId;
+            ContainerStorage.SetSelectedRecordId(CurrentPath, invoiceDetail.InvoiceDetailId);
+
+            NavigationManager.NavigateTo($"/user-back-from/{invoiceDetail.User?.UserId}");
+        }
+    }
+
+    private (string status, string emoji, int rank) CheckInvoieDetailStatus(InvoiceDetail? invoiceDetail)
+    {
+        return ContainerStorage.CheckInvoieDetailStatus(invoiceDetail);
+
+    }
+
+    private async Task HandleChangeInvoiceDetailStatusButton(InvoiceDetail? invoiceDetail)
+    {
+        if (this.Invoice is not null && invoiceDetail is not null)
+        {
+            selectedInvoiceDetailId = invoiceDetail.InvoiceDetailId;
+            ContainerStorage.SetSelectedRecordId(this.CurrentPath, invoiceDetail.InvoiceDetailId);
+
+            if (invoiceDetail.StartDatetime is null && invoiceDetail.EndDatetime is null)
+            {
+                HandleUpdateStartTime(invoiceDetail);
+            }
+            else if ((invoiceDetail.StartDatetime is not null) && (invoiceDetail.EndDatetime is null))
+            {
+                HandleUpdateEndTime(invoiceDetail);
+            }
+            else if (invoiceDetail.StartDatetime is not null && invoiceDetail.EndDatetime is not null)
+            {
+                var isConfirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"ℹ️ Click OK to reset the time and change payment method to PENDING, Are you sure ?");
+                if (isConfirmed)
+                {
+
+                    //ChangeInvoicePaymentMethodToPending(this.Invoice);
+                    await OnChangeInvoicePaymentMethodToPendingCallBack.InvokeAsync();
+                    HandleUpdateStartTime(invoiceDetail);
+                }
+
+            }
+        }
+    }
+
+    private void HandleUpdateStartTime(InvoiceDetail invoiceDetail)
+    {
+        if (invoiceDetail is not null)
+        {
+            if (invoiceDetail.StartDatetime is null)
+            {
+                invoiceDetail.StartDatetime = DateTime.Now;
+                if (invoiceDetail.EndDatetime is not null)
+                {
+                    invoiceDetail.EndDatetime = null;
+                }
+            }
+            else
+            {
+                invoiceDetail.StartDatetime = null;
+                if (invoiceDetail.EndDatetime is not null)
+                {
+                    invoiceDetail.EndDatetime = null;
+                    invoiceDetail.IsFinished = false;
+                }
+            }
+            InvoiceDetailsService.UpdateInvoiceDetailService(invoiceDetail.InvoiceDetailId, invoiceDetail);
+
+        }
+    }
+
+    private void HandleUpdateEndTime(InvoiceDetail invoiceDetail)
+    {
+        if (invoiceDetail is not null && invoiceDetail.StartDatetime is not null)
+        {
+            if (invoiceDetail.EndDatetime is null)
+            {
+                if (invoiceDetail.StartDatetime.HasValue)
+                {
+                    invoiceDetail.EndDatetime = DateTime.Now;
+                    invoiceDetail.IsFinished = true;
+                }
+            }
+            else
+            {
+                invoiceDetail.EndDatetime = null;
+                invoiceDetail.IsFinished = false;
+            }
+            InvoiceDetailsService.UpdateInvoiceDetailService(invoiceDetail.InvoiceDetailId, invoiceDetail);
+        }
+    }
+
+
+
+    private void HandleEditInvoiceDetailButton(InvoiceDetail? invoiceDetail)
+    {
+        if (invoiceDetail is not null)
+        {
+            //Container Storage
+            selectedInvoiceDetailId = invoiceDetail.InvoiceDetailId;
+
+            ContainerStorage.SetSelectedRecordId(this.CurrentPath, invoiceDetail.InvoiceDetailId);
+
+            //ContainerStorage.SetOptionalData(this.CurrentPath, "InvoiceDetail", invoiceDetail);
+
+            NavigationManager.NavigateTo($"/invoice-detail/{invoiceDetail.InvoiceDetailId}");
+        }
+    }
+
+    private async Task HandleDeleteInvoiceDetailButton(InvoiceDetail? invoiceDetail)
+    {
+        if (this.Invoice is not null && invoiceDetail is not null && !invoiceDetail.IsDeleted && listInvoiceDetails is not null)
+        {
+            selectedInvoiceDetailId = 0;
+            ContainerStorage.SetSelectedRecordId(this.CurrentPath, 0);
+
+            invoiceDetail.IsDeleted = true;
+            InvoiceDetailsService.UpdateInvoiceDetailService(invoiceDetail.InvoiceDetailId, invoiceDetail);
+            
+            // remove item from the list
+            //listInvoiceDetails.Remove(invoiceDetail);
+
+            // re-load listInvoiceDetails
+            listInvoiceDetails = this.Invoice.InvoiceDetails.Where(id => !id.IsDeleted)
+                                                        .OrderBy(id => CheckInvoieDetailStatus(id).rank)
+                                                        .ThenByDescending(id => id.ModifiedDatetime)
+                                                         .ToList();
+
+            if (!listInvoiceDetails.Any())
+            {
+                var isConfirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"ℹ️ Click OK to reset the time and change payment method to PENDING, Are you sure ?");
+                if (isConfirmed)
+                {
+                    await OnChangeInvoicePaymentMethodToPendingCallBack.InvokeAsync();
+                }
+            }
+        }
+    }
+
+ 
+
+}

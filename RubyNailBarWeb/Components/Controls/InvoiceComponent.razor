@@ -1,0 +1,642 @@
+﻿@inject IUsersService UsersService
+@inject IJSRuntime JSRuntime
+@inject IInvoicesService InvoicesService
+@inject ICustomersService CustomersService
+@inject ContainerStorage ContainerStorage
+@inject NavigationManager NavigationManager
+@inject IPaymentMethodsService PaymentMethodsService
+@inject IStoresService StoresService
+
+@if (this.Invoice is not null)
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>
+                    Store
+                </th>
+                <th>
+                    Manager
+                </th>
+                <th>
+                    Payment
+                </th>
+                <th>
+                    Customer
+                </th>
+                <th>
+                </th>
+                <th>
+                </th>
+                <th>
+                </th>
+                <th>
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>
+                    <InputSelect class="form-select" TValue="int?"
+                                 Value="Invoice.StoreId"
+                                 ValueChanged="@( (int? e) => {OnSelectStoreChanged(e);} )"
+                                 ValueExpression="@(() => Invoice.StoreId)">
+
+                        <option value="0" disabled selected>-- Select Store --</option>
+                        @if (listStores != null && listStores.Any())
+                        {
+                            @if (this.Invoice.InvoiceId > 0)
+                            {
+                                @foreach (var store in listStores)
+                                {
+                                    <option value="@store.StoreId" disabled="@(Invoice.InvoiceId > 0)">@store.Name</option>
+
+                                }
+
+                            }
+                            @if (this.Invoice.InvoiceId <= 0)
+                            {
+                                @foreach (var store in listStores.Where(s => s.IsActive == true).ToList())
+                                {
+                                    <option value="@store.StoreId" disabled="@(Invoice.InvoiceId > 0)">@store.Name</option>
+
+                                }
+                            }
+                        }
+
+                    </InputSelect>
+                </td>
+                <td>
+
+                    <InputSelect class="form-select" TValue="int?"
+                                 Value="Invoice.ManagerId"
+                                    ValueChanged="@( (int? e) => {OnSelectManagerChanged(e);} )"
+                                 ValueExpression="@(() => Invoice.ManagerId)">
+
+                        <option value="0" disabled selected>--Select Manager--</option>
+                        @if (listManagers != null && listManagers.Any())
+                        {
+                            @foreach (var manager in listManagers)
+                            {
+                                <option value="@manager.UserId">@manager.FirstName @manager.LastName</option>
+
+                            }
+
+                        }
+                    </InputSelect>
+                </td>
+                <td>
+                        <InputSelect class="form-select" TValue="int?"
+                                 Value="Invoice.PaymentMethodId"
+                                     ValueChanged="@(async (int? e) => {await OnSelectPaymentMethodChanged(e);} )"
+                                 ValueExpression="@(() => Invoice.PaymentMethodId)">
+
+                        @if ((this.Invoice.InvoiceId <= 0) && listPendingPayment != null && listPendingPayment.Any())
+                        {
+
+                            @foreach (var paymentMethod in listPendingPayment)
+                            {
+                                <option value="@paymentMethod.PaymentMethodId">@paymentMethod.Name</option>
+                            }
+
+                        }
+                        else if ((this.Invoice.InvoiceId > 0) && listPaymentMethod != null && listPaymentMethod.Any())
+                        {
+                            @foreach (var paymentMethod in listPaymentMethod)
+                            {
+                                <option value="@paymentMethod.PaymentMethodId">@paymentMethod.Name</option>
+                            }
+                        }
+                    </InputSelect>
+                </td>
+                <td>
+                    <input type="text" class="form-control" placeholder="Enter PhoneNo | Name" @bind="searchText" disabled="@(this.Invoice.InvoiceId > 0)" />
+                    @if (listFoundCustomers?.Any() == true)
+                    {
+                        <ul class="list-group position-absolute mt-1" style="z-index:1000; width:300px">
+
+                            @foreach (var customer in listFoundCustomers)
+                            {
+                                <li class="list-group-item list-group-item-action" @onclick="() => HandleSelectCustomer(customer)"> @customer.Name - @customer.PhoneNo @($"{(customer.Birthday!=null? "- "+customer.Birthday?.ToString("MMM dd"): ""  )}")</li>
+                            }
+                        </ul>
+                     }
+                </td>
+
+                @if (this.Invoice.InvoiceId > 0)
+                {
+                    @if (isManagerChanged || isPaymentMethodChanged || isDescriptionChanged)
+                    {
+                        <td class="align-middle">
+                            <button type="button" title="Update Invoice" class="bg-transparent border-2 border-light p-0" @onclick="HandleUpdateInvoiceButton">💾</button>
+                        </td>
+                        <td class="align-middle">
+                            <button type="button" title="Advanced Settings" class="bg-transparent border-2 border-light p-0" @onclick="HandleAddAdvancedSettingsSection">🛠️</button>
+                        </td>
+                        <td class="align-middle" colspan="2">
+                            <button type="button" title="Discard Update" class="bg-transparent border-2 border-light p-0" @onclick="HandleDiscardUpdateInvoiceButton">🚫</button>
+                        </td>
+                    }
+                    else
+                    {
+                        <td class="align-middle">
+                            <button type="button" title="Update Invoice" class="bg-transparent border-2 border-light p-0" @onclick="HandleUpdateInvoiceButton" disabled>💾</button>
+                        </td>
+                        <td class="align-middle">
+                            <button type="button" title="Advanced Settings" class="bg-transparent border-2 border-light p-0" @onclick="HandleAddAdvancedSettingsSection">🛠️</button>
+                        </td>
+                        <td class="align-middle" colspan="2">
+                            <button type="button" title="Add Services" class="bg-transparent border-2 border-light p-0" @onclick="HandleAddInvoiceDetailButton">➕</button>
+                        </td>
+
+
+                    }
+                }
+                else
+                {
+                    <td class="align-middle">
+                        @if (this.Invoice.CustomerId > 0)
+                        {
+                            <button type="button" title="Discard Customer" class="bg-transparent border-2 border-light p-0" @onclick="HandleClearCustomerSelectionButton" disabled="@(this.Invoice.InvoiceId > 0)">❌</button>
+
+                        }
+                        else
+                        {
+                            <button type="button" title="Search Customer" class="bg-transparent border-2 border-light p-0" @onclick="HandleSearchButton">🔍</button>
+
+                        }
+                    </td>
+                    <td class="align-middle">
+                        @if (activeAddCustomerSection)
+                        {
+                            <button type="button" title="Dont Add Customer" class="bg-transparent border-2 border-light p-0" @onclick="HandleAddNewCustomerButton">🚫</button>
+
+                        }
+                        else
+                        {
+                            <button type="button" title="Add New Customer" class="bg-transparent border-2 border-light p-0" @onclick="HandleAddNewCustomerButton">👤</button>
+
+                        }
+                    </td>
+
+                    <td class="align-middle">
+                        <button type="button" title="Advanced Settings" class="bg-transparent border-2 border-light p-0" @onclick="HandleAddAdvancedSettingsSection">🛠️</button>
+                    </td>
+
+                    <td class="align-middle">
+                        <button type="button" title="Add Invoice" class="bg-transparent border-2 border-light p-0" @onclick="HandleAddInvoiceButton"
+                                disabled="@(Invoice.CustomerId > 0 && Invoice.StoreId > 0 && Invoice.ManagerId > 0 ? false : true)">
+                            ✔️
+                        </button>
+                    </td>
+
+                }
+
+
+
+            </tr>
+        </tbody>
+    </table>
+
+    // Advanced Settings
+    @if (activeAddAdvacedSettingsSection && this.Invoice is not null)
+    {
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>
+                        Total Services
+                    </th>
+                    <th>
+                        Tip
+                    </th>
+                    <th>
+                        GST
+                    </th>
+                    <th>
+                        PST 
+                    </th>
+                    <th>
+                        Type
+                    </th>
+                    <th>
+                        Description
+                    </th>
+                    <th>
+
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="align-middle">
+                        <InputNumber class="form-control" @bind-Value="Invoice.ServicesAmount" disabled="@(invoicePaymentStatus)">
+
+                        </InputNumber>
+                    </td>
+                    <td class="align-middle">
+
+                        <InputNumber style="" class="form-control" @bind-Value="Invoice.TipAmount" disabled="@(invoicePaymentStatus)">
+
+                        </InputNumber>
+                    </td>
+                    <td class="align-middle">
+                        <div class="input-group input-group flex-nowrap">
+                            <InputNumber TValue="decimal?" class="form-control text-end"
+                                         @bind-Value="Invoice.GSTax" step="0.1" min="0" max="100" disabled="@(invoicePaymentStatus)" />
+                            <span class="input-group-text">%</span>
+                        </div>
+                    </td>
+                    <td class="align-middle input-group w-auto">
+                        <div class="input-group input-group flex-nowrap">
+                            <InputNumber TValue="decimal?" class="form-control text-end"
+                                         @bind-Value="Invoice.PSTax" step="0.1" min="0" max="100" disabled="@(invoicePaymentStatus)" />
+                            <span class="input-group-text">%</span>
+                        </div>
+                    </td>
+                    <td class="align-middle">
+                        <InputSelect class="form-select" TValue="int?"
+                                     Value="Invoice.ManagerId"
+                                     ValueChanged="@( (int? e) => {OnSelectManagerChanged(e);} )"
+                                     ValueExpression="@(() => Invoice.ManagerId)">
+
+                            <option value="0" disabled selected>--Select Manager--</option>
+                            @if (listManagers != null && listManagers.Any())
+                            {
+                                @foreach (var manager in listManagers)
+                                {
+                                    <option value="@manager.UserId">@manager.FirstName @manager.LastName</option>
+
+                                }
+
+                            }
+                        </InputSelect>
+                    </td>
+                    <td class="align-middle">
+                        <InputText type="text" class="form-control" placeholder="Enter Description"
+                                   Value="@Invoice.Description"
+                                   ValueChanged="@((string e) => { OnInvoiceDescriptionChange(e);} )"
+                                   ValueExpression="@(() => Invoice.Description)" />
+                    </td>
+
+                    <td class="align-middle">
+                        <button type="button" title="Save to Watchlist" class="bg-transparent border-2 border-light p-0" @onclick="HandleMoveToWatchlist">
+                            📒
+                        </button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    }
+   
+}
+
+<hr>
+
+
+
+
+
+@code {
+
+
+    //[Parameter]
+    //public int? Id { get; set; }
+
+    [Parameter]
+    public EventCallback<Invoice> InvoiceCallBack { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> AddCustomerSectionCallBack { get; set; }
+
+    [Parameter]
+    public EventCallback OnChangeInvoicePaymentMethodToPendingCallBack { get; set; }
+
+    [Parameter]
+    public string CurrentPath { get; set; } = string.Empty;
+
+    [Parameter]
+    public Invoice? Invoice { get; set; }
+
+    private List<User> listManagers = new List<User>();
+
+    private List<Store> listStores = new List<Store>();
+
+    private List<PaymentMethod>? listPendingPayment = new List<PaymentMethod>();
+
+    private List<PaymentMethod>? listPaymentMethod = new List<PaymentMethod>();
+
+    private string? searchText { get; set; } = string.Empty;
+
+    private List<Customer>? listFoundCustomers = new List<Customer>();
+
+    private bool isManagerChanged = false;
+
+    private bool isPaymentMethodChanged = false;
+
+    private bool isDescriptionChanged = false;
+
+    [Parameter]
+    public bool activeAddCustomerSection { get; set; } = false;
+
+    private bool activeAddAdvacedSettingsSection = false;
+
+    private int? snapshotPaymentMethodId;
+
+    private int? snapshotManagerId;
+
+    private string snapshotDescription = string.Empty;
+
+    private int? selectedInvoiceDetailId;
+
+    private Customer? selectedCustomerInfo = new Customer();
+
+    private bool invoicePaymentStatus = false;
+
+    //private List<InvoiceDetail> listInvoiceDetails = new List<InvoiceDetail>();
+
+
+
+    protected override void OnInitialized()
+    {
+        listStores = StoresService.GetActiveStoresService();
+
+        listPaymentMethod = PaymentMethodsService.GetPaymentMethodsService();
+
+        listPendingPayment = listPaymentMethod.Where(p => p.IsPayment == false).ToList();
+
+        this.selectedInvoiceDetailId = ContainerStorage.GetLastSelectedRecordId(this.CurrentPath);
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (this.Invoice is not null)
+        {
+            if (Invoice.InvoiceId > 0)
+            {
+
+                if (Invoice.StoreId > 0 && !listManagers.Any())
+                {
+                    listManagers = UsersService.GetManagerListByStoreIdService(Invoice.StoreId.Value);
+                }
+
+                snapshotPaymentMethodId = Invoice.PaymentMethodId;
+
+                snapshotManagerId = Invoice.ManagerId;
+
+                snapshotDescription = Invoice.Description ?? String.Empty;
+
+                invoicePaymentStatus = CheckInvoicePaymentStatus(Invoice.PaymentMethodId);
+            }
+
+            if (Invoice.InvoiceId <= 0)
+            {
+                Invoice.PaymentMethodId = listPaymentMethod?.FirstOrDefault(p => p.IsPayment == false)?.PaymentMethodId;
+            }
+
+            if (Invoice.CustomerId > 0)
+            {
+                selectedCustomerInfo = CustomersService.GetCustomerByIdService(Invoice.CustomerId.Value);
+
+                searchText = $"{selectedCustomerInfo?.Name} - {selectedCustomerInfo?.PhoneNo}";
+            }
+
+
+
+        }
+
+    }
+
+    private (string status, string emoji, int rank) CheckInvoieDetailStatus(InvoiceDetail? invoiceDetail)
+    {
+        return ContainerStorage.CheckInvoieDetailStatus(invoiceDetail);
+
+    }
+
+
+    private void OnSelectStoreChanged(int? valueChanged)
+    {
+        if (valueChanged is not null && valueChanged.Value > 0 && valueChanged != this.Invoice?.StoreId && this.Invoice is not null)
+        {
+            this.Invoice.StoreId = valueChanged.Value;
+            this.Invoice.ManagerId = 0;
+            listManagers = UsersService.GetManagerListByStoreIdService(valueChanged.Value);
+
+        }
+
+    }
+
+    private void HandleMoveToWatchlist()
+    {
+        if (this.Invoice is not null)
+        {
+            Invoice.IsImportant = !Invoice.IsImportant;
+        }
+    }
+
+    private void HandleUpdateInvoiceButton()
+    {
+        if (this.Invoice is not null)
+        {
+            InvoicesService.UpdateInvoiceService(Invoice.InvoiceId, Invoice);
+            //ContainerStorage.SetOptionalData(this.CurrentPath, "Invoice", Invoice);
+
+            isManagerChanged = false;
+            isPaymentMethodChanged = false;
+            isDescriptionChanged = false;
+            // refresh invoice
+            //StateHasChanged();
+            //Invoice = InvoicesService.GetInvoiceByIdService(Invoice.InvoiceId);
+        }
+    }
+
+    private void HandleSelectCustomer(Customer customer)
+    {
+        if (customer is not null && this.Invoice is not null)
+        {
+            searchText = $"{customer.Name} - {customer.PhoneNo}";
+
+            Invoice.CustomerId = customer.CustomerId;
+            listFoundCustomers?.Clear();
+        }
+    }
+
+    private async Task OnSelectPaymentMethodChanged(int? valueChanged)
+    {
+        if (valueChanged is not null && valueChanged.Value > 0 && valueChanged != Invoice?.PaymentMethodId && this.Invoice is not null)
+        {
+            if (listPaymentMethod is not null && listPaymentMethod.Where(p => p.IsPayment == true).Any(p => p.PaymentMethodId == valueChanged.Value))
+            {
+                if (!(this.Invoice.InvoiceId > 0))
+                {
+                    await JSRuntime.InvokeVoidAsync("confirm", $"⚠️ Payment cannot process due to no services.");
+                    //ChangeInvoicePaymentMethodToPending(invoice);
+                    await OnChangeInvoicePaymentMethodToPendingCallBack.InvokeAsync();
+                    return;
+                }
+                else if (Invoice.InvoiceDetails.All(id => id.IsDeleted == true))
+                {
+                    await JSRuntime.InvokeVoidAsync("confirm", $"⚠️ Payment cannot process due to no services.");
+                    //ChangeInvoicePaymentMethodToPending(invoice);
+                    await OnChangeInvoicePaymentMethodToPendingCallBack.InvokeAsync();
+                    return;
+                }
+                else if (Invoice.InvoiceDetails.Any()
+                                        && Invoice.InvoiceDetails.Any(id => id.IsDeleted == false
+                                                                        && !ContainerStorage.CheckInvoieDetailStatus(id).status.Equals("Completed", StringComparison.OrdinalIgnoreCase)))
+                {
+                    await JSRuntime.InvokeVoidAsync("confirm", $"⚠️ All Services must be in COMPLETED status prior to payment process.");
+                    //ChangeInvoicePaymentMethodToPending(invoice);
+                    await OnChangeInvoicePaymentMethodToPendingCallBack.InvokeAsync();
+                    return;
+                }
+                // Payment => Completed
+                if (Invoice.InvoiceDetails.Any()
+                                        && Invoice.InvoiceDetails.Where(id => id.IsDeleted == false).All(id => ContainerStorage.CheckInvoieDetailStatus(id).status.Equals("Completed", StringComparison.OrdinalIgnoreCase)))
+                {
+                    Invoice.PaymentMethodId = valueChanged.Value;
+                    invoicePaymentStatus = CheckInvoicePaymentStatus(valueChanged.Value);
+                    isPaymentMethodChanged = true;
+                    //ContainerStorage.SetOptionalData(this.CurrentPath, "Invoice", Invoice);
+                    
+                    return;
+                }
+            }
+            // Payment => Pending
+            if (listPaymentMethod is not null && listPaymentMethod.Where(p => p.IsPayment == false).Any(p => p.PaymentMethodId == valueChanged.Value))
+            {
+                Invoice.PaymentMethodId = valueChanged.Value;
+                invoicePaymentStatus = CheckInvoicePaymentStatus(valueChanged.Value);
+                isPaymentMethodChanged = true;
+                //ContainerStorage.SetOptionalData(this.CurrentPath, "Invoice", Invoice);
+               
+                return;
+            }
+        }
+    }
+
+
+    private void OnSelectManagerChanged(int? valueChanged)
+    {
+        if (valueChanged is not null && valueChanged.Value > 0 && valueChanged != Invoice?.ManagerId && Invoice is not null)
+        {
+            Invoice.ManagerId = valueChanged.Value;
+            isManagerChanged = true;
+        }
+    }
+
+    private void OnInvoiceDescriptionChange(string changedValue)
+    {
+        if (Invoice is not null)
+        {
+            Invoice.Description = changedValue;
+            isDescriptionChanged = true;
+        }
+    }
+
+    private void HandleAddAdvancedSettingsSection()
+    {
+        activeAddAdvacedSettingsSection = !activeAddAdvacedSettingsSection;
+
+    }
+
+    private void HandleDiscardUpdateInvoiceButton( )
+    {
+        if (this.Invoice is not null)
+        {
+            if (snapshotManagerId > 0)
+            {
+                Invoice.ManagerId = snapshotManagerId;
+            }
+            if (snapshotPaymentMethodId > 0)
+            {
+                Invoice.PaymentMethodId = snapshotPaymentMethodId;
+                invoicePaymentStatus = CheckInvoicePaymentStatus(snapshotPaymentMethodId);
+            }
+            Invoice.Description = snapshotDescription ?? String.Empty;
+
+            isManagerChanged = false;
+            isPaymentMethodChanged = false;
+            isDescriptionChanged = false;
+        }
+    }
+
+    private async Task HandleAddInvoiceDetailButton( )
+    {
+        if (listPaymentMethod is not null && this.Invoice is not null)
+        {
+            if (listPaymentMethod.Where(p => p.IsPayment == false).Any(p => p.PaymentMethodId == Invoice.PaymentMethodId))
+                NavigationManager.NavigateTo("invoice-detail");
+
+            if (listPaymentMethod.Where(p => p.IsPayment == true).Any(p => p.PaymentMethodId == Invoice.PaymentMethodId))
+            {
+                var isConfirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"⚠️ Change payment method to PENDING in order to add services, Are you sure ?");
+                if (isConfirmed)
+                {
+                    await OnChangeInvoicePaymentMethodToPendingCallBack.InvokeAsync();
+                    //ChangeInvoicePaymentMethodToPending(invoice);
+                    NavigationManager.NavigateTo("invoice-detail");
+                }
+                return;
+            }
+
+        }
+    }
+
+    private void HandleClearCustomerSelectionButton( )
+    {
+        if (Invoice?.CustomerId != null && Invoice?.CustomerId > 0)
+        {
+            searchText = string.Empty;
+            Invoice.CustomerId = 0;
+            listFoundCustomers?.Clear();
+        }
+    }
+
+    private void HandleSearchButton( )
+    {
+        if (string.IsNullOrWhiteSpace(searchText))
+        {
+            listFoundCustomers?.Clear();
+        }
+        else
+        {
+            listFoundCustomers = CustomersService.SearchCustomerService(searchText);
+        }
+    }
+
+    private void HandleAddNewCustomerButton()
+    {
+        activeAddCustomerSection = !activeAddCustomerSection;
+        AddCustomerSectionCallBack.InvokeAsync(activeAddCustomerSection);
+    }
+
+    private void HandleAddInvoiceButton( )
+    {
+        if (this.Invoice is not null && Invoice.CustomerId > 0 && Invoice.StoreId > 0 && Invoice.ManagerId > 0)
+        {
+            int newInvoiceId = InvoicesService.AddInvoiceService(Invoice);
+
+            ContainerStorage.ResetPaginationData(this.CurrentPath);
+
+            ContainerStorage.SetSelectedRecordId("invoices", newInvoiceId);
+
+            NavigationManager.NavigateTo($"/invoice/{newInvoiceId}");
+        }
+    }
+
+    private bool CheckInvoicePaymentStatus(int? paymentMethodId)
+    {
+        if (Invoice is not null && paymentMethodId is not null)
+        {
+
+            var paymentMethod = PaymentMethodsService.GetPaymentMethodByIdService(paymentMethodId.Value);
+            if (paymentMethod is not null)
+            {
+                return paymentMethod.IsPayment;
+
+            }
+        }
+        return false;
+    }
+}

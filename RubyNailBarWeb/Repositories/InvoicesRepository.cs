@@ -93,7 +93,8 @@ namespace RubyNailBarWeb.Repositories
                 invoiceToUpdate.ManagerId = invoice.ManagerId;
                 invoiceToUpdate.CustomerId = invoice.CustomerId;
                 invoiceToUpdate.ServicesAmount = invoice.ServicesAmount;
-                invoiceToUpdate.TaxAmount = invoice.TaxAmount;
+                invoiceToUpdate.GSTax = invoice.GSTax;
+                invoiceToUpdate.PSTax = invoice.PSTax;
                 invoiceToUpdate.TipAmount = invoice.TipAmount;
                 invoiceToUpdate.PaymentMethodId = invoice.PaymentMethodId;
                 invoiceToUpdate.IsDeleted = invoice.IsDeleted;

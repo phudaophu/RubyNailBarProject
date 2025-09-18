@@ -1,4 +1,8 @@
-﻿@page "/invoice/{id:int?}"
+﻿@* @page "/invoice/{id:int?}"
+ *@
+
+
+
 @* @page "/invoice-back-from/{id:int?}" *@
 
 @rendermode InteractiveServer
@@ -201,7 +205,7 @@ else
     </table>
 
     // Advanced Settings
-    @if (activeAddAdvacedSettingsSection)
+    @if (activeAddAdvacedSettingsSection && invoice is not null)
     {
         <table class="table table-striped">
             <thead>
@@ -228,27 +232,27 @@ else
             <tbody>
                 <tr>
                     <td class="align-middle">
-                        <InputNumber class="form-control" @bind-Value="invoice.ServicesAmount" disabled="@(isPaymentCompleted)">
+                        <InputNumber class="form-control" @bind-Value="invoice.ServicesAmount" disabled="@(invoice.PaymentMethod?.IsPayment)">
 
                         </InputNumber>
                     </td>
                     <td class="align-middle">
 
-                        <InputNumber style="" class="form-control" @bind-Value="invoice.TipAmount" disabled="@(isPaymentCompleted)">
+                        <InputNumber style="" class="form-control" @bind-Value="invoice.TipAmount" disabled="@(invoice.PaymentMethod?.IsPayment)">
 
                         </InputNumber>
                     </td>
                     <td class="align-middle">
                         <div class="input-group input-group flex-nowrap">
                             <InputNumber TValue="decimal" class="form-control text-end"
-                                         @bind-Value="this.goodServicesTax" step="0.1" min="0" max="100" disabled="@(isPaymentCompleted)" />
+                                         @bind-Value="this.goodServicesTax" step="0.1" min="0" max="100" disabled="@(invoice.PaymentMethod?.IsPayment)" />
                             <span class="input-group-text">%</span>
                         </div>
                     </td>
                     <td class="align-middle input-group w-auto">
                         <div class="input-group input-group flex-nowrap">
                             <InputNumber TValue="decimal" class="form-control text-end"
-                                         @bind-Value="this.provincialSalesTax" step="0.1" min="0" max="100" disabled="@(isPaymentCompleted)" />
+                                         @bind-Value="this.provincialSalesTax" step="0.1" min="0" max="100" disabled="@(invoice.PaymentMethod?.IsPayment)" />
                             <span class="input-group-text">%</span>
                         </div>
                     </td>
@@ -325,7 +329,7 @@ else
                         </tr>
                     </thead>
                     <tbody>
-                        @if (invoice.InvoiceDetails != null && invoice.InvoiceDetails.Any() 
+                        @if (invoice is not null && invoice.InvoiceDetails != null && invoice.InvoiceDetails.Any() 
                                     && listInvoiceDetails is not null && listInvoiceDetails.Any())
                     {
 
@@ -479,7 +483,7 @@ else
 
     private bool isFirstRender = true;
 
-    private bool isPaymentCompleted = false;
+    //private bool isPaymentCompleted = false;
 
     private void HandleAddAdvancedSettingsSection()
     {
@@ -491,7 +495,7 @@ else
     {
         if(invoice is not null)
         {
-            invoice.IsImportant = true;
+            invoice.IsImportant = !invoice.IsImportant;
         }
     }
 
@@ -615,11 +619,7 @@ else
                 var isConfirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"ℹ️ Click OK to reset the time and change payment method to PENDING, Are you sure ?");
                 if (isConfirmed)
                 {
-                    // bool? checkSelectedPaymentIsFinished = listPaymentMethod?.Where(p => p.IsPayment == true).Any(p => p.PaymentMethodId == invoice.PaymentMethodId);
-                    // if (checkSelectedPaymentIsFinished == true)
-                    // {
-                    //     invoice.PaymentMethodId = listPaymentMethod?.Where(p => p.IsPayment == false).FirstOrDefault()?.PaymentMethodId;
-                    // }
+
                     ChangeInvoicePaymentMethodToPending(invoice);
                     HandleUpdateStartTime(invoiceDetail);   
                 }
@@ -666,7 +666,7 @@ else
                                                                                     && ContainerStorage.CheckInvoieDetailStatus(id).status.Equals("Completed", StringComparison.OrdinalIgnoreCase)))
                 {
                     invoice.PaymentMethodId = valueChanged.Value;
-                    isPaymentCompleted = true;
+                    //isPaymentCompleted = true;
                     isPaymentMethodChanged = true;
                     return;
                 }
@@ -675,7 +675,7 @@ else
             if (listPaymentMethod is not null && listPaymentMethod.Where(p => p.IsPayment == false).Any(p => p.PaymentMethodId == valueChanged.Value))
             {
                 invoice.PaymentMethodId = valueChanged.Value;
-                isPaymentCompleted = false;
+                //isPaymentCompleted = false;
                 isPaymentMethodChanged = true;
             }
 
@@ -693,7 +693,8 @@ else
                 invoice.PaymentMethodId = listPaymentMethod?.Where(p => p.IsPayment == false).FirstOrDefault()?.PaymentMethodId;
                 snapshotPaymentMethodId = invoice.PaymentMethodId;
                 InvoicesService.UpdateInvoiceService(invoice.InvoiceId, invoice);
-                isPaymentCompleted = false;
+                // refresh invoice
+                // invoice = InvoicesService.GetInvoiceByIdService(invoice.InvoiceId);
             }
         }
     }
@@ -738,6 +739,8 @@ else
             isManagerChanged = false;
             isPaymentMethodChanged = false;
             isDescriptionChanged = false;
+            // refresh invoice 
+            invoice = InvoicesService.GetInvoiceByIdService(invoice.InvoiceId);
         }
     }
 
@@ -953,7 +956,7 @@ else
                 InvoiceDate = DateOnly.FromDateTime(DateTime.Now),
                 StoreId = 0,
                 ServicesAmount = 0,
-                TaxAmount = 0,
+                //TaxAmount = 0,
                 TipAmount = 0,
                 CreatedDatetime = DateTime.Now,
                 PaymentMethodId = listPendingPayment?.FirstOrDefault()?.PaymentMethodId

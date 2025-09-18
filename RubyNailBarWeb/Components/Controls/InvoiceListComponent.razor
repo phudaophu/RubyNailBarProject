@@ -71,10 +71,10 @@
                         </td>
 
                         <td style="cursor:pointer" @onclick="@(e => ShowInvoiceDetails(invoice))">
-                            @(invoice.ServicesAmount + invoice.TaxAmount + invoice.TipAmount)
+                            @(Decimal.Round((invoice.ServicesAmount + invoice.TipAmount)*(1+invoice.GSTax+invoice.PSTax)??0,2))
                         </td>
                         <td>
-                            @invoice.Store?.Name
+                            @(invoice.PaymentMethod?.IsPayment == false? "Unpaid" : "Paid") 
                         </td>
 
                         <td>
@@ -159,7 +159,7 @@
                                                                                 (
                                                                                     @selectedInvoice.Customer.Description.Split((char[])null!, StringSplitOptions.RemoveEmptyEntries).Length <= 10
                                                                                     ? @selectedInvoice.Customer.Description.Trim()
-                                                                            : string.Join(" ", @selectedInvoice.Customer.Description.Split((char[])null!, StringSplitOptions.RemoveEmptyEntries).Take(10)) + $" <a class=\"fst-italic\" href=\"/customer/{@selectedInvoice.Customer.CustomerId}\"> more</a>"
+                                                                            : string.Join(" ", @selectedInvoice.Customer.Description.Split((char[])null!, StringSplitOptions.RemoveEmptyEntries).Take(10)) + $" <a class=\"fst-italic\" href=\"/customer-back-from/{@selectedInvoice.Customer.CustomerId}\"> more</a>"
                                                                                 )
                                                          ))
                                     </div>
@@ -170,11 +170,11 @@
                                 <div class="col-md-6">
                                     <div><strong>Store:</strong> @selectedInvoice.Store?.Name</div>
                                     <div><strong>Manager:</strong> <a href=@($"/user-back-from/{selectedInvoice.Manager?.UserId}")> @selectedInvoice.Manager?.FirstName @selectedInvoice.Manager?.LastName</a> </div>
-                                    <div><strong>Total Bill:</strong> @(selectedInvoice.ServicesAmount + selectedInvoice.TaxAmount + selectedInvoice.TipAmount)</div>
+                                    <div><strong>Total Bill:</strong> @totalBill </div>
                                     <div><strong>Datetime:</strong> @(selectedInvoice.CreatedDatetime?.ToString("yyyy-MM-dd HH:mm"))</div>
 
                                     <div class="mt-2"><strong>Service Amount:</strong> @selectedInvoice.ServicesAmount</div>
-                                    <div><strong>Tax Amount:</strong> @selectedInvoice.TaxAmount</div>
+                                    <div><strong>Tax Amount:</strong> @selectedInvoice.GSTax% + @selectedInvoice.PSTax%</div>
                                     <div><strong>Tip Amount:</strong> @selectedInvoice.TipAmount</div>
 
 
@@ -334,7 +334,8 @@
                     <section class="ms-auto d-flex align-items-center gap-2">
 
                         <span class="btn border-dark text-black">
-                            Total: @(selectedInvoice?.ServicesAmount + selectedInvoice?.TaxAmount + selectedInvoice?.TipAmount)
+
+                            Total: @totalBill
                         </span>
                         @{
                             var totalMinutes = selectedInvoice?.InvoiceDetails.Where(id => id.IsDeleted == false)
@@ -458,6 +459,7 @@
 
     private int selectedInvoiceId = 0;
 
+    private decimal totalBill = 0;
 
     private List<Store> listStores = new List<Store>();
 
@@ -465,14 +467,7 @@
 
     private int CalculateTotalServiceTime(DateTime? startDatetime, DateTime? endDatetime)
     {
-        
-        if (startDatetime is not null && endDatetime is not null )
-        {
-            var totalServiceTime = (endDatetime - startDatetime)?.TotalMinutes;
-            if (totalServiceTime > 0)
-                return (int)Math.Ceiling((double)(totalServiceTime ?? 0));
-        }
-        return 0;
+        return ContainerStorage.CalculateTotalServiceTime(startDatetime, endDatetime);
     }
 
     private void HandleEditInvoiceDetailButton(InvoiceDetail? invoiceDetail)
@@ -482,8 +477,8 @@
             //Container Storage
 
             ContainerStorage.SetSelectedRecordId("invoice", invoiceDetail.InvoiceDetailId);
-
-            ContainerStorage.SetOptionalData("invoice", "InvoiceDetail", invoiceDetail);
+            ContainerStorage.SetOptionalData("invoice", "ObjectId", invoiceDetail.InvoiceId);
+            //ContainerStorage.SetOptionalData("invoice", "InvoiceDetail", invoiceDetail);
 
             NavigationManager.NavigateTo($"/invoice-detail/{invoiceDetail.InvoiceDetailId}");
         }
@@ -719,7 +714,7 @@
                 break;
 
             case "Bill Total":
-                ApplyLogicSort(i => (i.ServicesAmount + i.TaxAmount + i.TipAmount), sortingByColumn);
+                ApplyLogicSort(i => ((i.ServicesAmount + i.TipAmount))*(1+i.GSTax + i.PSTax), sortingByColumn);
                 break;
 
             default:
@@ -857,6 +852,9 @@
                                                                              .OrderBy(id => CheckInvoieDetailStatus(id).rank)
                                                                              .ThenByDescending(id => id.ModifiedDatetime)
                                                                              .ToList();
+
+            totalBill = ContainerStorage.CalculateInvoiceTotalBill(invoice);
+
 
             ContainerStorage.SetSelectedRecordId(CurrentPath, invoice.InvoiceId);
             await Task.Delay(100);

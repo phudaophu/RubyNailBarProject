@@ -1,0 +1,211 @@
+﻿@page "/invoice/{id:int?}"
+@* @page "/invoice-back-from/{id:int?}" *@
+
+@rendermode InteractiveServer
+
+@inject IInvoicesService InvoicesService
+@inject IUsersService UsersService
+@inject IStoresService StoresService
+@inject ICustomersService CustomersService
+@inject NavigationManager NavigationManager
+@inject ContainerStorage ContainerStorage
+@inject IPaymentMethodsService PaymentMethodsService
+@inject IInvoiceDetailsService InvoiceDetailsService
+@inject IJSRuntime JSRuntime
+
+
+@if (Id.HasValue)
+{
+    <h3>Edit Invoice</h3>
+}
+else
+{
+    <h3>Add Invoice</h3>
+}
+
+
+<InvoiceComponent Invoice="@invoice" activeAddCustomerSection="@activeAddCustomerSection" 
+                                        OnChangeInvoicePaymentMethodToPendingCallBack="HandlePendingInvoicePayment" 
+                                            CurrentPath="@currentPath" InvoiceCallBack="HandleInvoiceCallBack" 
+                                                AddCustomerSectionCallBack="HandleAddCustomerSectionCallBack">
+</InvoiceComponent>
+
+ @if(activeAddCustomerSection)
+{
+    <div class="ms-3">
+
+        <AddCustomerFormComponent NewCustomerIdCallBack="HandleNewCustomerId" RemoveUserCallBack="HandleRemoveAddUserSection">
+        </AddCustomerFormComponent>
+        <hr>
+    </div>
+
+}
+
+
+
+@if(this.invoice is not null)
+{
+    <InvoiceDetailComponent CurrentPath="@currentPath" Invoice="@invoice" 
+                                        OnChangeInvoicePaymentMethodToPendingCallBack="HandlePendingInvoicePayment"></InvoiceDetailComponent>
+
+}
+
+
+
+<button type="button" class="btn btn-primary mt-2" @onclick="HandleBackButton">Back</button>
+
+@if (this.invoice is not null)
+{
+    <button type="button" class="ms-2 btn btn-primary mt-2">Print Invoice</button>
+    <button type="button" class="ms-2 btn btn-primary mt-2">Download Invoice</button>
+}
+
+
+@code {
+
+
+    [Parameter]
+    public int? Id { get; set; }
+
+    private string currentPath = string.Empty;
+
+    private bool activeAddCustomerSection = false;
+
+    private Invoice? invoice { get; set; }
+
+    private string? searchText { get; set; } = string.Empty;
+
+    private Customer? selectedCustomerInfo = new Customer();
+
+    private List<PaymentMethod> listPaymentMethod = new List<PaymentMethod>();
+
+    protected override void OnInitialized()
+    {
+        listPaymentMethod = PaymentMethodsService.GetPaymentMethodsService();
+    }
+
+
+
+    protected override void OnParametersSet()
+    {
+        if (this.Id.HasValue)
+        {
+            invoice ??= InvoicesService.GetInvoiceByIdService(this.Id.Value);
+
+            
+
+            if (invoice is not null)
+            {
+
+                currentPath = NavigationManager.ToBaseRelativePath(NavigationManager.Uri).Split('?', '#', '/')[0];
+
+                ContainerStorage.SetSavePaginationPath(currentPath);
+
+                //ContainerStorage.SetOptionalData(currentPath, "Invoice", invoice);
+
+                ContainerStorage.SetOptionalData(currentPath, "ObjectId", invoice.InvoiceId);
+
+            }
+
+
+        }
+        else
+        {
+
+            invoice ??= new Invoice()
+            {
+                InvoiceDate = DateOnly.FromDateTime(DateTime.Now),
+                StoreId = 0,
+                ServicesAmount = 0,
+                GSTax = InvoicesService.GetGoodsAndServicesTaxValue(),
+                PSTax = InvoicesService.GetProvincialSalesTaxValue(),
+                TipAmount = 0,
+                CreatedDatetime = DateTime.Now,
+                //PaymentMethodId = listPendingPayment?.FirstOrDefault()?.PaymentMethodId
+            };
+
+        }
+
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            if (ContainerStorage.GetLastSelectedRecordId("invoices") == 0 && this.Id > 0)
+            {
+                // intercept
+                NavigationManager.NavigateTo("/deny-access");
+
+            }
+        }
+    }
+
+    private void HandlePendingInvoicePayment()
+    {
+        if (invoice is not null)
+        {
+            bool? checkSelectedPaymentIsFinished = listPaymentMethod?.Where(p => p.IsPayment == true).Any(p => p.PaymentMethodId == invoice.PaymentMethodId);
+            if (checkSelectedPaymentIsFinished == true)
+            {
+
+                invoice.PaymentMethodId = listPaymentMethod?.Where(p => p.IsPayment == false).FirstOrDefault()?.PaymentMethodId;
+                InvoicesService.UpdateInvoiceService(invoice.InvoiceId, invoice);
+                //ContainerStorage.SetOptionalData(currentPath, "Invoice", invoice);
+                StateHasChanged();
+            }
+        }
+    }
+
+
+    private void HandleAddCustomerSectionCallBack(bool activeAddCustomerSection)
+    {
+        if (this.activeAddCustomerSection != activeAddCustomerSection)
+        {
+            this.activeAddCustomerSection = activeAddCustomerSection;
+
+        }
+    }
+
+    private void HandleInvoiceCallBack(Invoice invoice)
+    {
+        if(invoice is not null)
+        {
+            this.invoice = invoice;
+
+        }
+     
+    }
+
+    private void HandleRemoveAddUserSection()
+    {
+        activeAddCustomerSection = false;
+    }
+
+    private void HandleNewCustomerId(int newCustomerId)
+    {
+        if(invoice is not null && newCustomerId > 0 && invoice.CustomerId != newCustomerId)
+        {
+
+            invoice.CustomerId = newCustomerId;
+            activeAddCustomerSection = false;
+            
+
+        }
+    }
+
+
+    private void HandleBackButton()
+    {
+        if (currentPath.Contains("back-from", StringComparison.OrdinalIgnoreCase))
+        {
+            var previousPath = ContainerStorage.GetSavePaginaionPath();
+            NavigationManager.NavigateTo($"/{previousPath}");
+        }
+        else
+        {
+            NavigationManager.NavigateTo("/invoices");
+        }
+    }
+
+}

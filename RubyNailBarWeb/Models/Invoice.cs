@@ -19,7 +19,9 @@ public partial class Invoice
 
     public decimal? ServicesAmount { get; set; }
 
-    public decimal? TaxAmount { get; set; }
+    public decimal? GSTax { get; set; }
+
+    public decimal? PSTax { get; set; }
 
     public decimal? TipAmount { get; set; }
 

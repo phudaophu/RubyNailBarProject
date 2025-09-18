@@ -7,6 +7,7 @@
 @inject NavigationManager NavigationManager
 @inject ICustomerServicesService CustomerServicesService
 @inject IUsersService UsersService
+@inject IInvoicesService InvoicesService
 @inject IPaymentMethodsService PaymentMethodsService
 @inject IJSRuntime JSRuntime
 
@@ -99,7 +100,7 @@
 
                                 <HorizonListComponent Label="🧾 Tax">
                                     <Control>
-                                        <InputNumber @bind-Value="invoice!.TaxAmount" class="form-control" disabled />
+                                       @*  <InputNumber @bind-Value="invoice!.TaxAmount" class="form-control" disabled /> *@
                                     </Control>
                                 </HorizonListComponent>
                             }
@@ -296,6 +297,8 @@
 
     private List<User>? listUsers { get; set; }
 
+    private int invoiceId; 
+
     private Invoice? invoice;
 
     private string currentPath = string.Empty;
@@ -314,23 +317,13 @@
         if (invoiceDetail is not null)
         {
             if (invoiceDetail.StartDatetime is null)
-                 icon = "🚩";
+                icon = "🚩";
             else icon = "❌";
         }
 
         builder.AddContent(0, icon);
     };
 
-    // private string GetEmojiStartTime()
-    // {
-    //     if(invoiceDetail is not null)
-    //     {
-    //         if (invoiceDetail.StartDatetime is null)
-    //             return  "🚩";
-    //         else return "❌";
-    //     }
-    //     return "";
-    // }
 
     private RenderFragment GetEmojiEndTime() => builder =>
      {
@@ -339,23 +332,13 @@
          if (invoiceDetail is not null)
          {
              if (invoiceDetail.EndDatetime is null)
-                  icon = "🏁";
+                 icon = "🏁";
              else icon = "❌";
          }
 
          builder.AddContent(0, icon);
      };
 
-    // private string GetEmojiEndTime()
-    // {
-    //     if (invoiceDetail is not null)
-    //     {
-    //         if (invoiceDetail.EndDatetime is null)
-    //             return  "🏁";
-    //         else return "❌";
-    //     }
-    //     return "";
-    // }
 
     private void OnIsFinishedCheckBoxChanged(bool changedValue)
     {
@@ -427,7 +410,7 @@
                         invoiceDetail.IsFinished = false;
                     }
                     ChangeInvoicePaymentMethodToPending(invoice);
-                    
+
                 }
             }
         }
@@ -443,7 +426,7 @@
                 {
                     invoiceDetail.EndDatetime = DateTime.Now;
                     invoiceDetail.IsFinished = true;
-                    
+
                 }
 
             }
@@ -451,7 +434,7 @@
             {
                 invoiceDetail.EndDatetime = null;
                 invoiceDetail.IsFinished = false;
-                
+
             }
 
         }
@@ -492,6 +475,26 @@
         }
     }
 
+
+    protected override void OnInitialized()
+    {
+        listCustomerServiceTypes = CustomerServicesService.GetCustomerServiceTypeService();
+
+        listPaymentMethod = PaymentMethodsService.GetPaymentMethodsService();
+
+        if (ContainerStorage.CheckElementOptionalDataExist("invoice", "ObjectId"))
+        {
+            invoiceId = ContainerStorage.GetElementOptionalData<int>("invoice", "ObjectId");
+            invoice = InvoicesService.GetInvoiceByIdService(invoiceId);
+        }
+
+        if (invoice is not null && invoice.StoreId > 0)
+        {
+            listActiveStaffsByStoreId = UsersService.GetStaffListByStoreIdService(invoice.StoreId.Value).OrderBy(u => !u.IsActive).ToList();
+        }
+    }
+
+
     protected override void OnParametersSet()
     {
         if (this.Id.HasValue)
@@ -522,26 +525,13 @@
         if(firstRender)
         {
 
-            if (ContainerStorage.CheckElementOptionalDataExist("invoice", "Invoice"))
+            if (ContainerStorage.GetLastSelectedRecordId("invoice") == 0 && this.Id > 0)
             {
-                invoice = ContainerStorage.GetElementOptionalData<Invoice>("invoice", "Invoice") ?? new Invoice();
+                // intercept
+                NavigationManager.NavigateTo("/deny-access");
+                
             }
-
-            if (this.Id.HasValue && ContainerStorage.CheckElementOptionalDataExist("invoice", "InvoiceDetail"))
-            {
-                invoiceDetail = ContainerStorage.GetElementOptionalData<InvoiceDetail>("invoice", "InvoiceDetail") ?? new InvoiceDetail();
-            }
-
-            listCustomerServiceTypes = CustomerServicesService.GetCustomerServiceTypeService();
-
-            if (invoice is not null && invoice.StoreId > 0)
-            {
-                listActiveStaffsByStoreId = UsersService.GetStaffListByStoreIdService(invoice.StoreId.Value).OrderBy(u => !u.IsActive).ToList();
-            }
-
-            listPaymentMethod = PaymentMethodsService.GetPaymentMethodsService();
-
-            StateHasChanged();
+            //StateHasChanged();
         }
     }
 
@@ -601,7 +591,9 @@
         {
 
             invoiceDetail.ModifiedDatetime = DateTime.Now;
+
             if(invoiceDetail.ServiceFee < 0) invoiceDetail.ServiceFee = 0;
+
             if (invoiceDetail.Tip < 0) invoiceDetail.Tip = 0;
             
 
@@ -619,8 +611,6 @@
                 var newInvoiceDetailId = InvoiceDetailsService.AddInvoiceDetailService(invoiceDetail);
 
                 ContainerStorage.SetSelectedRecordId("invoice", newInvoiceDetailId);
-
-
 
             }
             HandleBackButton();

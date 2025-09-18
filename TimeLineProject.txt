@@ -148,3 +148,20 @@ complete: calculate total time, add function to save total
 
 require: Configure 1 invoice-detail - 1 list of users (staffs > 1) 
 
+8:12 PM 9/16/2025
+
+complete: add description and IsImportant field to invoice 
+
+
+12:30 AM 9/17/2025
+process: split editaddinvoice to component
+1:09 AM 9/18/2025
+process: split editaddinvoice to component, do not change from pending to payment
+
+12:42 AM 9/19/2025
+process: add a column InvoiceType 
+
+
+
+
+	  
