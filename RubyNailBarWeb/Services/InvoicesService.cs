@@ -16,9 +16,21 @@ namespace RubyNailBarWeb.Services
             this._invoiceSettings = invoiceSettings.Value;   
         }
 
+        public List<string> GetInvoiceBookingTypesService() => _invoiceSettings.BookingTypes;
+        
         public decimal GetGoodsAndServicesTaxValue() => _invoiceSettings.GoodsAndServicesTax;
 
         public decimal GetProvincialSalesTaxValue() => _invoiceSettings.ProvincialSalesTax;
+
+        public List<Invoice> GetWatchListInvoicesOrderByPaymentStatusCreatedDatetimeDescService()
+        {
+            return _invoicesRepository.GetWatchListInvoicesOrderByPaymentStatusCreatedDatetimeDesc();
+        }
+
+        public List<Invoice> GetExistInvoicesOrderByPaymentStatusAndCreatedDatetimeDescService()
+        {
+            return _invoicesRepository.GetExistInvoicesOrderByPaymentStatusAndCreatedDatetimeDesc();
+        }
 
         public int GetNumberOfNotFinishedInvoiceDetailByInvoiceIdService(int invoiceId)
         {
@@ -39,10 +51,7 @@ namespace RubyNailBarWeb.Services
         {
             return _invoicesRepository.AddInvoice(invoice);
         }
-        public List<Invoice> GetExistInvoicesOrderByCreatedDatetimeDescService()
-        {
-            return _invoicesRepository.GetExistInvoicesOrderByCreatedDatetimeDesc();
-        }
+
         public List<Invoice> GetInvoicesService()
         {
             return _invoicesRepository.GetInvoices();
@@ -61,6 +70,13 @@ namespace RubyNailBarWeb.Services
         {
              _invoicesRepository.UpdateInvoice(invoiceId, invoice);   
         }
+
+
+        public List<Invoice>? SearchWatchListInvoiceByCustomerInfoService(string keyString)
+        {
+            return _invoicesRepository.SearchWatchListInvoiceByCustomerInfo(keyString);
+        }
+
 
         public  List<Invoice>? SearchInvoicesByCustomerInfoService(string keyString)
         {

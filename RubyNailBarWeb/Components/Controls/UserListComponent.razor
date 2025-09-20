@@ -42,6 +42,7 @@
             <th></th>
             <th></th>
             <th></th>
+            <th></th>
         </tr>
 
     </thead>
@@ -118,31 +119,30 @@
                     <td>
                         @if (user.IsActive == true)
                         {
-                            <button type="button" class="btn btn-outline-danger btn-sm px-2 py-0 text-nowrap"
+                                <button type="button" title="Set Inactive" class="bg-transparent border-2 border-light p-0"
                                     @onclick="@(() => {
                                                         SetUserStatus(user.UserId,false);
-                                                                                             })">
-                              Turn Off
-                          </button>
+                                                                                             })">🔕</button>
                     }
                                 else
                     {
-                        <button type="button" class="btn btn-outline-success btn-sm px-2 py-0 text-nowrap"
+                            <button type="button" title="Set Active" class="bg-transparent border-2 border-light p-0"
                                     @onclick="@(() => { 
                                                          SetUserStatus(user.UserId,true);
-                                                                                            })">
-                          Turn On
-                      </button>
+                                                                                            })">🔔</button>
                     }
                     &nbsp;
                     </td>
                     <td>
-    @*                 <a class="btn btn-outline-primary btn-sm px-2 py-0 text-nowrap" href=@($"/user/{user.UserId}")> Edit </a>
-     *@                 <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-0 text-nowrap" @onclick="(e) => HandleEditButton(user.UserId)">Edit</button>
+ 
+                    <button type="button" title="Edit User" class="bg-transparent border-2 border-light p-0" @onclick="(e) => HandleEditButton(user.UserId)">✏️</button>
                     </td>
                     <td>
-@*                     <a class="btn btn-outline-primary btn-sm px-2 py-0 text-nowrap" href=@($"/usergroups/{user.UserId}")> Edit Group </a>
- *@                    <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-0 text-nowrap" @onclick="(e) => HandleEditGroupButton(user.UserId)">Edit Group</button>
+
+                    <button type="button" title="Edit UserGroup" class="bg-transparent border-2 border-light p-0" @onclick="(e) => HandleEditGroupButton(user.UserId)">👥</button>
+                    </td>
+                    <td>
+                    <button type="button" title="Delete User" class="bg-transparent border-2 border-light p-0" @onclick="(e) => HandleDeleteUserButton(user)">❌</button>
                     </td>
                 </tr>
             }
@@ -328,6 +328,12 @@
             }
 
         }
+        else
+        {
+            ContainerStorage.SetTotalPages(CurrentPath, 1);
+            ContainerStorage.SetCurrentPage(CurrentPath, 1);
+            ContainerStorage.SetSelectedRecordId(CurrentPath, 0);
+        }
 
     }
 
@@ -405,7 +411,7 @@
         this.selectedUserId = 0;
         ContainerStorage.SetCurrentPage(CurrentPath, 1);
         ContainerStorage.SetSelectedRecordId(CurrentPath, 0);
-        
+
     }
 
     private void ToggleSort(string column)
@@ -466,7 +472,7 @@
                 }
                 else
                 {
-                    this.listUsers = UsersService.GetUsersService();
+                    this.listUsers = UsersService.GetValidUsersOrderByUserIdDescService();
                 }
 
                 break;
@@ -511,7 +517,7 @@
 
             if (listUsers is not null || listUsers?.Count >= 0)
             {
-                listUsers = UsersService.GetUsersService();
+                listUsers = UsersService.GetValidUsersOrderByUserIdDescService();
                 statusUserListView = "Data Is Loading...";
             }
 
@@ -528,7 +534,7 @@
                 }
             }
 
-                                                            //SelectedStoreIdFilter
+            //SelectedStoreIdFilter
             if (listUsers is not null && listUsers.Count >= 0 && _selectedStoreId > 0)
             {
                 listUsers = listUsers.Where(u => u.UserGroups.Any(ug => ug.StoreId == _selectedStoreId)).ToList();
@@ -569,7 +575,7 @@
 
             if (listUsers is not null || listUsers?.Count >= 0)
             {
-                listUsers = UsersService.GetUsersService();
+                listUsers = UsersService.GetValidUsersOrderByUserIdDescService();
                 statusUserListView = "Data Is Loading...";
             }
 
@@ -609,6 +615,21 @@
     }
 
 
+    private void HandleDeleteUserButton(User user)
+    {
+        if(user is not null && user.UserId > 0)
+        {
+            user.IsDeleted = true;
+
+            UsersService.UpdateUserService(user.UserId, user);
+            ContainerStorage.SetSelectedRecordId(CurrentPath, 0);
+
+            OnParametersSet();
+  
+        }
+    }
+
+
     private void SetUserStatus(int userId, bool status)
     {
         var userToUpdate = UsersService.GetUserByIdService(userId);
@@ -622,7 +643,7 @@
 
             userToUpdate.IsActive = status;
             UsersService.UpdateUserService(userToUpdate.UserId, userToUpdate);
-            listUsers = UsersService.GetUsersService();
+            listUsers = UsersService.GetValidUsersOrderByUserIdDescService();
             UpdatePagedUsers();
         }
         else

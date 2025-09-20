@@ -5,6 +5,7 @@ namespace RubyNailBarWeb.Services.Implements
     public interface ICustomersService
     {
 
+        List<Customer> GetValidCustomersOrderByCreatedDatetimeDescService();
         bool IsCustomerPhoneNoExistService(string phoneNo, int? excludedCustomerId = null);
         int AddCustomerService(Customer customer);
         Customer? GetCustomerByIdService(int customerId);

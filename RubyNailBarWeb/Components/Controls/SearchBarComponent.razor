@@ -68,20 +68,20 @@
 
     protected override void OnParametersSet()
     {
-        if (!isFirstRender && !string.IsNullOrWhiteSpace(ContainerStorage.GetLastSearchedText(CurrentPath)))
+        if (!string.IsNullOrWhiteSpace(ContainerStorage.GetLastSearchedText(CurrentPath)))
         {
             this.elementFilter = ContainerStorage.GetLastSearchedText(CurrentPath);
         }
     }
 
-    protected override void OnAfterRender(bool firstRender)
-    {
-        if (firstRender)
-        {
-            isFirstRender = false;
-            if (!string.IsNullOrWhiteSpace(ContainerStorage.GetLastSearchedText(CurrentPath)))
-                this.elementFilter = ContainerStorage.GetLastSearchedText(CurrentPath);
-        }
-    }
+    // protected override void OnAfterRender(bool firstRender)
+    // {
+    //     if (firstRender)
+    //     {
+    //         isFirstRender = false;
+    //         if (!string.IsNullOrWhiteSpace(ContainerStorage.GetLastSearchedText(CurrentPath)))
+    //             this.elementFilter = ContainerStorage.GetLastSearchedText(CurrentPath);
+    //     }
+    // }
 
 }

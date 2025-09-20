@@ -76,7 +76,7 @@ else
 
                                 <FieldComponent Label="Create Date">
                                     <Control>
-                                        <input type="datetime" @bind="customer.CreatedDatetime" disabled>
+                                        <input type="datetime" value="@customer.CreatedDatetime?.ToString("yyyy-MM-dd HH:mm:ss")" disabled>
                                     </Control>
                                 </FieldComponent>
 
@@ -84,7 +84,7 @@ else
                                 {
                                     <FieldComponent Label="Modified Date">
                                         <Control>
-                                            <input type="datetime" @bind="customer.ModifiedDatetime" disabled>
+                                            <input type="datetime" value="@customer.ModifiedDatetime?.ToString("yyyy-MM-dd HH:mm:ss")" disabled>
                                         </Control>
                                     </FieldComponent>
                                 }
@@ -154,9 +154,19 @@ else
 
                                     <FieldComponent Label="Last Visit">
                                         <Control>
-                                            <input type="datetime" @bind="customer.LastVisitDatetime">
+                                           @*  <input type="datetime" @bind="customer.LastVisitDatetime"> *@
+                                            <input type="datetime" value="@customer.LastVisitDatetime?.ToString("yyyy-MM-dd HH:mm:ss")" disabled>
                                         </Control>
                                     </FieldComponent>
+
+                                    <FieldComponent Label="Is Deleted">
+                                        <Control>
+                                            <InputCheckbox @bind-Value="customer.IsDeleted"></InputCheckbox>
+                                            
+                                        </Control>
+                                    </FieldComponent>
+
+
                                 }
 
 
@@ -262,7 +272,7 @@ else
             {
                 customer.ModifiedDatetime = DateTime.Now;
                 CustomerService.UpdateCustomerService(customer.CustomerId,customer);    
-                
+
             }
             else
             {
@@ -272,7 +282,8 @@ else
                 customer.LifetimeSpend = 0;
                 customer.TransactionCount = 0;
                 customer.CustomerLevel = "Silver";
-                int newCustomerId = CustomerService.AddCustomerService(customer);   
+                int newCustomerId = CustomerService.AddCustomerService(customer);
+                ContainerStorage.SetSelectedRecordId("customers", newCustomerId);
             }
             //NavigationManager.NavigateTo("/customers");
 
@@ -284,6 +295,7 @@ else
             }
             else
             {
+                
                 NavigationManager.NavigateTo("/customers");
             }
         }

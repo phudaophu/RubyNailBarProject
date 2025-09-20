@@ -29,6 +29,14 @@ namespace RubyNailBarWeb.Repositories
             return customer.CustomerId; 
         }
 
+        public List<Customer> GetValidCustomersOrderByCreatedDatetimeDesc()
+        {
+            using var db = this.contextFactory.CreateDbContext();
+            return db.Customers.Where(c => c.IsDeleted == false).OrderByDescending(c => c.CreatedDatetime).ToList();
+
+        }
+
+
         public List<Customer> GetCustomers()
         {
             using var db = this.contextFactory.CreateDbContext();
@@ -83,6 +91,8 @@ namespace RubyNailBarWeb.Repositories
                 customerToUpdate.ProvinceName = customer.ProvinceName;
                 customerToUpdate.PostalCode = customer.PostalCode;
                 customerToUpdate.CountryName = customer.CountryName;
+                customerToUpdate.Description = customer.Description;    
+                customerToUpdate.IsDeleted = customer.IsDeleted;    
                 db.SaveChanges();
             }
         }
@@ -92,10 +102,12 @@ namespace RubyNailBarWeb.Repositories
             using var db = this.contextFactory.CreateDbContext();
             if (string.IsNullOrEmpty(keyString)) return new List<Customer>();
 
-            IQueryable<Customer> customerQuery = db.Customers.AsNoTracking().Where(c =>
-                                                                                    (c.Name != null && c.Name.ToLower().IndexOf(keyString.ToLower()) >= 0) ||
-                                                                                    (c.Email != null && c.Email.ToLower().IndexOf(keyString.ToLower()) >= 0) ||
-                                                                                    (c.PhoneNo != null && c.PhoneNo.ToLower().IndexOf(keyString.ToLower()) >= 0));
+            IQueryable<Customer> customerQuery = db.Customers.AsNoTracking()
+                                                                .Where(c=> c.IsDeleted==false)
+                                                                .Where(c =>
+                                                                            (c.Name != null && c.Name.ToLower().IndexOf(keyString.ToLower()) >= 0) ||
+                                                                            (c.Email != null && c.Email.ToLower().IndexOf(keyString.ToLower()) >= 0) ||
+                                                                            (c.PhoneNo != null && c.PhoneNo.ToLower().IndexOf(keyString.ToLower()) >= 0));
             
 
             return customerQuery.OrderBy(cq => cq.CustomerId).ToList();

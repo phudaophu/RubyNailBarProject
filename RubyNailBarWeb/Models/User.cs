@@ -14,6 +14,8 @@ public partial class User
     public string? LastName { get; set; }
 
     [Required]
+    [RegularExpression("^[a-z0-9]+$", ErrorMessage = "Username must be lowercase letters and numbers only.")]
+    [StringLength(20, MinimumLength = 3, ErrorMessage = "Username must be 3–20 characters.")]
     public string? Username { get; set; }
 
     [Required]
@@ -27,7 +29,7 @@ public partial class User
 
     public DateTime? ModifiedDatetime { get; set; }
 
-    public bool IsDelete { get; set; } = false;
+    public bool IsDeleted { get; set; } = false;
 
     public string? ImageUrl { get; set; }
 

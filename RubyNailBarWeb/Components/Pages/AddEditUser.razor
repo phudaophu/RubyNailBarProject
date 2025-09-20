@@ -68,7 +68,17 @@ else
                                         <InputText type="tel" @bind-Value="user.PhoneNo"></InputText>
                                     </Control>
                                 </FieldComponent>
-                               
+                                @if (this.Id.HasValue)
+                                {
+                                    <FieldComponent Label="Is Deleted">
+                                        <Control>
+                                            <InputCheckbox TValue="bool" ValueExpression="@(() => user.IsDeleted)"
+                                                           Value="@user.IsDeleted"
+                                                           ValueChanged="async (bool e) => {await OnIsDeletedCheckBoxChanged(e); }"
+                                                           ></InputCheckbox>
+                                        </Control>
+                                    </FieldComponent>
+                                }
 
 
                             </div>
@@ -105,7 +115,7 @@ else
                                     <Control>
                                         <div class="d-flex align-items-center gap-3">
                                             <InputText @bind-Value="user.Username" disabled="@(isEditUserName == false)" class="@(isDuplicatedUsername == true ? "border-danger" : "")" @onblur="ClearUsernameError"></InputText>
-                                            <button type="button" class="btn btn-sm @(isEditUserName ? "btn-outline-secondary" : "btn-outline-warning")" @onclick="EditUsernameButton" title="Click to modify username"> @(isEditUserName ? "🔓" : "🔒")</button>
+                                            <button type="button" class="bg-transparent border-2 border-light p-0" @onclick="EditUsernameButton" title="Click to modify username"> @(isEditUserName ? "🔓" : "🔒")</button>
                                         </div>
                                     </Control>
                                     <ValidationControl>
@@ -127,7 +137,7 @@ else
                                     <Control>
                                         <div class="d-flex align-items-center gap-3">
                                             <InputText type="@(isShowedPassword==true?"text":"password")" @bind-Value="user.PasswordHash"></InputText>
-                                            <button type="button" class="btn btn-sm @(isShowedPassword ? "btn-outline-secondary" : "btn-outline-warning")" @onclick="ShowingPasswordButton" title="Click to unhide password"> @(isShowedPassword ? "🔓" : "🔒")</button>
+                                            <button type="button" class="bg-transparent border-2 border-light p-0" @onclick="ShowingPasswordButton" title="Click to unhide password"> @(isShowedPassword ? "🔓" : "🔒")</button>
                                         </div>
                                     </Control>
                                     <ValidationControl>
@@ -141,7 +151,7 @@ else
                                         <Control>
                                             <input type="datetime"
                                                    class="form-control"
-                                                   @bind="user.ModifiedDatetime"
+                                                   value="@user.ModifiedDatetime?.ToString("yyyy-MM-dd HH:mm:ss")"
                                                    disabled>
                                         </Control>
                                     </FieldComponent>
@@ -150,7 +160,7 @@ else
 
                                 <FieldComponent Label="Is Active">
                                     <Control>
-                                        <InputCheckbox @bind-Value="user.IsActive"></InputCheckbox>
+                                        <InputCheckbox @bind-Value="user.IsActive" ></InputCheckbox>
                                     </Control>
                                 </FieldComponent>
 
@@ -199,6 +209,42 @@ else
 
     private List<Store> listStore = new List<Store>();
 
+
+    private async Task OnIsDeletedCheckBoxChanged(bool changedValue)
+    {
+        if(user is not null)
+        {
+            if (changedValue)
+            {
+                if (user.IsActive)
+                {
+                    var isConfirmedDeleteAndChangeStatus = await JSRuntime.InvokeAsync<bool>("confirm", "⚠️ Click OK to proceed user delete and change to inactive status. \n Are you sure? ");
+                    if (isConfirmedDeleteAndChangeStatus)
+                    {
+                        user.IsDeleted = changedValue;
+                        user.IsActive = false;
+                        return;
+                    }
+                }
+                else
+                {
+                    var isConfirmedDelete = await JSRuntime.InvokeAsync<bool>("confirm", "⚠️ Click OK to proceed user delete. \n Are you sure? ");
+                    if (isConfirmedDelete)
+                    {
+                        user.IsDeleted = changedValue;
+                        return;
+                    }
+                }
+            }
+            else
+            {
+                user.IsDeleted = changedValue;
+            }
+
+            //UsersService.UpdateUserService(user.UserId, user);
+        }
+    }
+
     private void HandleEditGroupButton()
     {
         if (currentPath.Contains("back-from", StringComparison.OrdinalIgnoreCase))
@@ -230,7 +276,7 @@ else
     {
         if(firstRender)
         {
-           
+
             currentPath = NavigationManager.ToBaseRelativePath(NavigationManager.Uri).Split('?', '#')[0];
 
         }
@@ -250,7 +296,7 @@ else
             isEditUserName = true;
             listStore = StoresService.GetStoresService().Where(x => x.IsActive == true).ToList();
         }
-        
+
     }
 
     private async Task  HandleImageUpload(InputFileChangeEventArgs e, User user)
@@ -344,7 +390,7 @@ else
             isDuplicatedUsername = UsersService.IsUsernameExistsService(user.Username, Id);
             if (isDuplicatedUsername)
             {
-                usernameDuplicatedError = "The Username is already taken.";
+                usernameDuplicatedError = "This username is duplicated, please change to another one.";
                 return; // stop submission
             }
             else
@@ -352,12 +398,13 @@ else
                 usernameDuplicatedError = null;
             }
 
-            
+
 
             if (this.Id.HasValue)   
             {
+                user.ModifiedDatetime = DateTime.Now;
                 UsersService.UpdateUserService(user.UserId, user);
-                //NavigationManager.NavigateTo("/users");
+
                 if (currentPath.Contains("back-from", StringComparison.OrdinalIgnoreCase))
                 {
                     var previousPath = ContainerStorage.GetSavePaginaionPath();
@@ -371,8 +418,10 @@ else
             else
             {
                 user.ModifiedDatetime = DateTime.Now;
-                //user.IsActive = true;
+
                 int newUserId =  UsersService.AddUserService(user);
+                ContainerStorage.SetSelectedRecordId("users", newUserId);
+
                 UserGroupService.AddUserGroup(new UserGroup()
                 {
                     StoreId = listStore.FirstOrDefault()?.StoreId ?? 0,

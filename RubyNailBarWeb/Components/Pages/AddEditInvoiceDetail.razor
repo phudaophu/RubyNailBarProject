@@ -14,7 +14,7 @@
 @if (invoiceDetail is not null)
 {
    
-    <div class="container">
+   @*  <div class="container"> *@
         <form @onsubmit="SubmitFunc">
 
             <!-- ===== Invoice Information ===== -->
@@ -28,6 +28,8 @@
                 </div>
                 @if (showInvoiceInfoSection)
                 {
+                    @if (!showSecondPageInvoiceInfoSection)
+                    {
                     <div class="row g-4">
                         <!-- Col 1 -->
                         <div class="col-12 col-lg-4">
@@ -98,14 +100,98 @@
                                     </Control>
                                 </HorizonListComponent>
 
-                                <HorizonListComponent Label="🧾 Tax">
+                                <HorizonListComponent Label="">
                                     <Control>
-                                       @*  <InputNumber @bind-Value="invoice!.TaxAmount" class="form-control" disabled /> *@
+                                        @*  <InputNumber @bind-Value="invoice!.TaxAmount" class="form-control" disabled /> *@
+                                        <button type="button" class="btn btn-secondary" @onclick="HandleInvoiceMoreInfoButton">More</button>
                                     </Control>
                                 </HorizonListComponent>
                             }
                         </div>
                     </div>
+                    }
+                    else
+                    {
+                    <div class="row g-4">
+                        <!-- Col 1 -->
+                        <div class="col-12 col-lg-4">
+                            @if (invoice is not null)
+                            {
+                                <HorizonListComponent Label="GSTax">
+                                    <Control>
+                                        <InputNumber @bind-Value="invoice.GSTax" class="form-control" disabled />
+                                    </Control>
+                                </HorizonListComponent>
+
+                                <HorizonListComponent Label="PSTax">
+                                    <Control>
+                                        <InputNumber @bind-Value="invoice.PSTax" class="form-control" disabled />
+                                    </Control>
+                                </HorizonListComponent>
+
+                                @if (invoice.PaymentMethod is not null)
+                                {
+                                    <HorizonListComponent Label="Payment 2">
+                                        <Control>
+                                            <InputText class="form-control" @bind-Value="invoice.PaymentMethod.Name" disabled />
+                                        </Control>
+                                    </HorizonListComponent>
+                                }
+                            }
+                        </div>
+
+                        <!-- Col 2 -->
+                        <div class="col-12 col-lg-4">
+                            @if (invoice is not null && invoice.Store is not null && invoice.Manager is not null && invoice.Customer is not null)
+                            {
+                                <HorizonListComponent Label="Store 2">
+                                    <Control>
+                                        <InputText class="form-control" @bind-Value="invoice.Store.Name" disabled />
+                                    </Control>
+                                </HorizonListComponent>
+
+
+                                <HorizonListComponent Label="Manager 2">
+                                    <Control>
+                                        <input type="text" class="form-control" value=@($"{invoice.Manager.FirstName} {invoice.Manager.LastName}") disabled>
+                                    </Control>
+                                </HorizonListComponent>
+
+
+                                <HorizonListComponent Label="Customer 2">
+                                    <Control>
+                                        <input type="text" class="form-control" value=@($"{invoice.Customer.Name}") disabled>
+                                    </Control>
+                                </HorizonListComponent>
+                            }
+                        </div>
+
+                        <!-- Col 3 (Totals) -->
+                        <div class="col-12 col-lg-4">
+                            @if (invoice is not null)
+                            {
+                                <HorizonListComponent Label="All Services">
+                                    <Control>
+                                        <InputNumber @bind-Value="invoice!.ServicesAmount" class="form-control" disabled />
+                                    </Control>
+                                </HorizonListComponent>
+
+                                <HorizonListComponent Label="💵 Tip">
+                                    <Control>
+                                        <InputNumber @bind-Value="invoice!.TipAmount" class="form-control" disabled />
+                                    </Control>
+                                </HorizonListComponent>
+
+                                <HorizonListComponent Label="">
+                                    <Control>
+                                        @*  <InputNumber @bind-Value="invoice!.TaxAmount" class="form-control" disabled /> *@
+                                        <button type="button" class="btn btn-secondary" @onclick="HandleInvoiceMoreInfoButton">More</button>
+                                    </Control>
+                                </HorizonListComponent>
+                            }
+                        </div>
+                    </div>
+                    }
                 }
 
             </fieldset>
@@ -165,17 +251,45 @@
                         <HorizonListComponent Label="Staff">
                             <ElementControl>
                                 <button type="button" style="margin-left: 1.5rem" title="Go to User Page"
-                                        class="bg-transparent border-2 border-light p-0" @onclick="HandleNavigateToUserInStore">@emojiSearchUser
+                                        class="bg-transparent border-2 border-light p-0 " @onclick="HandleNavigateToUserInStore">@emojiSearchUser
                                 </button>
                             </ElementControl>
                             <Control>
                                 <InputSelect class="form-select" @bind-Value="invoiceDetail.UserId">
                                     <option value="0" disabled>- Select Staff -</option>
-                                    @foreach (var staff in listActiveStaffsByStoreId)
+@*                                 @foreach (var staff in listStaffsByStoreId)
                                     {
-                                        <option value="@staff.UserId" disabled="@(!staff.IsActive)"
-                                                class="@(staff.IsActive ? "text-success" : "text-danger")">@(staff.IsActive ? "🔔 " : "🔕 ") @staff.FirstName @staff.LastName┃@staff.Username </option>
+                                        <option value="@staff.UserId" disabled="@(!staff.IsActive || staff.IsDeleted)"
+                                            class="@(staff.IsDeleted ? "text-muted text-opacity-75" : (staff.IsActive ? "text-success" : "text-danger"))"> @(staff.IsDeleted ? "❌" : (staff.IsActive ? "🔔 " : "🔕 "))  @staff.FirstName @staff.LastName┃@staff.Username </option>
+                                    } *@
+
+                                <optgroup label="Active">
+                                    @foreach (var staff in listStaffsByStoreId.Where(s => s.IsActive && !s.IsDeleted))
+                                    {
+                                        <option value="@staff.UserId" class="text-success">
+                                            🔔 @staff.FirstName @staff.LastName ┃ @staff.Username
+                                        </option>
                                     }
+                                </optgroup>
+
+                                <optgroup label="Inactive">
+                                    @foreach (var staff in listStaffsByStoreId.Where(s => !s.IsActive && !s.IsDeleted))
+                                    {
+                                        <option value="@staff.UserId" class="text-danger" disabled>
+                                            🔕  @staff.FirstName @staff.LastName ┃ @staff.Username
+                                        </option>
+                                    }
+                                </optgroup>
+
+                                <optgroup label="Deleted">
+                                    @foreach (var staff in listStaffsByStoreId.Where(s => s.IsDeleted))
+                                    {
+                                        <option value="@staff.UserId" class="text-muted" disabled>
+                                            ❌ @staff.FirstName @staff.LastName ┃ @staff.Username
+                                        </option>
+                                    }
+                                </optgroup>
+
                                 </InputSelect>
                                 
                             </Control>
@@ -269,7 +383,7 @@
             </div>
 
         </form>
-    </div>
+    @* </div> *@
 }
 
 
@@ -283,7 +397,7 @@
     [Parameter]
     public int? Id { get; set; }
 
-    private List<User> listActiveStaffsByStoreId { get; set; } = new List<User>();
+    private List<User> listStaffsByStoreId { get; set; } = new List<User>();
 
     private InvoiceDetail? invoiceDetail { get; set; }
 
@@ -305,10 +419,19 @@
 
     private bool showInvoiceInfoSection = false;
 
+    private bool showSecondPageInvoiceInfoSection = false;
+
     private string emojiInvoiceInfo = "☰";
 
     private const string emojiSearchUser = "🔎";
 
+    private void HandleInvoiceMoreInfoButton()
+    {
+        if(invoice is not null)
+        {
+            showSecondPageInvoiceInfoSection = !showSecondPageInvoiceInfoSection;
+        }
+    }
 
     private RenderFragment GetEmojiStartTime() => builder =>
     {
@@ -440,7 +563,7 @@
         }
     }
 
-    private void HandleNavigateToUserInStore()
+    private async Task HandleNavigateToUserInStore()
     {
         if(invoice is not null && invoice.StoreId > 0)
         {
@@ -448,20 +571,34 @@
             if (invoiceDetail is not null && invoiceDetail.UserId > 0)
             {
                 int pageSize = 5;
+                (int currentPage, int totalPage) paginationTuple;
 
-                var (currentPage, totalPage) = UsersService.GetCurrentPageAndTotalPageService(pageSize, invoiceDetail.UserId.Value, invoice.StoreId);
+                paginationTuple = UsersService.GetCurrentPageAndTotalPageService(pageSize, invoiceDetail.UserId.Value, invoice.StoreId);
 
-                if ((currentPage, totalPage) != (0, 0))
+                if (paginationTuple.currentPage != 0 && paginationTuple.totalPage != 0)
                 {
-                    ContainerStorage.SetCurrentPage("users", currentPage);
+                    ContainerStorage.SetCurrentPage("users", paginationTuple.currentPage);
 
-                    ContainerStorage.SetTotalPages("users", totalPage);
+                    ContainerStorage.SetTotalPages("users", paginationTuple.totalPage);
 
+                    ContainerStorage.SetSelectedRecordId("users", invoiceDetail.UserId.Value);
+
+                    NavigationManager.NavigateTo($"/users");
+
+                    return;
+                }
+                else
+                {
+                    var isConfirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"⚠️ Staff Id {invoiceDetail.UserId.Value} is DELETED, Click OK to edit this user ?");
+                    if (isConfirmed)
+                    {
+                        NavigationManager.NavigateTo($"/user/{invoiceDetail.UserId.Value}");
+                    }
                 }
 
-                ContainerStorage.SetSelectedRecordId("users", invoiceDetail.UserId.Value);
             }
-            NavigationManager.NavigateTo($"/users");
+
+           
         }
     }
 
@@ -490,7 +627,7 @@
 
         if (invoice is not null && invoice.StoreId > 0)
         {
-            listActiveStaffsByStoreId = UsersService.GetStaffListByStoreIdService(invoice.StoreId.Value).OrderBy(u => !u.IsActive).ToList();
+            listStaffsByStoreId = UsersService.GetStaffListByStoreIdService(invoice.StoreId.Value).OrderBy(u => !u.IsActive).ToList();
         }
     }
 

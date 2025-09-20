@@ -161,7 +161,8 @@ process: split editaddinvoice to component, do not change from pending to paymen
 12:42 AM 9/19/2025
 process: add a column InvoiceType 
 
-
-
-
-	  
+8:40 AM 9/19/2025
+complete: seach customer, seach user but not found
+complete: config invoice type reading list<string> from appsettings
+process: watchlist function, add validate function prior to search staff in case of removed staff
+process: is deleted button in user page 	  

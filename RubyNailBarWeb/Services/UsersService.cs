@@ -20,7 +20,7 @@ namespace RubyNailBarWeb.Services
             List<User> listUsers = new List<User> ();   
             if (selectedStoreId > 0)
             {
-                listUsers = GetUsersService()
+                listUsers = GetValidUsersOrderByUserIdDescService()
                                 .Where(u => u.UserGroups != null && u.UserGroups
                                                                         .Any(ug => ug.StoreId != null && ug.StoreId == selectedStoreId))
                                                                         .ToList(); 
@@ -28,7 +28,7 @@ namespace RubyNailBarWeb.Services
             else
             {
 
-               listUsers = GetUsersService();
+               listUsers = GetValidUsersOrderByUserIdDescService();
 
             }
 
@@ -56,7 +56,6 @@ namespace RubyNailBarWeb.Services
             return usersRepository.GetManagerListByStoreId(storeId);    
         }
 
-
         // exclueedUserId is used to exclude the user from the check, useful when updating the user
         public bool IsUsernameExistsService(string username, int? excludedUserId = null)
         {
@@ -72,6 +71,11 @@ namespace RubyNailBarWeb.Services
         {
             usersRepository.UpdateUser(userId, user);
 
+        }
+
+        public List<User> GetValidUsersOrderByUserIdDescService()
+        {
+            return usersRepository.GetValidUsersOrderByUserIdDesc();
         }
 
         public List<User> GetUsersService()

@@ -4,6 +4,7 @@ namespace RubyNailBarWeb.Services.Implements
 {
     public interface IUsersService
     {
+        List<User> GetValidUsersOrderByUserIdDescService();
         (int CurrentPage, int TotalPage) GetCurrentPageAndTotalPageService(int pageSize, int selectedUserId, int? selectedStoreId = null);
         List<User> GetStaffListByStoreIdService(int storeId);
         List<User> GetManagerListByStoreIdService(int storeId);  

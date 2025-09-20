@@ -198,15 +198,22 @@
 
     }
 
+    protected override void OnInitialized()
+    {
+        currentPath = NavigationManager.ToBaseRelativePath(NavigationManager.Uri).Split('?', '#')[0];
+
+        ContainerStorage.ResetPaginationData(currentPath);
+
+        listStore = StoresService.GetStoresService();
+    }
+
 
     protected override void OnAfterRender(bool firstRender)
     {
         if (firstRender)
         {
-            currentPath = NavigationManager.ToBaseRelativePath(NavigationManager.Uri).Split('?', '#')[0];
-            ContainerStorage.ResetPaginationData(currentPath);
 
-            listStore = StoresService.GetStoresService();
+            
 
             if (ContainerStorage.CheckElementOptionalDataExist(currentPath, "SelectedStoreId"))
             {
@@ -231,31 +238,6 @@
                     _selectedEndDate = DateOnly.ParseExact(endDateNumber.ToString(), "yyyyMMdd");
                 }
             }
-
-            // if (ContainerStorage.GetOptionalData(currentPath).Count > 0)
-            // {
-            //     if (ContainerStorage.GetOptionalData(currentPath).Keys.Contains("SelectedStoreId"))
-            //     {
-            //         _selectedStoreId = ContainerStorage.GetOptionalData(currentPath)["SelectedStoreId"];
-            //     }
-            //     if (ContainerStorage.GetOptionalData(currentPath).Keys.Contains("SelectedStartDate"))
-            //     {
-            //         int startDateNumber = ContainerStorage.GetOptionalData(currentPath)["SelectedStartDate"];
-            //         if (startDateNumber > 0)
-            //         {
-            //             _selectedStartDate = DateOnly.ParseExact(startDateNumber.ToString(), "yyyyMMdd");
-            //             notAllowedChooseEndDate = false;
-            //         }
-            //     }
-            //     if (ContainerStorage.GetOptionalData(currentPath).Keys.Contains("SelectedEndDate"))
-            //     {
-            //         int endDateNumber = ContainerStorage.GetOptionalData(currentPath)["SelectedEndDate"];
-            //         if (endDateNumber > 0)
-            //         {
-            //             _selectedEndDate = DateOnly.ParseExact(endDateNumber.ToString(), "yyyyMMdd");
-            //         }
-            //     }
-            // }
           
             StateHasChanged();
         }

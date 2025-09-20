@@ -34,6 +34,7 @@ public partial class Invoice
     public bool IsImportant { get; set; } = false;
 
     public string? Description { get; set; }
+    public string? BookingType { get; set; }    
 
     public virtual Customer? Customer { get; set; }
 

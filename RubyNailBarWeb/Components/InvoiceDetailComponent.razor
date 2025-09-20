@@ -216,8 +216,6 @@
                 var isConfirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"ℹ️ Click OK to reset the time and change payment method to PENDING, Are you sure ?");
                 if (isConfirmed)
                 {
-
-                    //ChangeInvoicePaymentMethodToPending(this.Invoice);
                     await OnChangeInvoicePaymentMethodToPendingCallBack.InvokeAsync();
                     HandleUpdateStartTime(invoiceDetail);
                 }

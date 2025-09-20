@@ -11,6 +11,11 @@ namespace RubyNailBarWeb.Services
             this._customersRepository = customersRepository;
         }
 
+        public List<Customer> GetValidCustomersOrderByCreatedDatetimeDescService()
+        {
+            return _customersRepository.GetValidCustomersOrderByCreatedDatetimeDesc();
+        }
+
         public bool IsCustomerPhoneNoExistService(string phoneNo, int? excludedCustomerId = null)
         {
             return _customersRepository.IsCustomerPhoneNoExist(phoneNo, excludedCustomerId);

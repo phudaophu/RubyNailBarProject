@@ -67,6 +67,15 @@ namespace RubyNailBarWeb.Repositories
             db.SaveChanges();
             return user.UserId;
         }
+
+        public List<User> GetValidUsersOrderByUserIdDesc()
+        {
+            using var db = this.contextFactory.CreateDbContext();
+            return db.Users.Where(u => u.IsDeleted == false)
+                            .Include(u => u.UserGroups)
+                            .OrderByDescending(u => u.UserId).ToList();    
+        }
+
         public List<User> GetUsers()
         {
             using var db = this.contextFactory.CreateDbContext();
@@ -110,7 +119,7 @@ namespace RubyNailBarWeb.Repositories
                 userToUpdate.IsActive = user.IsActive;
                 userToUpdate.ImageUrl = user.ImageUrl;
                 userToUpdate.Address1 = user.Address1;
-                userToUpdate.IsDelete = user.IsDelete;
+                userToUpdate.IsDeleted = user.IsDeleted;
                 userToUpdate.ModifiedDatetime = DateTime.Now;
                 db.SaveChanges();
             }

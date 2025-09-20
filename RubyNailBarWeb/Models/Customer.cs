@@ -48,6 +48,8 @@ public partial class Customer
 
     public string? Description { get; set; }    
 
+    public bool IsDeleted { get; set; } = false;
+
     public virtual ICollection<BirthdayNotificationLog> BirthdayNotificationLogs { get; set; } = new List<BirthdayNotificationLog>();
 
     public virtual ICollection<CustomerPointLog> CustomerPointLogs { get; set; } = new List<CustomerPointLog>();

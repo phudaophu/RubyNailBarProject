@@ -27,7 +27,24 @@ namespace RubyNailBarWeb.Repositories
             return invoice.InvoiceId;
         }
 
-        public List<Invoice> GetExistInvoicesOrderByCreatedDatetimeDesc()
+        public List<Invoice> GetWatchListInvoicesOrderByPaymentStatusCreatedDatetimeDesc()
+        {
+            using var db = this.contextFactory.CreateDbContext();
+            return db.Invoices
+                .Include(i => i.Manager)
+                .Include(i => i.Store)
+                .Include(i => i.Customer)
+                .Include(i => i.PaymentMethod)
+                .Include(i => i.InvoiceDetails).ThenInclude(i => i.CustomerService)
+                .Include(i => i.InvoiceDetails).ThenInclude(i => i.User)
+                .Where(i => i != null && i.IsImportant == true)
+                .OrderByDescending(i => i.CreatedDatetime)
+                .ToList();
+
+        }
+
+
+        public List<Invoice> GetExistInvoicesOrderByPaymentStatusAndCreatedDatetimeDesc()
         {
             using var db = this.contextFactory.CreateDbContext();
             return db.Invoices
@@ -38,7 +55,7 @@ namespace RubyNailBarWeb.Repositories
                 .Include(i => i.InvoiceDetails).ThenInclude(i => i.CustomerService)
                 .Include(i => i.InvoiceDetails).ThenInclude(i => i.User)
                 .Where(i => i != null && i.IsDeleted == false)
-                .OrderByDescending(i => i.CreatedDatetime)
+                .OrderBy(i => i.PaymentMethod != null && i.PaymentMethod.IsPayment).ThenByDescending(i => i.CreatedDatetime)
                 .ToList();
                 
         }
@@ -100,9 +117,36 @@ namespace RubyNailBarWeb.Repositories
                 invoiceToUpdate.IsDeleted = invoice.IsDeleted;
                 invoiceToUpdate.IsImportant = invoice.IsImportant;
                 invoiceToUpdate.Description = invoice.Description;
+                invoiceToUpdate.BookingType = invoice.BookingType;
                 db.SaveChanges();
             }
         }
+
+
+        public List<Invoice>? SearchWatchListInvoiceByCustomerInfo(string keyString)
+        {
+            using var db = this.contextFactory.CreateDbContext();
+
+            if (string.IsNullOrWhiteSpace(keyString))
+            {
+                // throw new ArgumentNullException("Loi: provided keyword is null");
+                return new List<Invoice>();
+            }
+
+            IQueryable<Invoice> invoiceQuery = db.Invoices.AsNoTracking()
+                                                          .Include(iq => iq.Customer)
+                                                          .Include(iq => iq.Store)
+                                                          .Where(iq => iq.IsImportant == true);
+
+            invoiceQuery = invoiceQuery.Where(iq =>
+                                                    (iq.Customer != null && iq.Customer.Name != null && iq.Customer.Name.ToLower().IndexOf(keyString.ToLower()) >= 0) ||
+                                                    (iq.Customer != null && iq.Customer.Email != null && iq.Customer.Email.ToLower().IndexOf(keyString.ToLower()) >= 0) ||
+                                                    (iq.Customer != null && iq.Customer.PhoneNo != null && iq.Customer.PhoneNo.ToLower().IndexOf(keyString.ToLower()) >= 0));
+
+
+            return invoiceQuery.OrderByDescending(i => i.CreatedDatetime).ToList();
+        }
+
 
         public List<Invoice>? SearchInvoicesByCustomerInfo(string keyString)
         {

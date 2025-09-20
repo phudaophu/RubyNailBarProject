@@ -125,7 +125,7 @@
 
                 @if (this.Invoice.InvoiceId > 0)
                 {
-                    @if (isManagerChanged || isPaymentMethodChanged || isDescriptionChanged)
+                    @if (isManagerChanged || isPaymentMethodChanged || isDescriptionChanged || isInvoiceBookingTypeChanged)
                     {
                         <td class="align-middle">
                             <button type="button" title="Update Invoice" class="bg-transparent border-2 border-light p-0" @onclick="HandleUpdateInvoiceButton">💾</button>
@@ -217,7 +217,7 @@
                         PST 
                     </th>
                     <th>
-                        Type
+                        Booking via
                     </th>
                     <th>
                         Description
@@ -255,17 +255,17 @@
                         </div>
                     </td>
                     <td class="align-middle">
-                        <InputSelect class="form-select" TValue="int?"
-                                     Value="Invoice.ManagerId"
-                                     ValueChanged="@( (int? e) => {OnSelectManagerChanged(e);} )"
-                                     ValueExpression="@(() => Invoice.ManagerId)">
+                        <InputSelect class="form-select"
+                                     Value="Invoice.BookingType"
+                                     ValueChanged="@( (string? e) => {OnSelectInvoiceTypeChanged(e);} )"
+                                     ValueExpression="@(() => Invoice.BookingType)">
 
-                            <option value="0" disabled selected>--Select Manager--</option>
-                            @if (listManagers != null && listManagers.Any())
+                            <option value="" disabled selected>-Select Type-</option>
+                            @if (listInvoiceBookingTypes != null && listInvoiceBookingTypes.Any())
                             {
-                                @foreach (var manager in listManagers)
+                                @foreach (var bookingType in listInvoiceBookingTypes)
                                 {
-                                    <option value="@manager.UserId">@manager.FirstName @manager.LastName</option>
+                                    <option value="@bookingType">@bookingType</option>
 
                                 }
 
@@ -281,7 +281,7 @@
 
                     <td class="align-middle">
                         <button type="button" title="Save to Watchlist" class="bg-transparent border-2 border-light p-0" @onclick="HandleMoveToWatchlist">
-                            📒
+                            📌
                         </button>
                     </td>
                 </tr>
@@ -298,10 +298,6 @@
 
 
 @code {
-
-
-    //[Parameter]
-    //public int? Id { get; set; }
 
     [Parameter]
     public EventCallback<Invoice> InvoiceCallBack { get; set; }
@@ -326,6 +322,8 @@
 
     private List<PaymentMethod>? listPaymentMethod = new List<PaymentMethod>();
 
+    private List<string>? listInvoiceBookingTypes = new List<string>();
+
     private string? searchText { get; set; } = string.Empty;
 
     private List<Customer>? listFoundCustomers = new List<Customer>();
@@ -335,6 +333,8 @@
     private bool isPaymentMethodChanged = false;
 
     private bool isDescriptionChanged = false;
+
+    private bool isInvoiceBookingTypeChanged = false;
 
     [Parameter]
     public bool activeAddCustomerSection { get; set; } = false;
@@ -346,6 +346,8 @@
     private int? snapshotManagerId;
 
     private string snapshotDescription = string.Empty;
+
+    private string snapshotInvoiceType = string.Empty;
 
     private int? selectedInvoiceDetailId;
 
@@ -362,6 +364,8 @@
         listStores = StoresService.GetActiveStoresService();
 
         listPaymentMethod = PaymentMethodsService.GetPaymentMethodsService();
+
+        listInvoiceBookingTypes = InvoicesService.GetInvoiceBookingTypesService();
 
         listPendingPayment = listPaymentMethod.Where(p => p.IsPayment == false).ToList();
 
@@ -385,6 +389,8 @@
                 snapshotManagerId = Invoice.ManagerId;
 
                 snapshotDescription = Invoice.Description ?? String.Empty;
+
+                snapshotInvoiceType = Invoice.BookingType ?? String.Empty;
 
                 invoicePaymentStatus = CheckInvoicePaymentStatus(Invoice.PaymentMethodId);
             }
@@ -413,6 +419,14 @@
 
     }
 
+    private void OnSelectInvoiceTypeChanged(string? valueChanged)
+    {
+        if (Invoice is not null)
+        {
+            Invoice.BookingType = valueChanged;
+            isInvoiceBookingTypeChanged = true;
+        }
+    }
 
     private void OnSelectStoreChanged(int? valueChanged)
     {
@@ -444,6 +458,7 @@
             isManagerChanged = false;
             isPaymentMethodChanged = false;
             isDescriptionChanged = false;
+            isInvoiceBookingTypeChanged = false;
             // refresh invoice
             //StateHasChanged();
             //Invoice = InvoicesService.GetInvoiceByIdService(Invoice.InvoiceId);
@@ -525,11 +540,11 @@
         }
     }
 
-    private void OnInvoiceDescriptionChange(string changedValue)
+    private void OnInvoiceDescriptionChange(string valueChanged)
     {
         if (Invoice is not null)
         {
-            Invoice.Description = changedValue;
+            Invoice.Description = valueChanged;
             isDescriptionChanged = true;
         }
     }
@@ -554,10 +569,12 @@
                 invoicePaymentStatus = CheckInvoicePaymentStatus(snapshotPaymentMethodId);
             }
             Invoice.Description = snapshotDescription ?? String.Empty;
+            Invoice.BookingType = snapshotInvoiceType ?? String.Empty;
 
             isManagerChanged = false;
             isPaymentMethodChanged = false;
             isDescriptionChanged = false;
+            isInvoiceBookingTypeChanged = false;
         }
     }
 

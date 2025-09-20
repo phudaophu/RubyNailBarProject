@@ -77,7 +77,7 @@
                     <td>
                         <InputSelect @bind-Value="userGroup.RoleName" class="form-select">
 
-                            <option value="@string.Empty" >Select Role </option>
+                            <option value="@string.Empty" disabled selected>Select Role </option>
 
                             @if (!string.IsNullOrEmpty(userGroup.GroupName) && dictGroupRole.TryGetValue(userGroup.GroupName, out var listRole))
                             {
