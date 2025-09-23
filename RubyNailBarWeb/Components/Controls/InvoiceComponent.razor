@@ -125,7 +125,8 @@
 
                 @if (this.Invoice.InvoiceId > 0)
                 {
-                    @if (isManagerChanged || isPaymentMethodChanged || isDescriptionChanged || isInvoiceBookingTypeChanged)
+                    @if (isManagerChanged || isPaymentMethodChanged || isDescriptionChanged || isInvoiceBookingTypeChanged || isInvoiceServicesAmountChanged 
+                                                    || isInvoiceTipAmountChanged || isGSTaxChanged || isPSTaxChanged || isInvoiceImportantChanged || isAppliedDiscountChanged)
                     {
                         <td class="align-middle">
                             <button type="button" title="Update Invoice" class="bg-transparent border-2 border-light p-0" @onclick="HandleUpdateInvoiceButton">💾</button>
@@ -211,6 +212,9 @@
                         Tip
                     </th>
                     <th>
+                        Discount
+                    </th>
+                    <th>
                         GST
                     </th>
                     <th>
@@ -222,35 +226,71 @@
                     <th>
                         Description
                     </th>
-                    <th>
+                    <th></th>
+                    <th></th>
+                    
 
-                    </th>
                 </tr>
             </thead>
+@*             private bool isTotalBillChanged = false;
+
+            private bool isInvoiceTipChanged = false;
+
+            private bool isGSTaxChanged = false;
+
+            private bool isPSTaxChanged = false; *@
             <tbody>
                 <tr>
                     <td class="align-middle">
-                        <InputNumber class="form-control" @bind-Value="Invoice.ServicesAmount" disabled="@(invoicePaymentStatus)">
-
+                        <InputNumber class="form-control"
+                                     TValue="decimal?"
+                                     Value="Invoice.ServicesAmount"
+                                     ValueChanged="@( (decimal? e) => {OnInvoiceServicesFeeChanged(e);} )"
+                                     ValueExpression="@(() => Invoice.ServicesAmount)"
+                                     min="0" disabled="@(invoicePaymentStatus)">
                         </InputNumber>
                     </td>
                     <td class="align-middle">
 
-                        <InputNumber style="" class="form-control" @bind-Value="Invoice.TipAmount" disabled="@(invoicePaymentStatus)">
+                        <InputNumber class="form-control" 
+                                     TValue="decimal?"
+                                     Value="Invoice.TipAmount"
+                                     ValueChanged="@( (decimal? e) => {OnInvoiceTipAmountChanged(e);} )"
+                                     ValueExpression="@(() => Invoice.TipAmount)"
+                                     min="0" disabled="@(invoicePaymentStatus)">
 
                         </InputNumber>
                     </td>
+
+                    <td class="align-middle">
+
+                        <div class="input-group input-group flex-nowrap">
+                            <InputNumber TValue="decimal?" class="form-control text-end"
+                                         Value="Invoice.Discount"
+                                         ValueChanged="@( (decimal? e) => {OnAppliedDiscountChanged(e);} )"
+                                         ValueExpression="@(() => Invoice.Discount)"
+                                         step="0.1" min="0" max="100" disabled="@(invoicePaymentStatus)" />
+                            <span class="input-group-text">%</span>
+                        </div>
+                    </td>
+
                     <td class="align-middle">
                         <div class="input-group input-group flex-nowrap">
                             <InputNumber TValue="decimal?" class="form-control text-end"
-                                         @bind-Value="Invoice.GSTax" step="0.1" min="0" max="100" disabled="@(invoicePaymentStatus)" />
+                                         Value="Invoice.GSTax"
+                                         ValueChanged="@( (decimal? e) => {OnGSTaxChanged(e);} )"
+                                         ValueExpression="@(() => Invoice.GSTax)"
+                                         step="0.1" min="0" max="100" disabled="@(invoicePaymentStatus)" />
                             <span class="input-group-text">%</span>
                         </div>
                     </td>
                     <td class="align-middle input-group w-auto">
                         <div class="input-group input-group flex-nowrap">
                             <InputNumber TValue="decimal?" class="form-control text-end"
-                                         @bind-Value="Invoice.PSTax" step="0.1" min="0" max="100" disabled="@(invoicePaymentStatus)" />
+                                         Value="Invoice.PSTax"
+                                         ValueChanged="@( (decimal? e) => {OnPSTaxChanged(e);} )"
+                                         ValueExpression="@(() => Invoice.PSTax)"
+                                         step="0.1" min="0" max="100" disabled="@(invoicePaymentStatus)" />
                             <span class="input-group-text">%</span>
                         </div>
                     </td>
@@ -272,7 +312,7 @@
                             }
                         </InputSelect>
                     </td>
-                    <td class="align-middle">
+                    <td class="align-middle" colspan="2">
                         <InputText type="text" class="form-control" placeholder="Enter Description"
                                    Value="@Invoice.Description"
                                    ValueChanged="@((string e) => { OnInvoiceDescriptionChange(e);} )"
@@ -280,9 +320,17 @@
                     </td>
 
                     <td class="align-middle">
-                        <button type="button" title="Save to Watchlist" class="bg-transparent border-2 border-light p-0" @onclick="HandleMoveToWatchlist">
-                            📌
-                        </button>
+                        @if (!Invoice.IsImportant)
+                        {
+                            <button type="button" title="Save to Watchlist" class="bg-transparent border-2 border-light p-0" @onclick="HandleMoveToWatchlist">
+                                📌
+                            </button>
+                        }else{
+                            <button type="button" title="Remove from Watchlist" class="bg-transparent border-2 border-light p-0" @onclick="HandleMoveToWatchlist">
+                                ✂
+                            </button>
+                        }
+
                     </td>
                 </tr>
             </tbody>
@@ -299,14 +347,20 @@
 
 @code {
 
-    [Parameter]
-    public EventCallback<Invoice> InvoiceCallBack { get; set; }
+    // [Parameter]
+    // public EventCallback<Invoice> InvoiceCallBack { get; set; }
 
     [Parameter]
     public EventCallback<bool> AddCustomerSectionCallBack { get; set; }
 
     [Parameter]
-    public EventCallback OnChangeInvoicePaymentMethodToPendingCallBack { get; set; }
+    public EventCallback<bool> OnChangeInvoicePaymentStatusCallBack { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> AddAdvancedSettingsSectionCallBack { get; set; }
+
+    [Parameter]
+    public EventCallback OnChangeInvoiceTotalBillCallBack { get; set; }
 
     [Parameter]
     public string CurrentPath { get; set; } = string.Empty;
@@ -336,6 +390,18 @@
 
     private bool isInvoiceBookingTypeChanged = false;
 
+    private bool isInvoiceServicesAmountChanged = false;
+
+    private bool isInvoiceTipAmountChanged = false;
+
+    private bool isGSTaxChanged = false;
+
+    private bool isPSTaxChanged = false;
+
+    private bool isInvoiceImportantChanged = false;
+
+    private bool isAppliedDiscountChanged = false;
+
     [Parameter]
     public bool activeAddCustomerSection { get; set; } = false;
 
@@ -349,13 +415,23 @@
 
     private string snapshotInvoiceType = string.Empty;
 
+    private decimal? snapshotInvoiceServicesAmount;
+
+    private decimal? snapshotInvoiceTipAmount;
+
+    private decimal? snapshotGSTax; 
+
+    private decimal? snapshotPSTax; 
+
+    private decimal? snapshotAppliedDiscount; 
+
+    private bool snapshotInvoiceImportant; 
+
     private int? selectedInvoiceDetailId;
 
     private Customer? selectedCustomerInfo = new Customer();
 
     private bool invoicePaymentStatus = false;
-
-    //private List<InvoiceDetail> listInvoiceDetails = new List<InvoiceDetail>();
 
 
 
@@ -370,6 +446,32 @@
         listPendingPayment = listPaymentMethod.Where(p => p.IsPayment == false).ToList();
 
         this.selectedInvoiceDetailId = ContainerStorage.GetLastSelectedRecordId(this.CurrentPath);
+
+        if(this.Invoice is not null)
+        {
+            if (Invoice.PaymentMethodId > 0) snapshotPaymentMethodId = Invoice.PaymentMethodId;
+
+            if(Invoice.ManagerId > 0) snapshotManagerId = Invoice.ManagerId;
+
+            snapshotDescription = Invoice.Description ?? String.Empty;
+
+            snapshotInvoiceType = Invoice.BookingType ?? String.Empty;
+
+            snapshotInvoiceServicesAmount = Invoice.ServicesAmount ?? 0;
+
+            snapshotInvoiceTipAmount = Invoice.TipAmount ?? 0;
+
+            snapshotGSTax = Invoice.GSTax ?? InvoicesService.GetGoodsAndServicesTaxValue();
+
+            snapshotPSTax = Invoice.PSTax ?? InvoicesService.GetProvincialSalesTaxValue();
+
+            snapshotAppliedDiscount = Invoice.Discount ?? InvoicesService.GetAppliedDiscount();
+
+            snapshotInvoiceImportant = Invoice.IsImportant;
+
+
+        }
+
     }
 
     protected override void OnParametersSet()
@@ -378,19 +480,10 @@
         {
             if (Invoice.InvoiceId > 0)
             {
-
                 if (Invoice.StoreId > 0 && !listManagers.Any())
                 {
                     listManagers = UsersService.GetManagerListByStoreIdService(Invoice.StoreId.Value);
                 }
-
-                snapshotPaymentMethodId = Invoice.PaymentMethodId;
-
-                snapshotManagerId = Invoice.ManagerId;
-
-                snapshotDescription = Invoice.Description ?? String.Empty;
-
-                snapshotInvoiceType = Invoice.BookingType ?? String.Empty;
 
                 invoicePaymentStatus = CheckInvoicePaymentStatus(Invoice.PaymentMethodId);
             }
@@ -406,17 +499,66 @@
 
                 searchText = $"{selectedCustomerInfo?.Name} - {selectedCustomerInfo?.PhoneNo}";
             }
-
-
-
         }
-
     }
 
     private (string status, string emoji, int rank) CheckInvoieDetailStatus(InvoiceDetail? invoiceDetail)
     {
         return ContainerStorage.CheckInvoieDetailStatus(invoiceDetail);
 
+    }
+
+    private void OnAppliedDiscountChanged(decimal? valueChanged)
+    {
+        if(Invoice is not null && valueChanged >= 0)
+        {
+            Invoice.Discount = valueChanged;
+            isAppliedDiscountChanged = true;
+            OnChangeInvoiceTotalBillCallBack.InvokeAsync();
+        }
+    }
+
+    private void OnInvoiceTipAmountChanged(decimal? valueChanged)
+    {
+        if (Invoice is not null && valueChanged >= 0)
+        {
+            Invoice.TipAmount = valueChanged;
+            isInvoiceTipAmountChanged = true;
+            OnChangeInvoiceTotalBillCallBack.InvokeAsync();
+        }
+    }
+
+    private void OnGSTaxChanged(decimal? valueChanged)
+    {
+        if (Invoice is not null && valueChanged >= 0)
+        {
+            Invoice.GSTax = valueChanged;
+            isGSTaxChanged = true;
+            OnChangeInvoiceTotalBillCallBack.InvokeAsync();
+
+        }
+    }
+
+    private void OnPSTaxChanged(decimal? valueChanged)
+    {
+        if (Invoice is not null && valueChanged >= 0)
+        {
+            Invoice.PSTax = valueChanged;
+            isPSTaxChanged = true;
+            OnChangeInvoiceTotalBillCallBack.InvokeAsync();
+
+        }
+    }
+
+    private void OnInvoiceServicesFeeChanged(decimal? valueChanged)
+    {
+        if(Invoice is not null && valueChanged >= 0)
+        {
+            Invoice.ServicesAmount = valueChanged;
+            isInvoiceServicesAmountChanged = true; 
+            OnChangeInvoiceTotalBillCallBack.InvokeAsync();
+
+        }
     }
 
     private void OnSelectInvoiceTypeChanged(string? valueChanged)
@@ -445,6 +587,7 @@
         if (this.Invoice is not null)
         {
             Invoice.IsImportant = !Invoice.IsImportant;
+            isInvoiceImportantChanged = true;
         }
     }
 
@@ -452,16 +595,19 @@
     {
         if (this.Invoice is not null)
         {
+            Invoice.ModifiedDatetime = DateTime.Now;
             InvoicesService.UpdateInvoiceService(Invoice.InvoiceId, Invoice);
-            //ContainerStorage.SetOptionalData(this.CurrentPath, "Invoice", Invoice);
 
             isManagerChanged = false;
             isPaymentMethodChanged = false;
             isDescriptionChanged = false;
             isInvoiceBookingTypeChanged = false;
-            // refresh invoice
-            //StateHasChanged();
-            //Invoice = InvoicesService.GetInvoiceByIdService(Invoice.InvoiceId);
+            isInvoiceServicesAmountChanged = false;
+            isInvoiceTipAmountChanged = false;
+            isGSTaxChanged = false;
+            isPSTaxChanged = false;
+            isInvoiceImportantChanged = false;
+
         }
     }
 
@@ -486,14 +632,14 @@
                 {
                     await JSRuntime.InvokeVoidAsync("confirm", $"⚠️ Payment cannot process due to no services.");
                     //ChangeInvoicePaymentMethodToPending(invoice);
-                    await OnChangeInvoicePaymentMethodToPendingCallBack.InvokeAsync();
+                    await OnChangeInvoicePaymentStatusCallBack.InvokeAsync(false);
                     return;
                 }
                 else if (Invoice.InvoiceDetails.All(id => id.IsDeleted == true))
                 {
                     await JSRuntime.InvokeVoidAsync("confirm", $"⚠️ Payment cannot process due to no services.");
                     //ChangeInvoicePaymentMethodToPending(invoice);
-                    await OnChangeInvoicePaymentMethodToPendingCallBack.InvokeAsync();
+                    await OnChangeInvoicePaymentStatusCallBack.InvokeAsync(false);
                     return;
                 }
                 else if (Invoice.InvoiceDetails.Any()
@@ -502,7 +648,7 @@
                 {
                     await JSRuntime.InvokeVoidAsync("confirm", $"⚠️ All Services must be in COMPLETED status prior to payment process.");
                     //ChangeInvoicePaymentMethodToPending(invoice);
-                    await OnChangeInvoicePaymentMethodToPendingCallBack.InvokeAsync();
+                    await OnChangeInvoicePaymentStatusCallBack.InvokeAsync(false);
                     return;
                 }
                 // Payment => Completed
@@ -511,9 +657,11 @@
                 {
                     Invoice.PaymentMethodId = valueChanged.Value;
                     invoicePaymentStatus = CheckInvoicePaymentStatus(valueChanged.Value);
+                    await OnChangeInvoicePaymentStatusCallBack.InvokeAsync(invoicePaymentStatus);
+
                     isPaymentMethodChanged = true;
                     //ContainerStorage.SetOptionalData(this.CurrentPath, "Invoice", Invoice);
-                    
+
                     return;
                 }
             }
@@ -522,9 +670,11 @@
             {
                 Invoice.PaymentMethodId = valueChanged.Value;
                 invoicePaymentStatus = CheckInvoicePaymentStatus(valueChanged.Value);
+                await OnChangeInvoicePaymentStatusCallBack.InvokeAsync(invoicePaymentStatus);
+
                 isPaymentMethodChanged = true;
                 //ContainerStorage.SetOptionalData(this.CurrentPath, "Invoice", Invoice);
-               
+
                 return;
             }
         }
@@ -552,6 +702,7 @@
     private void HandleAddAdvancedSettingsSection()
     {
         activeAddAdvacedSettingsSection = !activeAddAdvacedSettingsSection;
+        AddAdvancedSettingsSectionCallBack.InvokeAsync(activeAddAdvacedSettingsSection);
 
     }
 
@@ -563,18 +714,35 @@
             {
                 Invoice.ManagerId = snapshotManagerId;
             }
+
             if (snapshotPaymentMethodId > 0)
             {
                 Invoice.PaymentMethodId = snapshotPaymentMethodId;
                 invoicePaymentStatus = CheckInvoicePaymentStatus(snapshotPaymentMethodId);
+                OnChangeInvoicePaymentStatusCallBack.InvokeAsync(invoicePaymentStatus);
             }
+
             Invoice.Description = snapshotDescription ?? String.Empty;
             Invoice.BookingType = snapshotInvoiceType ?? String.Empty;
+            Invoice.ServicesAmount = snapshotInvoiceServicesAmount ?? 0;
+            Invoice.TipAmount = snapshotInvoiceTipAmount ?? 0;
+            Invoice.GSTax = snapshotGSTax ?? InvoicesService.GetGoodsAndServicesTaxValue();
+            Invoice.PSTax = snapshotPSTax ?? InvoicesService.GetProvincialSalesTaxValue();
+            Invoice.IsImportant = snapshotInvoiceImportant;
+            Invoice.Discount = snapshotAppliedDiscount;
 
             isManagerChanged = false;
             isPaymentMethodChanged = false;
             isDescriptionChanged = false;
             isInvoiceBookingTypeChanged = false;
+            isInvoiceServicesAmountChanged = false;
+            isInvoiceTipAmountChanged = false;
+            isGSTaxChanged = false;
+            isPSTaxChanged = false;
+            isInvoiceImportantChanged = false;
+            isAppliedDiscountChanged = false;
+
+            OnChangeInvoiceTotalBillCallBack.InvokeAsync();
         }
     }
 
@@ -590,7 +758,7 @@
                 var isConfirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"⚠️ Change payment method to PENDING in order to add services, Are you sure ?");
                 if (isConfirmed)
                 {
-                    await OnChangeInvoicePaymentMethodToPendingCallBack.InvokeAsync();
+                    await OnChangeInvoicePaymentStatusCallBack.InvokeAsync(false);
                     //ChangeInvoicePaymentMethodToPending(invoice);
                     NavigationManager.NavigateTo("invoice-detail");
                 }
@@ -644,15 +812,10 @@
 
     private bool CheckInvoicePaymentStatus(int? paymentMethodId)
     {
-        if (Invoice is not null && paymentMethodId is not null)
+        if (this.Invoice is not null && paymentMethodId >0 && listPaymentMethod is not null)
         {
-
-            var paymentMethod = PaymentMethodsService.GetPaymentMethodByIdService(paymentMethodId.Value);
-            if (paymentMethod is not null)
-            {
-                return paymentMethod.IsPayment;
-
-            }
+            var paymentMethod = listPaymentMethod.FirstOrDefault(p => p.PaymentMethodId == paymentMethodId);
+            if (paymentMethod is not null) return paymentMethod.IsPayment;
         }
         return false;
     }

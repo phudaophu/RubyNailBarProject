@@ -165,4 +165,7 @@ process: add a column InvoiceType
 complete: seach customer, seach user but not found
 complete: config invoice type reading list<string> from appsettings
 process: watchlist function, add validate function prior to search staff in case of removed staff
-process: is deleted button in user page 	  
+process: is deleted button in user page
+
+12:44 AM 9/22/2025 
+process: total bill in addedit invoice page 	  

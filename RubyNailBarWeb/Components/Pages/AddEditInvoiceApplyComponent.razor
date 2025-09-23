@@ -24,10 +24,12 @@ else
 }
 
 
-<InvoiceComponent Invoice="@invoice" activeAddCustomerSection="@activeAddCustomerSection" 
-                                        OnChangeInvoicePaymentMethodToPendingCallBack="HandlePendingInvoicePayment" 
-                                            CurrentPath="@currentPath" InvoiceCallBack="HandleInvoiceCallBack" 
-                                                AddCustomerSectionCallBack="HandleAddCustomerSectionCallBack">
+<InvoiceComponent Invoice="@invoice" activeAddCustomerSection="@activeAddCustomerSection"
+                                    OnChangeInvoicePaymentStatusCallBack="HandleChangeInvoicePayment"
+                                    OnChangeInvoiceTotalBillCallBack="HandleUpdateInvoiceTotalBillChanged"
+                                      CurrentPath="@currentPath" 
+                                        AddCustomerSectionCallBack="HandleAddCustomerSectionCallBack"
+                                        AddAdvancedSettingsSectionCallBack="HandleAddAdvancedSettingsSectionCallBack">
 </InvoiceComponent>
 
  @if(activeAddCustomerSection)
@@ -36,28 +38,37 @@ else
 
         <AddCustomerFormComponent NewCustomerIdCallBack="HandleNewCustomerId" RemoveUserCallBack="HandleRemoveAddUserSection">
         </AddCustomerFormComponent>
-        <hr>
+       
     </div>
-
+    <hr>
 }
 
 
 
 @if(this.invoice is not null)
 {
-    <InvoiceDetailComponent CurrentPath="@currentPath" Invoice="@invoice" 
-                                        OnChangeInvoicePaymentMethodToPendingCallBack="HandlePendingInvoicePayment"></InvoiceDetailComponent>
+    <InvoiceDetailComponent CurrentPath="@currentPath" Invoice="@invoice"
+                            OnChangeInvoicePaymentStatusCallBack="HandleChangeInvoicePayment"
+                            ActiveAddAdvacedSettingsSection="@activeAddAdvancedSettingsSection"
+                            OnInvoiceDetailTimeChangedCallBack="HandleUpdateInvoiceDetailTimeChanged">
+    </InvoiceDetailComponent>
 
 }
 
 
-
-<button type="button" class="btn btn-primary mt-2" @onclick="HandleBackButton">Back</button>
-
 @if (this.invoice is not null)
 {
-    <button type="button" class="ms-2 btn btn-primary mt-2">Print Invoice</button>
-    <button type="button" class="ms-2 btn btn-primary mt-2">Download Invoice</button>
+    <div class="ms-3 d-flex justify-content-between align-items-center mt-2">
+        <div class="d-flex align-items-center">
+            <button type="button" class="btn btn-primary" @onclick="HandleBackButton">Back</button>
+            <span class="ms-2 btn font-monospace  @(isPaymentCompleted == true ? "border-success text-success" : "border-light text-black text-opacity-50")"> $ @totalBill│ @totalTime min </span>
+        </div>
+        <div class="d-flex align-items-center">
+            <button type="button" class="ms-2 btn btn-primary">Print</button>
+            <button type="button" class="ms-2 btn btn-primary">Download</button>
+            
+        </div>
+    </div>
 }
 
 
@@ -71,6 +82,8 @@ else
 
     private bool activeAddCustomerSection = false;
 
+    private bool activeAddAdvancedSettingsSection  =false;
+
     private Invoice? invoice { get; set; }
 
     private string? searchText { get; set; } = string.Empty;
@@ -79,12 +92,26 @@ else
 
     private List<PaymentMethod> listPaymentMethod = new List<PaymentMethod>();
 
+    private decimal totalBill = 0;
+
+    private int totalTime = 0;
+
+    private bool isPaymentCompleted = false; 
+
+    private int CalculateTotalInvoiceTime(Invoice invoice)
+    {
+        return ContainerStorage.CalculateTotalInvoiceTime(invoice);
+    }
+
+    private decimal CalculateInvoiceTotalBill(Invoice invoice)
+    {
+        return ContainerStorage.CalculateInvoiceTotalBill(invoice);
+    }
+
     protected override void OnInitialized()
     {
         listPaymentMethod = PaymentMethodsService.GetPaymentMethodsService();
     }
-
-
 
     protected override void OnParametersSet()
     {
@@ -92,7 +119,7 @@ else
         {
             invoice ??= InvoicesService.GetInvoiceByIdService(this.Id.Value);
 
-            
+
 
             if (invoice is not null)
             {
@@ -105,6 +132,9 @@ else
 
                 ContainerStorage.SetOptionalData(currentPath, "ObjectId", invoice.InvoiceId);
 
+                totalBill = CalculateInvoiceTotalBill(invoice);
+
+                totalTime = CalculateTotalInvoiceTime(invoice);
             }
 
 
@@ -119,9 +149,10 @@ else
                 ServicesAmount = 0,
                 GSTax = InvoicesService.GetGoodsAndServicesTaxValue(),
                 PSTax = InvoicesService.GetProvincialSalesTaxValue(),
+                Discount = InvoicesService.GetAppliedDiscount(),
                 TipAmount = 0,
                 CreatedDatetime = DateTime.Now,
-                //PaymentMethodId = listPendingPayment?.FirstOrDefault()?.PaymentMethodId
+               
             };
 
         }
@@ -141,22 +172,55 @@ else
         }
     }
 
-    private void HandlePendingInvoicePayment()
+    private void HandleUpdateInvoiceTotalBillChanged()
     {
         if (invoice is not null)
         {
-            bool? checkSelectedPaymentIsFinished = listPaymentMethod?.Where(p => p.IsPayment == true).Any(p => p.PaymentMethodId == invoice.PaymentMethodId);
-            if (checkSelectedPaymentIsFinished == true)
-            {
-
-                invoice.PaymentMethodId = listPaymentMethod?.Where(p => p.IsPayment == false).FirstOrDefault()?.PaymentMethodId;
-                InvoicesService.UpdateInvoiceService(invoice.InvoiceId, invoice);
-                //ContainerStorage.SetOptionalData(currentPath, "Invoice", invoice);
-                StateHasChanged();
-            }
+            totalBill = CalculateInvoiceTotalBill(invoice);
         }
     }
 
+    private void HandleUpdateInvoiceDetailTimeChanged()
+    {
+        if (invoice is not null)
+        {
+            totalTime = CalculateTotalInvoiceTime(invoice);
+        }
+    }
+
+
+    private void HandleChangeInvoicePayment(bool isPaymentCompleted)
+    {
+        if (invoice is not null)
+        {
+            if (this.isPaymentCompleted != isPaymentCompleted)
+            {
+                this.isPaymentCompleted = isPaymentCompleted;
+
+            }
+
+            if (!isPaymentCompleted)
+            {
+                bool? checkSelectedPaymentIsFinished = listPaymentMethod?.Where(p => p.IsPayment == true).Any(p => p.PaymentMethodId == invoice.PaymentMethodId);
+                if (checkSelectedPaymentIsFinished == true)
+                {
+                    invoice.PaymentMethodId = listPaymentMethod?.Where(p => p.IsPayment == false).FirstOrDefault()?.PaymentMethodId;
+                    invoice.ModifiedDatetime = DateTime.Now;
+                    InvoicesService.UpdateInvoiceService(invoice.InvoiceId, invoice);
+                    StateHasChanged();
+                }
+            }
+
+        }
+    }
+
+    private void HandleAddAdvancedSettingsSectionCallBack(bool activeAddAdvancedSettingsSection)
+    {
+        if (this.activeAddAdvancedSettingsSection != activeAddAdvancedSettingsSection)
+        {
+            this.activeAddAdvancedSettingsSection = activeAddAdvancedSettingsSection;
+        }
+    }
 
     private void HandleAddCustomerSectionCallBack(bool activeAddCustomerSection)
     {
@@ -186,11 +250,8 @@ else
     {
         if(invoice is not null && newCustomerId > 0 && invoice.CustomerId != newCustomerId)
         {
-
             invoice.CustomerId = newCustomerId;
             activeAddCustomerSection = false;
-            
-
         }
     }
 

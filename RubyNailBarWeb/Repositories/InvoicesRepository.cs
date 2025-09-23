@@ -118,6 +118,8 @@ namespace RubyNailBarWeb.Repositories
                 invoiceToUpdate.IsImportant = invoice.IsImportant;
                 invoiceToUpdate.Description = invoice.Description;
                 invoiceToUpdate.BookingType = invoice.BookingType;
+                invoiceToUpdate.ModifiedDatetime = invoice.ModifiedDatetime;
+                invoiceToUpdate.Discount = invoice.Discount;
                 db.SaveChanges();
             }
         }

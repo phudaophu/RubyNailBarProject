@@ -12,7 +12,6 @@ public partial class Invoice
 
     [Required]
     public int? StoreId { get; set; }
-
     public int? ManagerId { get; set; }
     [Required]
     public int? CustomerId { get; set; }
@@ -22,6 +21,8 @@ public partial class Invoice
     public decimal? GSTax { get; set; }
 
     public decimal? PSTax { get; set; }
+
+    public decimal? Discount { get; set; }
 
     public decimal? TipAmount { get; set; }
 
@@ -34,7 +35,10 @@ public partial class Invoice
     public bool IsImportant { get; set; } = false;
 
     public string? Description { get; set; }
-    public string? BookingType { get; set; }    
+
+    public string? BookingType { get; set; }
+
+    public DateTime? ModifiedDatetime { get; set; }
 
     public virtual Customer? Customer { get; set; }
 

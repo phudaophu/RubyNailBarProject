@@ -11,7 +11,7 @@
             <span><i class="bi bi-person">Included Services</i></span>
         </div>
 
-        <div class="table-responsive" style="overflow-y: auto; max-height: @(activeAddAdvacedSettingsSection == true ? "35vh;" : "48vh;")">
+        <div class="table-responsive" style="overflow-y: auto; max-height: @(ActiveAddAdvacedSettingsSection == true ? "35vh;" : "48vh;")">
             <table class="table table-striped table-hover">
                 <thead class="bg-white">
                     <tr style="position:sticky; top:0; z-index:2;">
@@ -142,9 +142,13 @@
     public Invoice? Invoice { get; set; }
 
     [Parameter]
-    public EventCallback OnChangeInvoicePaymentMethodToPendingCallBack { get; set; }
+    public EventCallback<bool> OnChangeInvoicePaymentStatusCallBack { get; set; }
 
-    private bool activeAddAdvacedSettingsSection = false;
+    [Parameter]
+    public EventCallback OnInvoiceDetailTimeChangedCallBack { get; set; }
+
+    [Parameter]
+    public bool ActiveAddAdvacedSettingsSection { get; set; } = false;
 
     private int selectedInvoiceDetailId;
 
@@ -210,17 +214,20 @@
             else if ((invoiceDetail.StartDatetime is not null) && (invoiceDetail.EndDatetime is null))
             {
                 HandleUpdateEndTime(invoiceDetail);
+                await OnInvoiceDetailTimeChangedCallBack.InvokeAsync();
+
             }
             else if (invoiceDetail.StartDatetime is not null && invoiceDetail.EndDatetime is not null)
             {
                 var isConfirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"ℹ️ Click OK to reset the time and change payment method to PENDING, Are you sure ?");
                 if (isConfirmed)
                 {
-                    await OnChangeInvoicePaymentMethodToPendingCallBack.InvokeAsync();
+                    await OnChangeInvoicePaymentStatusCallBack.InvokeAsync(false);
                     HandleUpdateStartTime(invoiceDetail);
                 }
 
             }
+            // invoke 
         }
     }
 
@@ -245,6 +252,7 @@
                     invoiceDetail.IsFinished = false;
                 }
             }
+            invoiceDetail.ModifiedDatetime = DateTime.Now;
             InvoiceDetailsService.UpdateInvoiceDetailService(invoiceDetail.InvoiceDetailId, invoiceDetail);
 
         }
@@ -267,6 +275,7 @@
                 invoiceDetail.EndDatetime = null;
                 invoiceDetail.IsFinished = false;
             }
+            invoiceDetail.ModifiedDatetime = DateTime.Now;
             InvoiceDetailsService.UpdateInvoiceDetailService(invoiceDetail.InvoiceDetailId, invoiceDetail);
         }
     }
@@ -297,9 +306,8 @@
 
             invoiceDetail.IsDeleted = true;
             InvoiceDetailsService.UpdateInvoiceDetailService(invoiceDetail.InvoiceDetailId, invoiceDetail);
-            
-            // remove item from the list
-            //listInvoiceDetails.Remove(invoiceDetail);
+
+            await OnInvoiceDetailTimeChangedCallBack.InvokeAsync();
 
             // re-load listInvoiceDetails
             listInvoiceDetails = this.Invoice.InvoiceDetails.Where(id => !id.IsDeleted)
@@ -312,7 +320,7 @@
                 var isConfirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"ℹ️ Click OK to reset the time and change payment method to PENDING, Are you sure ?");
                 if (isConfirmed)
                 {
-                    await OnChangeInvoicePaymentMethodToPendingCallBack.InvokeAsync();
+                    await OnChangeInvoicePaymentStatusCallBack.InvokeAsync(false);
                 }
             }
         }

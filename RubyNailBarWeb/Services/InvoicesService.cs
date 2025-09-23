@@ -18,9 +18,11 @@ namespace RubyNailBarWeb.Services
 
         public List<string> GetInvoiceBookingTypesService() => _invoiceSettings.BookingTypes;
         
-        public decimal GetGoodsAndServicesTaxValue() => _invoiceSettings.GoodsAndServicesTax;
+        public decimal GetGoodsAndServicesTaxValue() => _invoiceSettings.GoodsAndServicesTaxInPercent;
 
-        public decimal GetProvincialSalesTaxValue() => _invoiceSettings.ProvincialSalesTax;
+        public decimal GetProvincialSalesTaxValue() => _invoiceSettings.ProvincialSalesTaxInPercent;
+
+        public decimal GetAppliedDiscount() => _invoiceSettings.AppliedDiscountInPercent;
 
         public List<Invoice> GetWatchListInvoicesOrderByPaymentStatusCreatedDatetimeDescService()
         {

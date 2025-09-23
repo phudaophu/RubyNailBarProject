@@ -10,7 +10,6 @@ namespace RubyNailBarWeb.StateStorage
     {
         
         public ContainerStorage() { }
-
         private  PaginationData paginationIndexPage { set; get; } = new PaginationData();
         private  PaginationData paginationUsersPage { set; get; } = new PaginationData();
         private  PaginationData paginationCustomersPage { set; get; } = new PaginationData();
@@ -47,12 +46,34 @@ namespace RubyNailBarWeb.StateStorage
             }
             return new PaginationData() { };
         }
-        public int CalculateTotalServiceTime(DateTime? startDatetime, DateTime? endDatetime)
+
+        public int CalculateTotalInvoiceTime(Invoice invoice)
+        {
+            if (invoice is null || invoice.IsDeleted)
+                return 0;
+
+            if (invoice.InvoiceDetails is null)
+                return 0;
+
+            
+            return invoice.InvoiceDetails
+                .Where(d => d is not null
+                            && !d.IsDeleted
+                            && d.StartDatetime.HasValue
+                            && d.EndDatetime.HasValue
+                            && d.EndDatetime >= d.StartDatetime) 
+                .Select(d => CalculateTotalServiceTime(d))    
+                .DefaultIfEmpty(0)
+                .Sum();
+
+        }
+
+        public int CalculateTotalServiceTime(InvoiceDetail invoiceDetail)
         {
 
-            if (startDatetime is not null && endDatetime is not null)
+            if (!invoiceDetail.IsDeleted && invoiceDetail.StartDatetime is not null && invoiceDetail.EndDatetime is not null)
             {
-                var totalServiceTime = (endDatetime - startDatetime)?.TotalMinutes;
+                var totalServiceTime = (invoiceDetail.EndDatetime - invoiceDetail.StartDatetime)?.TotalMinutes;
                 if (totalServiceTime > 0)
                     return (int)Math.Ceiling((double)(totalServiceTime ?? 0));
             }
@@ -61,7 +82,7 @@ namespace RubyNailBarWeb.StateStorage
 
         public decimal CalculateInvoiceTotalBill(Invoice? invoice)
         {
-            if (invoice is not null)
+            if (invoice is not null && !invoice.IsDeleted)
             {
                 var tax = (1 + invoice?.GSTax / 100 + invoice?.PSTax / 100);
                 var totalServices = ((invoice?.ServicesAmount + invoice?.TipAmount));
@@ -84,7 +105,7 @@ namespace RubyNailBarWeb.StateStorage
 
         public (string status, string emoji, int rank) CheckInvoieDetailStatus(InvoiceDetail? invoiceDetail)
         {
-            if (invoiceDetail is not null)
+            if (invoiceDetail is not null && invoiceDetail.IsDeleted == false)
             {
                 if (invoiceDetail.StartDatetime is null && invoiceDetail.EndDatetime is null)
                 {

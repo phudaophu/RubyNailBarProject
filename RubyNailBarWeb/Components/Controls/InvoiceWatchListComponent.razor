@@ -261,7 +261,7 @@
                                                     <td style="cursor:pointer">
 
                                                         @{
-                                                            var serviceTime = CalculateTotalServiceTime(invoiceDetail?.StartDatetime, invoiceDetail?.EndDatetime);
+                                                            var serviceTime = CalculateTotalServiceTime(invoiceDetail);
                                                         }
                                                         @(serviceTime > 0 ? serviceTime.ToString() : "····")
 
@@ -337,10 +337,11 @@
                             Total: @totalBill
                         </span>
                         @{
-                            var totalMinutes = selectedInvoice?.InvoiceDetails.Where(id => id.IsDeleted == false)
-                            .Sum(id => CalculateTotalServiceTime(id.StartDatetime, id.EndDatetime));
+                            var totalMinutes = 0;
+                            if (selectedInvoice is not null)
+                                totalMinutes = CalculateTotalInvoiceTime(selectedInvoice);
                         }
-                        @if (totalMinutes > 0)
+                        @if (totalMinutes >= 0)
                         {
                             <span class="btn border-dark text-black">
                                 @totalMinutes Min
@@ -464,9 +465,16 @@
 
     // -     -   -   -   -   -   -   -   -   //
 
-    private int CalculateTotalServiceTime(DateTime? startDatetime, DateTime? endDatetime)
+
+    private int CalculateTotalInvoiceTime(Invoice invoice)
     {
-        return ContainerStorage.CalculateTotalServiceTime(startDatetime, endDatetime);
+        return ContainerStorage.CalculateTotalInvoiceTime(invoice);
+
+    }
+
+    private int CalculateTotalServiceTime(InvoiceDetail invoiceDetail)
+    {
+        return ContainerStorage.CalculateTotalServiceTime(invoiceDetail);
     }
 
     private void HandleEditInvoiceDetailButton(InvoiceDetail? invoiceDetail)

@@ -69,7 +69,12 @@
                         </td>
 
                         <td style="cursor:pointer" @onclick="@(e => ShowInvoiceDetails(invoice))">
-                            @(Decimal.Round((invoice.ServicesAmount + invoice.TipAmount)*(1+invoice.GSTax+invoice.PSTax)??0,2))
+@*                             @(Decimal.Round((invoice.ServicesAmount + invoice.TipAmount)*(1+invoice.GSTax+invoice.PSTax)??0,2))
+ *@                                   
+                            @(CalculateInvoiceTotalBill(invoice))
+
+
+
                         </td>
                         <td>
                             @(invoice.PaymentMethod?.IsPayment == false? "Unpaid" : "Paid") 
@@ -260,7 +265,7 @@
                                                             <td style="cursor:pointer">
 
                                                                 @{
-                                                                    var serviceTime = CalculateTotalServiceTime(invoiceDetail?.StartDatetime, invoiceDetail?.EndDatetime);
+                                                                    var serviceTime = CalculateTotalServiceTime(invoiceDetail);
                                                                 }
                                                                 @(serviceTime > 0 ? serviceTime.ToString() : "····")
 
@@ -331,20 +336,20 @@
                     </section>
                     <section class="ms-auto d-flex align-items-center gap-2">
 
-                        <span class="btn border-dark text-black">
+@*                         <span class="btn border-dark text-black">
 
                             Total: @totalBill
-                        </span>
+                        </span> *@
                         @{
-                            var totalMinutes = selectedInvoice?.InvoiceDetails.Where(id => id.IsDeleted == false)
-                                                                                .Sum(id => CalculateTotalServiceTime(id.StartDatetime, id.EndDatetime));
+                            var totalMinutes = 0;
+                            if (selectedInvoice is not null)
+                                totalMinutes = CalculateTotalInvoiceTime(selectedInvoice);
                         }
-                        @if (totalMinutes > 0)
-                        {
-                            <span class="btn border-dark text-black">
-                                @totalMinutes Min
-                            </span>
-                        }
+
+                        <span class="ms-2 btn font-monospace  @(selectedInvoice?.PaymentMethod?.IsPayment == true ? "border-success text-success" : "border-light text-black text-opacity-50")">
+                            $ @totalBill│ @totalMinutes Min
+                        </span>
+                        
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     </section>
                 </div>
@@ -464,9 +469,16 @@
 
     // -     -   -   -   -   -   -   -   -   //
 
-    private int CalculateTotalServiceTime(DateTime? startDatetime, DateTime? endDatetime)
+
+    private int CalculateTotalInvoiceTime(Invoice invoice)
     {
-        return ContainerStorage.CalculateTotalServiceTime(startDatetime, endDatetime);
+        return ContainerStorage.CalculateTotalInvoiceTime(invoice);
+
+    }
+
+    private int CalculateTotalServiceTime(InvoiceDetail invoiceDetail)
+    {
+        return ContainerStorage.CalculateTotalServiceTime(invoiceDetail);
     }
 
     private void HandleEditInvoiceDetailButton(InvoiceDetail? invoiceDetail)
@@ -875,7 +887,7 @@
                                                                              .ThenByDescending(id => id.ModifiedDatetime)
                                                                              .ToList();
 
-            totalBill = ContainerStorage.CalculateInvoiceTotalBill(invoice);
+            totalBill = CalculateInvoiceTotalBill(invoice);
 
 
             ContainerStorage.SetSelectedRecordId(CurrentPath, invoice.InvoiceId);
@@ -885,7 +897,10 @@
 
     }
 
-
+    private decimal CalculateInvoiceTotalBill(Invoice invoice)
+    {
+        return ContainerStorage.CalculateInvoiceTotalBill(invoice);
+    }
 
     public void HandleDeleteButton(Invoice invoice)
     {

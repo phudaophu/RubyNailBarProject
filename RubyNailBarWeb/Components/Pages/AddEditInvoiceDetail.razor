@@ -31,7 +31,7 @@
                     @if (!showSecondPageInvoiceInfoSection)
                     {
                     <div class="row g-4">
-                        <!-- Col 1 -->
+                        <!-- Col 1.1 -->
                         <div class="col-12 col-lg-4">
                             @if (invoice is not null)
                             {
@@ -58,7 +58,7 @@
                             }
                         </div>
 
-                        <!-- Col 2 -->
+                        <!-- Col 1.2 -->
                         <div class="col-12 col-lg-4">
                             @if (invoice is not null && invoice.Store is not null && invoice.Manager is not null && invoice.Customer is not null)
                             {
@@ -84,17 +84,17 @@
                             }
                         </div>
 
-                        <!-- Col 3 (Totals) -->
+                        <!-- Col 1.3 (Totals) -->
                         <div class="col-12 col-lg-4">
                             @if (invoice is not null)
                             {
-                                <HorizonListComponent Label="All Services">
+                                <HorizonListComponent Label="Booking Type">
                                     <Control>
-                                        <InputNumber @bind-Value="invoice!.ServicesAmount" class="form-control" disabled />
+                                        <InputText @bind-Value="invoice!.BookingType" class="form-control" disabled />
                                     </Control>
                                 </HorizonListComponent>
 
-                                <HorizonListComponent Label="💵 Tip">
+                                <HorizonListComponent Label="💵 Total">
                                     <Control>
                                         <InputNumber @bind-Value="invoice!.TipAmount" class="form-control" disabled />
                                     </Control>
@@ -102,8 +102,9 @@
 
                                 <HorizonListComponent Label="">
                                     <Control>
-                                        @*  <InputNumber @bind-Value="invoice!.TaxAmount" class="form-control" disabled /> *@
-                                        <button type="button" class="btn btn-secondary" @onclick="HandleInvoiceMoreInfoButton">More</button>
+                                        <button type="button" class="bg-transparent border-2 border-light p-0" @onclick="HandleInvoiceMoreInfoButton" disabled="@(!showSecondPageInvoiceInfoSection)">⬅️</button>
+
+                                        <button type="button" class="bg-transparent border-2 border-light p-0" @onclick="HandleInvoiceMoreInfoButton" disabled="@(showSecondPageInvoiceInfoSection)">➡️</button>
                                     </Control>
                                 </HorizonListComponent>
                             }
@@ -113,17 +114,17 @@
                     else
                     {
                     <div class="row g-4">
-                        <!-- Col 1 -->
+                        <!-- Col 2.1 -->
                         <div class="col-12 col-lg-4">
                             @if (invoice is not null)
                             {
-                                <HorizonListComponent Label="GSTax">
+                                <HorizonListComponent Label="GSTax in %">
                                     <Control>
                                         <InputNumber @bind-Value="invoice.GSTax" class="form-control" disabled />
                                     </Control>
                                 </HorizonListComponent>
 
-                                <HorizonListComponent Label="PSTax">
+                                <HorizonListComponent Label="PSTax in %">
                                     <Control>
                                         <InputNumber @bind-Value="invoice.PSTax" class="form-control" disabled />
                                     </Control>
@@ -140,7 +141,7 @@
                             }
                         </div>
 
-                        <!-- Col 2 -->
+                        <!-- Col 2.2 -->
                         <div class="col-12 col-lg-4">
                             @if (invoice is not null && invoice.Store is not null && invoice.Manager is not null && invoice.Customer is not null)
                             {
@@ -166,7 +167,7 @@
                             }
                         </div>
 
-                        <!-- Col 3 (Totals) -->
+                        <!-- Col 2.3 (Totals) -->
                         <div class="col-12 col-lg-4">
                             @if (invoice is not null)
                             {
@@ -184,8 +185,9 @@
 
                                 <HorizonListComponent Label="">
                                     <Control>
-                                        @*  <InputNumber @bind-Value="invoice!.TaxAmount" class="form-control" disabled /> *@
-                                        <button type="button" class="btn btn-secondary" @onclick="HandleInvoiceMoreInfoButton">More</button>
+                                        <button type="button" class="bg-transparent border-2 border-light p-0" @onclick="HandleInvoiceMoreInfoButton" disabled="@(!showSecondPageInvoiceInfoSection)">⬅️</button>
+
+                                        <button type="button" class="bg-transparent border-2 border-light p-0" @onclick="HandleInvoiceMoreInfoButton" disabled="@(showSecondPageInvoiceInfoSection)">➡️</button>
                                     </Control>
                                 </HorizonListComponent>
                             }

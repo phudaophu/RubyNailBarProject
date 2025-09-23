@@ -8,6 +8,7 @@ namespace RubyNailBarWeb.Services.Implements
         List<Invoice> GetWatchListInvoicesOrderByPaymentStatusCreatedDatetimeDescService();
         public decimal GetGoodsAndServicesTaxValue();
         public decimal GetProvincialSalesTaxValue();
+        public decimal GetAppliedDiscount();
         int GetNumberOfInvoiceDetailByInvoiceIdService(int invoiceId);
         int GetNumberOfNotFinishedInvoiceDetailByInvoiceIdService(int invoiceId);
         List<Invoice> GetExistInvoicesOrderByPaymentStatusAndCreatedDatetimeDescService();
