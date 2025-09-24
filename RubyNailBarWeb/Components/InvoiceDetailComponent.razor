@@ -59,8 +59,16 @@
                                     @invoiceDetail.CustomerService?.Name
                                 </td>
                                 <td style="cursor:pointer">
+                                    @if(invoiceDetail.UserId is not null && invoiceDetail.UserId > 0)
+                                    {
+                                        <button type="button" class="btn btn-link p-0 text-decoration-none text-primary text-start" @onclick="() => { HandleNavigateToSelectedStaff(invoiceDetail); }"> @invoiceDetail.User?.FirstName @invoiceDetail.User?.LastName </button>
 
-                                    <button type="button" class="btn btn-link p-0 text-decoration-none text-primary text-start" @onclick="() => { HandleNavigateToSelectedStaff(invoiceDetail); }"> @invoiceDetail.User?.FirstName @invoiceDetail.User?.LastName </button>
+                                    }
+                                    else
+                                    {
+                                        <span>····</span>
+
+                                    }
                                 </td>
                                 <td style="cursor:pointer">
                                     @if (invoiceDetail.ServiceFee != null && invoiceDetail.ServiceFee > 0)
@@ -204,10 +212,22 @@
     {
         if (this.Invoice is not null && invoiceDetail is not null)
         {
+
             selectedInvoiceDetailId = invoiceDetail.InvoiceDetailId;
             ContainerStorage.SetSelectedRecordId(this.CurrentPath, invoiceDetail.InvoiceDetailId);
-
-            if (invoiceDetail.StartDatetime is null && invoiceDetail.EndDatetime is null)
+            if (invoiceDetail.UserId is null)
+            {
+                var isConfirmed =  await JSRuntime.InvokeAsync<bool>("confirm", $"ℹ️  Let designate a valid staff before getting started !");
+                if (isConfirmed)
+                {
+                    NavigationManager.NavigateTo($"/invoice-detail/{selectedInvoiceDetailId}");
+                }
+                else
+                {
+                    return;
+                }
+            }
+            else if (invoiceDetail.StartDatetime is null && invoiceDetail.EndDatetime is null)
             {
                 HandleUpdateStartTime(invoiceDetail);
             }
@@ -227,7 +247,6 @@
                 }
 
             }
-            // invoke 
         }
     }
 
@@ -306,6 +325,8 @@
 
             invoiceDetail.IsDeleted = true;
             InvoiceDetailsService.UpdateInvoiceDetailService(invoiceDetail.InvoiceDetailId, invoiceDetail);
+
+
 
             await OnInvoiceDetailTimeChangedCallBack.InvokeAsync();
 

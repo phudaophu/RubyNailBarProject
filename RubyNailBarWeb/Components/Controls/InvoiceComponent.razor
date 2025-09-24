@@ -596,6 +596,19 @@
         {
             Invoice.BookingType = valueChanged;
             isInvoiceBookingTypeChanged = true;
+
+            if (Invoice is not null && Invoice.InvoiceId > 0)
+                InvoiceInfoChangedButNotSaveCallBack.InvokeAsync(true);
+        }
+    }
+
+    private void HandleMoveToWatchlist()
+    {
+        if (this.Invoice is not null)
+        {
+            Invoice.IsImportant = !Invoice.IsImportant;
+            isInvoiceImportantChanged = true;
+
             if (Invoice is not null && Invoice.InvoiceId > 0)
                 InvoiceInfoChangedButNotSaveCallBack.InvokeAsync(true);
         }
@@ -608,20 +621,12 @@
             this.Invoice.StoreId = valueChanged.Value;
             this.Invoice.ManagerId = 0;
             listManagers = UsersService.GetManagerListByStoreIdService(valueChanged.Value);
-            if (Invoice is not null && Invoice.InvoiceId > 0)
-                InvoiceInfoChangedButNotSaveCallBack.InvokeAsync(true);
+
         }
 
     }
 
-    private void HandleMoveToWatchlist()
-    {
-        if (this.Invoice is not null)
-        {
-            Invoice.IsImportant = !Invoice.IsImportant;
-            isInvoiceImportantChanged = true;
-        }
-    }
+
 
     public void HandleUpdateInvoiceButton()
     {
@@ -664,14 +669,14 @@
             {
                 if (!(this.Invoice.InvoiceId > 0))
                 {
-                    await JSRuntime.InvokeVoidAsync("warnning", $"⚠️ Payment cannot process due to no services.");
+                    await JSRuntime.InvokeVoidAsync("confirm", $"⚠️ Payment cannot process due to no services.");
                     //ChangeInvoicePaymentMethodToPending(invoice);
                     await OnChangeInvoicePaymentStatusCallBack.InvokeAsync(false);
                     return;
                 }
                 else if (Invoice.InvoiceDetails.All(id => id.IsDeleted == true))
                 {
-                    await JSRuntime.InvokeVoidAsync("warnning", $"⚠️ Payment cannot process due to no services.");
+                    await JSRuntime.InvokeVoidAsync("alert", $"⚠️ Payment cannot process due to no services.");
                     //ChangeInvoicePaymentMethodToPending(invoice);
                     await OnChangeInvoicePaymentStatusCallBack.InvokeAsync(false);
                     return;
@@ -680,7 +685,7 @@
                                         && Invoice.InvoiceDetails.Any(id => id.IsDeleted == false
                                                                         && !ContainerStorage.CheckInvoieDetailStatus(id).status.Equals("Completed", StringComparison.OrdinalIgnoreCase)))
                 {
-                    await JSRuntime.InvokeVoidAsync("warnning", $"⚠️ All Services must be in COMPLETED status prior to payment process.");
+                    await JSRuntime.InvokeVoidAsync("alert", $"⚠️ All Services must be in COMPLETED status prior to payment process.");
                     //ChangeInvoicePaymentMethodToPending(invoice);
                     await OnChangeInvoicePaymentStatusCallBack.InvokeAsync(false);
                     return;
@@ -736,10 +741,27 @@
         {
             Invoice.Description = valueChanged;
             isDescriptionChanged = true;
+
             if (Invoice is not null && Invoice.InvoiceId > 0)
                 InvoiceInfoChangedButNotSaveCallBack.InvokeAsync(true);
         }
     }
+
+
+    private void HandleAddInvoiceButton()
+    {
+        if (this.Invoice is not null && Invoice.CustomerId > 0 && Invoice.StoreId > 0 && Invoice.ManagerId > 0)
+        {
+            int newInvoiceId = InvoicesService.AddInvoiceService(Invoice);
+
+            ContainerStorage.ResetPaginationData(this.CurrentPath);
+
+            ContainerStorage.SetSelectedRecordId("invoices", newInvoiceId);
+
+            NavigationManager.NavigateTo($"/invoice/{newInvoiceId}");
+        }
+    }
+
 
     private void HandleAddAdvancedSettingsSection()
     {
@@ -839,19 +861,7 @@
         AddCustomerSectionCallBack.InvokeAsync(activeAddCustomerSection);
     }
 
-    private void HandleAddInvoiceButton( )
-    {
-        if (this.Invoice is not null && Invoice.CustomerId > 0 && Invoice.StoreId > 0 && Invoice.ManagerId > 0)
-        {
-            int newInvoiceId = InvoicesService.AddInvoiceService(Invoice);
 
-            ContainerStorage.ResetPaginationData(this.CurrentPath);
-
-            ContainerStorage.SetSelectedRecordId("invoices", newInvoiceId);
-
-            NavigationManager.NavigateTo($"/invoice/{newInvoiceId}");
-        }
-    }
 
     private bool CheckInvoicePaymentStatus(int? paymentMethodId)
     {

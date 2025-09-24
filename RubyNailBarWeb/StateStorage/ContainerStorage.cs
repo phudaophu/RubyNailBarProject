@@ -84,11 +84,13 @@ namespace RubyNailBarWeb.StateStorage
         {
             if (invoice is not null && !invoice.IsDeleted)
             {
-                var calculateConstantWithTaxAndDiscount = 1 + (invoice?.GSTax / 100) + (invoice?.PSTax / 100) - (invoice?.Discount/100);
+                decimal? calculateConstantWithTaxAndDiscount = 1 + ((invoice?.GSTax ?? 0) / 100) + ((invoice?.PSTax ?? 0) / 100) - ((invoice?.Discount ?? 0)/100);
 
-                var totalServices = invoice?.ServicesAmount + invoice?.TipAmount;
+                decimal? invoiceServicesAmount = invoice?.ServicesAmount ?? 0;
 
-                var totalBill = totalServices* calculateConstantWithTaxAndDiscount;
+                decimal? invoiceTip = invoice?.TipAmount ?? 0;
+
+                decimal? totalBill = (invoiceServicesAmount * calculateConstantWithTaxAndDiscount) + invoiceTip;
               
                 return Decimal.Round(totalBill??0, 2); 
             }

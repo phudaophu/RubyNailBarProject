@@ -172,8 +172,15 @@ process: total bill in addedit invoice page
 
 4:28 PM 9/23/2025
 process: check Any Change and Save Change optional after click Back Button in Invoice Edit Page 
-process: change invoice detail status => accumulate service fee to invoice
+
 
 
 10:40 AM 9/24/2025
 require: create a table to save DISCOUNT 
+complete: Not Designate a staff and validate Start time
+process: change invoice detail status => accumulate service fee to invoice
+
+
+
+
+

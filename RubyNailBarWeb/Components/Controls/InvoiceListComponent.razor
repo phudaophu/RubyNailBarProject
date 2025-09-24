@@ -132,7 +132,7 @@
                             </div>
 
                             <div class="row mt-1">
-                                <div class="col-md-6">
+                                <div class="col-md-6 border-1">
                                     <div><strong>Customer Name:</strong> <a href=@($"/customer-back-from/{selectedInvoice.Customer?.CustomerId}")> @selectedInvoice.Customer?.Name</a> </div>
                                     <div><strong>PhoneNo:</strong> @selectedInvoice.Customer?.PhoneNo</div>
                                     <div><strong>Birthday:</strong> @selectedInvoice.Customer?.Birthday?.ToString("MMM dd")</div>
@@ -167,13 +167,13 @@
 
                                 </div>
 
-                                <div class="col-md-6">
+                                <div class="col-md-6 border-1">
                                     <div><strong>Store:</strong> @selectedInvoice.Store?.Name</div>
                                     <div><strong>Manager:</strong> <a href=@($"/user-back-from/{selectedInvoice.Manager?.UserId}")> @selectedInvoice.Manager?.FirstName @selectedInvoice.Manager?.LastName</a> </div>
-                                    <div><strong>Total Bill:</strong> @totalBill </div>
+                                    <div><strong>Service Amount:</strong> @selectedInvoice.ServicesAmount</div>
                                     <div><strong>Datetime:</strong> @(selectedInvoice.CreatedDatetime?.ToString("yyyy-MM-dd HH:mm"))</div>
 
-                                    <div class="mt-2"><strong>Service Amount:</strong> @selectedInvoice.ServicesAmount</div>
+                                    <div class="mt-2"><strong>Discount:</strong> @selectedInvoice.Discount%</div>
                                     <div><strong>Tax Amount:</strong> @selectedInvoice.GSTax% + @selectedInvoice.PSTax%</div>
                                     <div><strong>Tip Amount:</strong> @selectedInvoice.TipAmount</div>
 
@@ -235,9 +235,14 @@
                                                                 @invoiceDetail.CustomerService?.Name
                                                             </td>
                                                             <td style="cursor:pointer">
-                                                                <a href=@($"/user-back-from/{invoiceDetail.User?.UserId}")>
-                                                                    @invoiceDetail.User?.FirstName @invoiceDetail.User?.LastName
-                                                                </a>
+                                                                @if (invoiceDetail.UserId != null && invoiceDetail.UserId > 0)
+                                                                {
+                                                                    <a href=@($"/user-back-from/{invoiceDetail.User?.UserId}")>@invoiceDetail.User?.FirstName @invoiceDetail.User?.LastName</a>
+                                                                }
+                                                                else
+                                                                {
+                                                                    <a href="/users" style="text-decoration:none">····</a>
+                                                                }
                                                             </td>
                                                             <td style="cursor:pointer">
                                                                 @if (invoiceDetail.ServiceFee != null)
@@ -307,7 +312,7 @@
             </div>
             <div class="modal-footer">
                 <div class="w-100 d-flex align-items-center font-monospace">
-                    <section class="d-flex flex-wrap gap-3 btn border-dark">
+                    <section class="d-flex flex-wrap gap-3 btn border-light">
 
                         @if(ContainerStorage.CountValidInvoiceDetailByStatus(selectedInvoice, "Created") > 0)
                         {
@@ -509,103 +514,103 @@
         }
     }
 
-    // protected override void OnInitialized()
-    // {
-    //     var seachInvoiceData = ContainerStorage.GetLastSearchedText(CurrentPath);
-    //     if (!String.IsNullOrWhiteSpace(seachInvoiceData))
-    //     {
-    //         this.SeachingInvoicesData = seachInvoiceData;
+    protected override void OnInitialized()
+    {
+        var seachInvoiceData = ContainerStorage.GetLastSearchedText(CurrentPath);
+        if (!String.IsNullOrWhiteSpace(seachInvoiceData))
+        {
+            this.SeachingInvoicesData = seachInvoiceData;
 
-    //     }
+        }
 
-    //     var checkSelectedStoreIdExist = ContainerStorage.CheckElementOptionalDataExist(CurrentPath, "SelectedStoreId");
-    //     if (checkSelectedStoreIdExist)
-    //     {
-    //         _selectedStoreId = ContainerStorage.GetElementOptionalData<int>(CurrentPath, "SelectedStoreId");
-    //     }
+        var checkSelectedStoreIdExist = ContainerStorage.CheckElementOptionalDataExist(CurrentPath, "SelectedStoreId");
+        if (checkSelectedStoreIdExist)
+        {
+            _selectedStoreId = ContainerStorage.GetElementOptionalData<int>(CurrentPath, "SelectedStoreId");
+        }
 
-    //     var checkStartDateNumberExist = ContainerStorage.CheckElementOptionalDataExist(CurrentPath, "SelectedStartDate");
-    //     if (checkStartDateNumberExist)
-    //     {
-    //         int startDateNumber = ContainerStorage.GetElementOptionalData<int>(CurrentPath, "SelectedStartDate");
-    //         if (startDateNumber > 0)
-    //         {
-    //             _selectedStartDateFilter = DateOnly.ParseExact(startDateNumber.ToString(), "yyyyMMdd");
-    //         }
-    //     }
+        var checkStartDateNumberExist = ContainerStorage.CheckElementOptionalDataExist(CurrentPath, "SelectedStartDate");
+        if (checkStartDateNumberExist)
+        {
+            int startDateNumber = ContainerStorage.GetElementOptionalData<int>(CurrentPath, "SelectedStartDate");
+            if (startDateNumber > 0)
+            {
+                _selectedStartDateFilter = DateOnly.ParseExact(startDateNumber.ToString(), "yyyyMMdd");
+            }
+        }
 
-    //     var checkEndDateNumberExist = ContainerStorage.CheckElementOptionalDataExist(CurrentPath, "SelectedEndDate");
-    //     if (checkEndDateNumberExist)
-    //     {
-    //         int endDateNumber = ContainerStorage.GetElementOptionalData<int>(CurrentPath, "SelectedEndDate");
-    //         if (endDateNumber > 0)
-    //         {
-    //             _selectedEndDateFilter = DateOnly.ParseExact(endDateNumber.ToString(), "yyyyMMdd");
+        var checkEndDateNumberExist = ContainerStorage.CheckElementOptionalDataExist(CurrentPath, "SelectedEndDate");
+        if (checkEndDateNumberExist)
+        {
+            int endDateNumber = ContainerStorage.GetElementOptionalData<int>(CurrentPath, "SelectedEndDate");
+            if (endDateNumber > 0)
+            {
+                _selectedEndDateFilter = DateOnly.ParseExact(endDateNumber.ToString(), "yyyyMMdd");
 
-    //         }
-    //     }
+            }
+        }
 
-    //     if (listInvoices is not null && listInvoices?.Count >= 0)
-    //     {
-    //         listInvoices = InvoicesService.GetExistInvoicesOrderByPaymentStatusAndCreatedDatetimeDescService();
-    //         statusInvoiceListView = "Data Is Loading...";
-    //     }
-    //     else
-    //     {
-    //         statusInvoiceListView = "No Invoice Found";
-    //     }
-
-
-    //     if (listInvoices is not null && listInvoices.Count >= 0 && !string.IsNullOrWhiteSpace(SeachingInvoicesData))
-    //     {
-    //         listInvoices = InvoicesService.SearchInvoicesByCustomerInfoService(SeachingInvoicesData);
-
-    //         statusInvoiceListView = "Data Is Loading...";
-
-    //         if (listInvoices is null || listInvoices.Count == 0)
-    //         {
-    //             statusInvoiceListView = "No Invoice Found";
-    //         }
-    //     }
-
-    //     if (listInvoices is not null && listInvoices.Count >= 0 && _selectedStoreId > 0)
-    //     {
-    //         listInvoices = listInvoices.Where(i => i.StoreId == _selectedStoreId).ToList();
-
-    //         if (listInvoices.Count == 0)
-    //         {
-    //             statusInvoiceListView = "No Invoice Found";
-    //         }
-    //     }
-
-    //     if (listInvoices is not null && listInvoices.Count >= 0 && _selectedStartDateFilter.HasValue)
-    //     {
-
-    //         listInvoices = listInvoices.Where(i => i.InvoiceDate >= _selectedStartDateFilter).ToList();
-
-    //         if (_selectedEndDateFilter.HasValue)
-    //         {
-    //             listInvoices = listInvoices.Where(i => i.InvoiceDate <= _selectedEndDateFilter).ToList();
-
-    //         }
-
-    //         if (listInvoices.Count == 0)
-    //         {
-    //             statusInvoiceListView = "No Invoice Found";
-    //         }
-    //     }
+        if (listInvoices is not null && listInvoices?.Count >= 0)
+        {
+            listInvoices = InvoicesService.GetExistInvoicesOrderByPaymentStatusAndCreatedDatetimeDescService();
+            statusInvoiceListView = "Data Is Loading...";
+        }
+        else
+        {
+            statusInvoiceListView = "No Invoice Found";
+        }
 
 
+        if (listInvoices is not null && listInvoices.Count >= 0 && !string.IsNullOrWhiteSpace(SeachingInvoicesData))
+        {
+            listInvoices = InvoicesService.SearchInvoicesByCustomerInfoService(SeachingInvoicesData);
 
-    //     this.PageSize = ContainerStorage.GetLastPageSize(CurrentPath);
-    //     this.CurrentPage = ContainerStorage.GetLastCurrentPage(CurrentPath);
-    //     this.selectedInvoiceId = ContainerStorage.GetLastSelectedRecordId(CurrentPath);
+            statusInvoiceListView = "Data Is Loading...";
+
+            if (listInvoices is null || listInvoices.Count == 0)
+            {
+                statusInvoiceListView = "No Invoice Found";
+            }
+        }
+
+        if (listInvoices is not null && listInvoices.Count >= 0 && _selectedStoreId > 0)
+        {
+            listInvoices = listInvoices.Where(i => i.StoreId == _selectedStoreId).ToList();
+
+            if (listInvoices.Count == 0)
+            {
+                statusInvoiceListView = "No Invoice Found";
+            }
+        }
+
+        if (listInvoices is not null && listInvoices.Count >= 0 && _selectedStartDateFilter.HasValue)
+        {
+
+            listInvoices = listInvoices.Where(i => i.InvoiceDate >= _selectedStartDateFilter).ToList();
+
+            if (_selectedEndDateFilter.HasValue)
+            {
+                listInvoices = listInvoices.Where(i => i.InvoiceDate <= _selectedEndDateFilter).ToList();
+
+            }
+
+            if (listInvoices.Count == 0)
+            {
+                statusInvoiceListView = "No Invoice Found";
+            }
+        }
 
 
-    //     UpdateInvoiceSorting(sortingByColumn);
-    //     UpdatePagedInvoices();
-    //     StateHasChanged();
-    // }
+
+        this.PageSize = ContainerStorage.GetLastPageSize(CurrentPath);
+        this.CurrentPage = ContainerStorage.GetLastCurrentPage(CurrentPath);
+        this.selectedInvoiceId = ContainerStorage.GetLastSelectedRecordId(CurrentPath);
+
+
+         //UpdateInvoiceSorting(sortingByColumn);
+         UpdatePagedInvoices();
+         //StateHasChanged();
+    }
 
     protected override void OnParametersSet()
     {
@@ -708,93 +713,93 @@
 
     protected override void OnAfterRender(bool firstRender)
     {
-        if (firstRender)
+        if (firstRender && isFirstRender == true)
         {
             isFirstRender = false;
 
-            var seachInvoiceData = ContainerStorage.GetLastSearchedText(CurrentPath);
-            if (!String.IsNullOrWhiteSpace(seachInvoiceData))
-            {
-                this.SeachingInvoicesData = seachInvoiceData;
+            // var seachInvoiceData = ContainerStorage.GetLastSearchedText(CurrentPath);
+            // if (!String.IsNullOrWhiteSpace(seachInvoiceData))
+            // {
+            //     this.SeachingInvoicesData = seachInvoiceData;
 
-            }
+            // }
 
-            var checkSelectedStoreIdExist = ContainerStorage.CheckElementOptionalDataExist(CurrentPath, "SelectedStoreId");
-            if (checkSelectedStoreIdExist)
-            {
-                _selectedStoreId = ContainerStorage.GetElementOptionalData<int>(CurrentPath, "SelectedStoreId");
-            }
+            // var checkSelectedStoreIdExist = ContainerStorage.CheckElementOptionalDataExist(CurrentPath, "SelectedStoreId");
+            // if (checkSelectedStoreIdExist)
+            // {
+            //     _selectedStoreId = ContainerStorage.GetElementOptionalData<int>(CurrentPath, "SelectedStoreId");
+            // }
 
-            var checkStartDateNumberExist = ContainerStorage.CheckElementOptionalDataExist(CurrentPath, "SelectedStartDate");
-            if (checkStartDateNumberExist)
-            {
-                int startDateNumber = ContainerStorage.GetElementOptionalData<int>(CurrentPath, "SelectedStartDate");
-                if (startDateNumber > 0)
-                {
-                    _selectedStartDateFilter = DateOnly.ParseExact(startDateNumber.ToString(), "yyyyMMdd");
-                }
-            }
+            // var checkStartDateNumberExist = ContainerStorage.CheckElementOptionalDataExist(CurrentPath, "SelectedStartDate");
+            // if (checkStartDateNumberExist)
+            // {
+            //     int startDateNumber = ContainerStorage.GetElementOptionalData<int>(CurrentPath, "SelectedStartDate");
+            //     if (startDateNumber > 0)
+            //     {
+            //         _selectedStartDateFilter = DateOnly.ParseExact(startDateNumber.ToString(), "yyyyMMdd");
+            //     }
+            // }
 
-            var checkEndDateNumberExist = ContainerStorage.CheckElementOptionalDataExist(CurrentPath, "SelectedEndDate");
-            if (checkEndDateNumberExist)
-            {
-                int endDateNumber = ContainerStorage.GetElementOptionalData<int>(CurrentPath, "SelectedEndDate");
-                if (endDateNumber > 0)
-                {
-                    _selectedEndDateFilter = DateOnly.ParseExact(endDateNumber.ToString(), "yyyyMMdd");
+            // var checkEndDateNumberExist = ContainerStorage.CheckElementOptionalDataExist(CurrentPath, "SelectedEndDate");
+            // if (checkEndDateNumberExist)
+            // {
+            //     int endDateNumber = ContainerStorage.GetElementOptionalData<int>(CurrentPath, "SelectedEndDate");
+            //     if (endDateNumber > 0)
+            //     {
+            //         _selectedEndDateFilter = DateOnly.ParseExact(endDateNumber.ToString(), "yyyyMMdd");
 
-                }
-            }
+            //     }
+            // }
 
-            if (listInvoices is not null && listInvoices?.Count >= 0)
-            {
-                listInvoices = InvoicesService.GetExistInvoicesOrderByPaymentStatusAndCreatedDatetimeDescService();
-                statusInvoiceListView = "Data Is Loading...";
-            }
-            else
-            {
-                statusInvoiceListView = "No Invoice Found";
-            }
+            // if (listInvoices is not null && listInvoices?.Count >= 0)
+            // {
+            //     listInvoices = InvoicesService.GetExistInvoicesOrderByPaymentStatusAndCreatedDatetimeDescService();
+            //     statusInvoiceListView = "Data Is Loading...";
+            // }
+            // else
+            // {
+            //     statusInvoiceListView = "No Invoice Found";
+            // }
 
 
-            if (listInvoices is not null && listInvoices.Count >= 0 && !string.IsNullOrWhiteSpace(SeachingInvoicesData))
-            {
-                listInvoices = InvoicesService.SearchInvoicesByCustomerInfoService(SeachingInvoicesData);
+            // if (listInvoices is not null && listInvoices.Count >= 0 && !string.IsNullOrWhiteSpace(SeachingInvoicesData))
+            // {
+            //     listInvoices = InvoicesService.SearchInvoicesByCustomerInfoService(SeachingInvoicesData);
 
-                statusInvoiceListView = "Data Is Loading...";
+            //     statusInvoiceListView = "Data Is Loading...";
 
-                if (listInvoices is null || listInvoices.Count == 0)
-                {
-                    statusInvoiceListView = "No Invoice Found";
-                }
-            }
+            //     if (listInvoices is null || listInvoices.Count == 0)
+            //     {
+            //         statusInvoiceListView = "No Invoice Found";
+            //     }
+            // }
 
-            if (listInvoices is not null && listInvoices.Count >= 0 && _selectedStoreId > 0)
-            {
-                listInvoices = listInvoices.Where(i => i.StoreId == _selectedStoreId).ToList();
+            // if (listInvoices is not null && listInvoices.Count >= 0 && _selectedStoreId > 0)
+            // {
+            //     listInvoices = listInvoices.Where(i => i.StoreId == _selectedStoreId).ToList();
 
-                if (listInvoices.Count == 0)
-                {
-                    statusInvoiceListView = "No Invoice Found";
-                }
-            }
+            //     if (listInvoices.Count == 0)
+            //     {
+            //         statusInvoiceListView = "No Invoice Found";
+            //     }
+            // }
 
-            if (listInvoices is not null && listInvoices.Count >= 0 && _selectedStartDateFilter.HasValue)
-            {
+            // if (listInvoices is not null && listInvoices.Count >= 0 && _selectedStartDateFilter.HasValue)
+            // {
 
-                listInvoices = listInvoices.Where(i => i.InvoiceDate >= _selectedStartDateFilter).ToList();
+            //     listInvoices = listInvoices.Where(i => i.InvoiceDate >= _selectedStartDateFilter).ToList();
 
-                if (_selectedEndDateFilter.HasValue)
-                {
-                    listInvoices = listInvoices.Where(i => i.InvoiceDate <= _selectedEndDateFilter).ToList();
+            //     if (_selectedEndDateFilter.HasValue)
+            //     {
+            //         listInvoices = listInvoices.Where(i => i.InvoiceDate <= _selectedEndDateFilter).ToList();
 
-                }
+            //     }
 
-                if (listInvoices.Count == 0)
-                {
-                    statusInvoiceListView = "No Invoice Found";
-                }
-            }
+            //     if (listInvoices.Count == 0)
+            //     {
+            //         statusInvoiceListView = "No Invoice Found";
+            //     }
+            // }
 
 
 

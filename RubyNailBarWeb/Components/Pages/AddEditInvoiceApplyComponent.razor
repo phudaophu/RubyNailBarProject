@@ -132,12 +132,15 @@ else
 
             if (invoice is not null)
             {
+                // if (invoice.InvoiceDetails is not null && invoice.InvoiceDetails.Any()) 
+                //     CalculateInvoiceServicesAmount(invoice);
 
                 currentPath = NavigationManager.ToBaseRelativePath(NavigationManager.Uri).Split('?', '#', '/')[0];
 
                 ContainerStorage.SetSavePaginationPath(currentPath);
 
                 //ContainerStorage.SetOptionalData(currentPath, "Invoice", invoice);
+
 
                 ContainerStorage.SetOptionalData(currentPath, "ObjectId", invoice.InvoiceId);
 
@@ -180,6 +183,21 @@ else
             }
         }
     }
+
+    // private void CalculateInvoiceServicesAmount(Invoice? invoice)
+    // {
+    //     if(invoice is not null && invoice.InvoiceDetails is not null && invoice.InvoiceDetails.Any())
+    //     {
+    //         var originalInvoiceServicesAmount = invoice.ServicesAmount;
+    //         var calculatedInvoiceServicesAmount = invoice.InvoiceDetails.Where(id => id.IsDeleted == false).Sum(id => id.ServiceFee);
+    //         if (originalInvoiceServicesAmount == calculatedInvoiceServicesAmount) return;
+    //         else if (calculatedInvoiceServicesAmount > 0 && originalInvoiceServicesAmount != calculatedInvoiceServicesAmount)
+    //         {
+    //             invoice.ServicesAmount = calculatedInvoiceServicesAmount;
+    //             InvoicesService.UpdateInvoiceService(invoice.InvoiceId, invoice);
+    //         }
+    //     }
+    // }
 
     private void HandleUpdateInvoiceTotalBillChanged()
     {

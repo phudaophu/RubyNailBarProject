@@ -258,12 +258,8 @@
                             </ElementControl>
                             <Control>
                                 <InputSelect class="form-select" @bind-Value="invoiceDetail.UserId">
-                                    <option value="0" disabled>- Select Staff -</option>
-@*                                 @foreach (var staff in listStaffsByStoreId)
-                                    {
-                                        <option value="@staff.UserId" disabled="@(!staff.IsActive || staff.IsDeleted)"
-                                            class="@(staff.IsDeleted ? "text-muted text-opacity-75" : (staff.IsActive ? "text-success" : "text-danger"))"> @(staff.IsDeleted ? "❌" : (staff.IsActive ? "🔔 " : "🔕 "))  @staff.FirstName @staff.LastName┃@staff.Username </option>
-                                    } *@
+                                    <option value="" disabled selected>- Not Designated -</option>
+
 
                                 <optgroup label="Active">
                                     @foreach (var staff in listStaffsByStoreId.Where(s => s.IsActive && !s.IsDeleted))
@@ -349,13 +345,18 @@
 
                         <HorizonListComponent Label="Fee">
                             <Control>
-                                <InputNumber @bind-Value="invoiceDetail.ServiceFee" class="form-control" step="1"></InputNumber>
+                            <InputNumber TValue="decimal?" class="form-control"
+                                         ValueExpression="@(() => invoiceDetail.ServiceFee)"
+                                               Value="@invoiceDetail.ServiceFee"
+                                               ValueChanged="(decimal? e) => {OnServiceFeeChanged(e); }" 
+                                               disabled="@(!invoiceDetail.StartDatetime.HasValue)"
+                                               step="1" min="0" ></InputNumber>
                             </Control>
                         </HorizonListComponent>
 
                         <HorizonListComponent Label="Tip">
                             <Control>
-                                <InputNumber @bind-Value="invoiceDetail.Tip" class="form-control" step="0.5"></InputNumber>
+                                <InputNumber @bind-Value="invoiceDetail.Tip" class="form-control" step="0.5" min="0"></InputNumber>
                             </Control>
                         </HorizonListComponent>
 
@@ -396,6 +397,7 @@
 
 
 @code {
+
     [Parameter]
     public int? Id { get; set; }
 
@@ -426,6 +428,27 @@
     private string emojiInvoiceInfo = "☰";
 
     private const string emojiSearchUser = "🔎";
+
+    private decimal? snapshotServiceFee;
+
+    private decimal? snapshotInvoiceServicesAmount; 
+
+    private void OnServiceFeeChanged(decimal? changedValue)
+    {
+        if (invoice is not null && invoiceDetail is not null && changedValue >= 0)
+        {
+            invoiceDetail.ServiceFee = changedValue;
+
+            if(snapshotInvoiceServicesAmount is null || snapshotInvoiceServicesAmount == 0)
+            {
+                invoice.ServicesAmount = changedValue;
+            }
+            else
+            {
+                invoice.ServicesAmount = snapshotInvoiceServicesAmount + (changedValue - snapshotServiceFee);
+            }
+        }
+    }
 
     private void HandleInvoiceMoreInfoButton()
     {
@@ -483,14 +506,16 @@
 
     private void OnCustomerServiceChanged(int? changedValue)
     {
-        if (invoiceDetail is not null && changedValue > 0)
+        if (invoice is not null && invoiceDetail is not null && changedValue > 0)
         {
             invoiceDetail.CustomerServiceId = changedValue;
             var selectedCustomerService = listCustomerServices.FirstOrDefault(cs => cs.CustomerServiceId == changedValue);
             if (selectedCustomerService is not null)
             {
                 invoiceDetail.ServiceFee = selectedCustomerService.Fee;
-                invoiceDetail.Tip = 0;
+                snapshotServiceFee = selectedCustomerService.Fee;
+                invoice.ServicesAmount += selectedCustomerService.Fee;
+                snapshotInvoiceServicesAmount = invoice.ServicesAmount;
             }
         }
     }
@@ -512,8 +537,17 @@
 
     private async Task HandleUpdateStartTime()
     {
+
+
         if(invoice is not null && invoiceDetail is not null )
         {
+
+            if(invoiceDetail.UserId is null)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"ℹ️ Let designate a valid staff before start !");
+                return;
+            }
+
             if(invoiceDetail.StartDatetime is null)
             {
                 invoiceDetail.StartDatetime = DateTime.Now;
@@ -521,7 +555,7 @@
                 {
                     invoiceDetail.EndDatetime = null;
                 }
-
+                return;
             }
             else
             {
@@ -595,12 +629,18 @@
                     if (isConfirmed)
                     {
                         NavigationManager.NavigateTo($"/user/{invoiceDetail.UserId.Value}");
+                        return;
                     }
                 }
 
             }
+            else
+            {
+                NavigationManager.NavigateTo($"/users");
 
-           
+                return;
+            }
+
         }
     }
 
@@ -650,11 +690,14 @@
 
                     selectedServiceTypes = customerService.ServiceType;
                 }
+
+                snapshotInvoiceServicesAmount = invoice?.ServicesAmount ?? 0;
+                snapshotServiceFee = invoiceDetail.ServiceFee;
             }
         }
         else
         {
-            invoiceDetail = new InvoiceDetail() {CustomerServiceId = 0, UserId = 0};
+            invoiceDetail = new InvoiceDetail() { CustomerServiceId = 0 , ServiceFee = 0, Tip = 0}; // UserId = 0};
         }
 
     }
@@ -668,7 +711,7 @@
             {
                 // intercept
                 NavigationManager.NavigateTo("/deny-access");
-                
+
             }
             //StateHasChanged();
         }
@@ -712,29 +755,29 @@
             await JSRuntime.InvokeVoidAsync("alert", $"⛔ No Information About Invoice and Service, please back to Invoices page ❗");
             NavigationManager.NavigateTo("/invoices");
         }
-        if (invoiceDetail?.CustomerServiceId is null || invoiceDetail?.UserId is null ||
-                        invoiceDetail?.CustomerServiceId <= 0 || invoiceDetail?.UserId <= 0)
+        else if (invoiceDetail?.CustomerServiceId is null || invoiceDetail?.CustomerServiceId <= 0) // || invoiceDetail?.UserId is null || invoiceDetail?.UserId <= 0)
         {
             await JSRuntime.InvokeVoidAsync("alert", $"ℹ️ Please select Service Type, Service Name and Staff ❗");
             return;
         }
-        if (invoiceDetail is not null && invoiceDetail.StartDatetime.HasValue && invoiceDetail.EndDatetime.HasValue 
+        else if (invoiceDetail is not null && invoiceDetail.StartDatetime.HasValue && invoiceDetail.EndDatetime.HasValue 
                                         && invoiceDetail.StartDatetime >  invoiceDetail.EndDatetime)
         {
             await JSRuntime.InvokeVoidAsync("alert", $"⛔ Start time cannot be later than end time ❗");
             return;
         }
         // 
-        if (invoice is not null && invoiceDetail is not null 
-                && invoiceDetail.CustomerServiceId > 0 && invoiceDetail.UserId  > 0)
+        //
+        else if (invoice is not null && invoiceDetail is not null 
+                && invoiceDetail.CustomerServiceId > 0 ) //&& invoiceDetail.UserId  >= 0)
         {
 
             invoiceDetail.ModifiedDatetime = DateTime.Now;
 
-            if(invoiceDetail.ServiceFee < 0) invoiceDetail.ServiceFee = 0;
+            if(invoiceDetail.ServiceFee <= 0) invoiceDetail.ServiceFee = 0;
 
             if (invoiceDetail.Tip < 0) invoiceDetail.Tip = 0;
-            
+
 
             if (this.Id.HasValue)
             {
@@ -745,6 +788,7 @@
                 // add invoice detail 
                 invoiceDetail.CreatedDatetime = DateTime.Now;
                 invoiceDetail.InvoiceId = invoice.InvoiceId;
+
                 // select customer service
 
                 var newInvoiceDetailId = InvoiceDetailsService.AddInvoiceDetailService(invoiceDetail);
@@ -752,6 +796,9 @@
                 ContainerStorage.SetSelectedRecordId("invoice", newInvoiceDetailId);
 
             }
+
+            InvoicesService.UpdateInvoiceService(invoice.InvoiceId, invoice);
+
             HandleBackButton();
         }
     }
