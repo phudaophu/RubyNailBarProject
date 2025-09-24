@@ -125,8 +125,9 @@
 
                 @if (this.Invoice.InvoiceId > 0)
                 {
-                    @if (isManagerChanged || isPaymentMethodChanged || isDescriptionChanged || isInvoiceBookingTypeChanged || isInvoiceServicesAmountChanged 
-                                                    || isInvoiceTipAmountChanged || isGSTaxChanged || isPSTaxChanged || isInvoiceImportantChanged || isAppliedDiscountChanged)
+                    @* @if (isManagerChanged || isPaymentMethodChanged || isDescriptionChanged || isInvoiceBookingTypeChanged || isInvoiceServicesAmountChanged 
+                                                    || isInvoiceTipAmountChanged || isGSTaxChanged || isPSTaxChanged || isInvoiceImportantChanged || isAppliedDiscountChanged) *@
+                    @if(IsInvoiceInfoChanged())
                     {
                         <td class="align-middle">
                             <button type="button" title="Update Invoice" class="bg-transparent border-2 border-light p-0" @onclick="HandleUpdateInvoiceButton">💾</button>
@@ -368,6 +369,9 @@
     [Parameter]
     public Invoice? Invoice { get; set; }
 
+    [Parameter]
+    public EventCallback<bool> InvoiceInfoChangedButNotSaveCallBack { get; set; }
+
     private List<User> listManagers = new List<User>();
 
     private List<Store> listStores = new List<Store>();
@@ -469,9 +473,7 @@
 
             snapshotInvoiceImportant = Invoice.IsImportant;
 
-
         }
-
     }
 
     protected override void OnParametersSet()
@@ -483,7 +485,7 @@
                 if (Invoice.StoreId > 0 && !listManagers.Any())
                 {
                     listManagers = UsersService.GetManagerListByStoreIdService(Invoice.StoreId.Value);
-                }
+                }   
 
                 invoicePaymentStatus = CheckInvoicePaymentStatus(Invoice.PaymentMethodId);
             }
@@ -508,6 +510,19 @@
 
     }
 
+
+    private bool IsInvoiceInfoChanged()
+    {
+        if(isManagerChanged || isPaymentMethodChanged || isDescriptionChanged 
+                    || isInvoiceBookingTypeChanged || isInvoiceServicesAmountChanged
+                                        || isInvoiceTipAmountChanged || isGSTaxChanged || isPSTaxChanged 
+                                                        || isInvoiceImportantChanged || isAppliedDiscountChanged)
+        {
+            return true;
+        }
+        return false;
+    }
+
     private void OnAppliedDiscountChanged(decimal? valueChanged)
     {
         if(Invoice is not null && valueChanged >= 0)
@@ -515,6 +530,9 @@
             Invoice.Discount = valueChanged;
             isAppliedDiscountChanged = true;
             OnChangeInvoiceTotalBillCallBack.InvokeAsync();
+
+            if (Invoice is not null && Invoice.InvoiceId > 0) 
+                        InvoiceInfoChangedButNotSaveCallBack.InvokeAsync(true);
         }
     }
 
@@ -525,6 +543,9 @@
             Invoice.TipAmount = valueChanged;
             isInvoiceTipAmountChanged = true;
             OnChangeInvoiceTotalBillCallBack.InvokeAsync();
+
+            if (Invoice is not null && Invoice.InvoiceId > 0)
+                InvoiceInfoChangedButNotSaveCallBack.InvokeAsync(true);
         }
     }
 
@@ -535,6 +556,9 @@
             Invoice.GSTax = valueChanged;
             isGSTaxChanged = true;
             OnChangeInvoiceTotalBillCallBack.InvokeAsync();
+
+            if (Invoice is not null && Invoice.InvoiceId > 0)
+                InvoiceInfoChangedButNotSaveCallBack.InvokeAsync(true);
 
         }
     }
@@ -547,6 +571,9 @@
             isPSTaxChanged = true;
             OnChangeInvoiceTotalBillCallBack.InvokeAsync();
 
+            if (Invoice is not null && Invoice.InvoiceId > 0)
+                InvoiceInfoChangedButNotSaveCallBack.InvokeAsync(true);
+
         }
     }
 
@@ -558,6 +585,8 @@
             isInvoiceServicesAmountChanged = true; 
             OnChangeInvoiceTotalBillCallBack.InvokeAsync();
 
+            if (Invoice is not null && Invoice.InvoiceId > 0)
+                InvoiceInfoChangedButNotSaveCallBack.InvokeAsync(true);
         }
     }
 
@@ -567,6 +596,8 @@
         {
             Invoice.BookingType = valueChanged;
             isInvoiceBookingTypeChanged = true;
+            if (Invoice is not null && Invoice.InvoiceId > 0)
+                InvoiceInfoChangedButNotSaveCallBack.InvokeAsync(true);
         }
     }
 
@@ -577,7 +608,8 @@
             this.Invoice.StoreId = valueChanged.Value;
             this.Invoice.ManagerId = 0;
             listManagers = UsersService.GetManagerListByStoreIdService(valueChanged.Value);
-
+            if (Invoice is not null && Invoice.InvoiceId > 0)
+                InvoiceInfoChangedButNotSaveCallBack.InvokeAsync(true);
         }
 
     }
@@ -591,7 +623,7 @@
         }
     }
 
-    private void HandleUpdateInvoiceButton()
+    public void HandleUpdateInvoiceButton()
     {
         if (this.Invoice is not null)
         {
@@ -608,6 +640,8 @@
             isPSTaxChanged = false;
             isInvoiceImportantChanged = false;
 
+            if (Invoice is not null && Invoice.InvoiceId > 0)
+                InvoiceInfoChangedButNotSaveCallBack.InvokeAsync(false);
         }
     }
 
@@ -630,14 +664,14 @@
             {
                 if (!(this.Invoice.InvoiceId > 0))
                 {
-                    await JSRuntime.InvokeVoidAsync("confirm", $"⚠️ Payment cannot process due to no services.");
+                    await JSRuntime.InvokeVoidAsync("warnning", $"⚠️ Payment cannot process due to no services.");
                     //ChangeInvoicePaymentMethodToPending(invoice);
                     await OnChangeInvoicePaymentStatusCallBack.InvokeAsync(false);
                     return;
                 }
                 else if (Invoice.InvoiceDetails.All(id => id.IsDeleted == true))
                 {
-                    await JSRuntime.InvokeVoidAsync("confirm", $"⚠️ Payment cannot process due to no services.");
+                    await JSRuntime.InvokeVoidAsync("warnning", $"⚠️ Payment cannot process due to no services.");
                     //ChangeInvoicePaymentMethodToPending(invoice);
                     await OnChangeInvoicePaymentStatusCallBack.InvokeAsync(false);
                     return;
@@ -646,7 +680,7 @@
                                         && Invoice.InvoiceDetails.Any(id => id.IsDeleted == false
                                                                         && !ContainerStorage.CheckInvoieDetailStatus(id).status.Equals("Completed", StringComparison.OrdinalIgnoreCase)))
                 {
-                    await JSRuntime.InvokeVoidAsync("confirm", $"⚠️ All Services must be in COMPLETED status prior to payment process.");
+                    await JSRuntime.InvokeVoidAsync("warnning", $"⚠️ All Services must be in COMPLETED status prior to payment process.");
                     //ChangeInvoicePaymentMethodToPending(invoice);
                     await OnChangeInvoicePaymentStatusCallBack.InvokeAsync(false);
                     return;
@@ -660,6 +694,7 @@
                     await OnChangeInvoicePaymentStatusCallBack.InvokeAsync(invoicePaymentStatus);
 
                     isPaymentMethodChanged = true;
+                    await InvoiceInfoChangedButNotSaveCallBack.InvokeAsync(true);
                     //ContainerStorage.SetOptionalData(this.CurrentPath, "Invoice", Invoice);
 
                     return;
@@ -673,6 +708,9 @@
                 await OnChangeInvoicePaymentStatusCallBack.InvokeAsync(invoicePaymentStatus);
 
                 isPaymentMethodChanged = true;
+                if (Invoice is not null && Invoice.InvoiceId > 0)
+                    await InvoiceInfoChangedButNotSaveCallBack.InvokeAsync(true);
+
                 //ContainerStorage.SetOptionalData(this.CurrentPath, "Invoice", Invoice);
 
                 return;
@@ -687,6 +725,8 @@
         {
             Invoice.ManagerId = valueChanged.Value;
             isManagerChanged = true;
+            if (Invoice is not null && Invoice.InvoiceId > 0)
+                InvoiceInfoChangedButNotSaveCallBack.InvokeAsync(true);
         }
     }
 
@@ -696,6 +736,8 @@
         {
             Invoice.Description = valueChanged;
             isDescriptionChanged = true;
+            if (Invoice is not null && Invoice.InvoiceId > 0)
+                InvoiceInfoChangedButNotSaveCallBack.InvokeAsync(true);
         }
     }
 
@@ -742,6 +784,7 @@
             isInvoiceImportantChanged = false;
             isAppliedDiscountChanged = false;
 
+            InvoiceInfoChangedButNotSaveCallBack.InvokeAsync(false);
             OnChangeInvoiceTotalBillCallBack.InvokeAsync();
         }
     }
@@ -812,7 +855,7 @@
 
     private bool CheckInvoicePaymentStatus(int? paymentMethodId)
     {
-        if (this.Invoice is not null && paymentMethodId >0 && listPaymentMethod is not null)
+        if (this.Invoice is not null && paymentMethodId > 0 && listPaymentMethod is not null)
         {
             var paymentMethod = listPaymentMethod.FirstOrDefault(p => p.PaymentMethodId == paymentMethodId);
             if (paymentMethod is not null) return paymentMethod.IsPayment;

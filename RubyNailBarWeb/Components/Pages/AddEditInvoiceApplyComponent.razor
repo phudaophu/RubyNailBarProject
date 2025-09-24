@@ -29,7 +29,9 @@ else
                                     OnChangeInvoiceTotalBillCallBack="HandleUpdateInvoiceTotalBillChanged"
                                       CurrentPath="@currentPath" 
                                         AddCustomerSectionCallBack="HandleAddCustomerSectionCallBack"
-                                        AddAdvancedSettingsSectionCallBack="HandleAddAdvancedSettingsSectionCallBack">
+                                        AddAdvancedSettingsSectionCallBack="HandleAddAdvancedSettingsSectionCallBack"
+                                        InvoiceInfoChangedButNotSaveCallBack="HandleInvoiceChangeNotificationToUserCallBack"
+                                        @ref="invoiceComponent">
 </InvoiceComponent>
 
  @if(activeAddCustomerSection)
@@ -60,7 +62,7 @@ else
 {
     <div class="ms-3 d-flex justify-content-between align-items-center mt-2">
         <div class="d-flex align-items-center">
-            <button type="button" class="btn btn-primary" @onclick="HandleBackButton">Back</button>
+            <button type="button" class="btn btn-primary" @onclick="async ()=> { await HandleBackButton();}">Back</button>
             <span class="ms-2 btn font-monospace  @(isPaymentCompleted == true ? "border-success text-success" : "border-light text-black text-opacity-50")"> $ @totalBill│ @totalTime min </span>
         </div>
         <div class="d-flex align-items-center">
@@ -96,7 +98,16 @@ else
 
     private int totalTime = 0;
 
-    private bool isPaymentCompleted = false; 
+    private bool isPaymentCompleted = false;
+
+    private bool IsInvoiceChangedButNotSave = false;
+
+    private InvoiceComponent? invoiceComponent;
+
+    private void HandleInvoiceChangeNotificationToUserCallBack(bool isChanged)
+    {
+        IsInvoiceChangedButNotSave = isChanged;
+    }
 
     private int CalculateTotalInvoiceTime(Invoice invoice)
     {
@@ -118,8 +129,6 @@ else
         if (this.Id.HasValue)
         {
             invoice ??= InvoicesService.GetInvoiceByIdService(this.Id.Value);
-
-
 
             if (invoice is not null)
             {
@@ -152,7 +161,7 @@ else
                 Discount = InvoicesService.GetAppliedDiscount(),
                 TipAmount = 0,
                 CreatedDatetime = DateTime.Now,
-               
+
             };
 
         }
@@ -238,7 +247,7 @@ else
             this.invoice = invoice;
 
         }
-     
+
     }
 
     private void HandleRemoveAddUserSection()
@@ -256,17 +265,28 @@ else
     }
 
 
-    private void HandleBackButton()
+    private async Task HandleBackButton()
     {
+
+        if (IsInvoiceChangedButNotSave)
+        {
+            var isConfirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"⚠️ Click OK to save the changed before leaving the page.");
+            if (isConfirmed)
+            {
+                invoiceComponent?.HandleUpdateInvoiceButton();
+            }
+
+        }
+
         if (currentPath.Contains("back-from", StringComparison.OrdinalIgnoreCase))
         {
             var previousPath = ContainerStorage.GetSavePaginaionPath();
             NavigationManager.NavigateTo($"/{previousPath}");
+            return;
         }
-        else
-        {
-            NavigationManager.NavigateTo("/invoices");
-        }
+
+        NavigationManager.NavigateTo("/invoices");
+        
     }
 
 }

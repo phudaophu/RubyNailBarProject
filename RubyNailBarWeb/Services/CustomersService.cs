@@ -11,6 +11,12 @@ namespace RubyNailBarWeb.Services
             this._customersRepository = customersRepository;
         }
 
+
+        public int GetMaxCustomerIdService()
+        {
+            List<Customer> listCustomers = GetCustomersService();
+            return listCustomers.Max(c => c.CustomerId);
+        }
         public List<Customer> GetValidCustomersOrderByCreatedDatetimeDescService()
         {
             return _customersRepository.GetValidCustomersOrderByCreatedDatetimeDesc();

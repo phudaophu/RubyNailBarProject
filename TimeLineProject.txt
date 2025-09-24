@@ -168,4 +168,12 @@ process: watchlist function, add validate function prior to search staff in case
 process: is deleted button in user page
 
 12:44 AM 9/22/2025 
-process: total bill in addedit invoice page 	  
+process: total bill in addedit invoice page
+
+4:28 PM 9/23/2025
+process: check Any Change and Save Change optional after click Back Button in Invoice Edit Page 
+process: change invoice detail status => accumulate service fee to invoice
+
+
+10:40 AM 9/24/2025
+require: create a table to save DISCOUNT 

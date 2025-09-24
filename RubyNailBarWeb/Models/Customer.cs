@@ -14,6 +14,7 @@ public partial class Customer
     public string? Email { get; set; }
 
     [Required]
+    [RegularExpression(@"^\d{9,20}$", ErrorMessage = "Phone number must be 9–20 digits (numbers only).")]
     public string? PhoneNo { get; set; }
 
     public DateOnly? Birthday { get; set; }

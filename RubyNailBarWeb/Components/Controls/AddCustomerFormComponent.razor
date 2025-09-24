@@ -29,6 +29,7 @@
                                         <th></th>
                                         <th></th>
                                         <th></th>
+                                        <th></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -52,10 +53,13 @@
                                             }
                                         </td>
                                         <td>
-                                        <button class="btn btn-outline-secondary" type="submit">➕</button>
+                                            <button class="bg-transparent border-2 border-light p-0" type="submit">➕</button>
                                         </td>
                                         <td>
-                                        <button class="btn btn-outline-secondary" type="button" @onclick="HandleRemoveUserButton">🚫</button>
+                                            <button type="button" class="bg-transparent border-2 border-light p-0" @onclick="HandleQuickCreateNewCustomerButton">⚡️</button>
+                                        </td>
+                                        <td>
+                                            <button class="bg-transparent border-2 border-light p-0" type="button" @onclick="HandleRemoveUserButton">🚫</button>
                                         </td>
                                     </tr>
 
@@ -100,6 +104,32 @@
         customer = new Customer();
     }
 
+    private void HandleQuickCreateNewCustomerButton()
+    {
+        int tempNewCustomerId = CustomerService.GetMaxCustomerIdService() + 1;
+
+        //int numberOfDigits = (int)Math.Floor(Math.Log10(tempNewCustomerId)) + 1;
+
+        //var calculateLengthForValidPhoneNo = Math.Abs(9 - numberOfDigits);
+
+        var tempNewPhoneNumber = (tempNewCustomerId.ToString()).PadLeft(9, '0');
+
+        customer = new Customer()
+        {
+            Name = $"New Customer ({tempNewCustomerId})",
+            
+            PhoneNo = $"{tempNewPhoneNumber}",
+
+            CreatedDatetime = DateTime.Now,
+            Points = 0,
+            LifetimeSpend = 0,
+            TransactionCount = 0,
+            CustomerLevel = "Silver"
+        };
+        int newCustomerId = CustomerService.AddCustomerService(customer);
+        NewCustomerIdCallBack.InvokeAsync(newCustomerId);
+    }
+
     private void HandleRemoveUserButton()
     {
         RemoveUserCallBack.InvokeAsync();
@@ -127,7 +157,7 @@
             }
 
             customer.CreatedDatetime = DateTime.Now;
-            customer.ModifiedDatetime = DateTime.Now;
+            //customer.ModifiedDatetime = DateTime.Now;
             customer.Points = 0;
             customer.LifetimeSpend = 0;
             customer.TransactionCount = 0;
