@@ -116,7 +116,7 @@ else
                 invoice.ServicesAmount -= invoiceDetailServiceFee;
 
                 if (invoice.ServicesAmount < 0) 
-                        invoice.ServicesAmount = 0;
+                    invoice.ServicesAmount = 0;
 
                 invoice.ModifiedDatetime = DateTime.Now;
 
@@ -155,17 +155,15 @@ else
 
             if (invoice is not null)
             {
-                // if (invoice.InvoiceDetails is not null && invoice.InvoiceDetails.Any()) 
-                //     CalculateInvoiceServicesAmount(invoice);
 
                 currentPath = NavigationManager.ToBaseRelativePath(NavigationManager.Uri).Split('?', '#', '/')[0];
 
                 ContainerStorage.SetSavePaginationPath(currentPath);
 
-                //ContainerStorage.SetOptionalData(currentPath, "Invoice", invoice);
-
-
                 ContainerStorage.SetOptionalData(currentPath, "ObjectId", invoice.InvoiceId);
+
+                if (invoice.PaymentMethod is not null)
+                    isPaymentCompleted = invoice.PaymentMethod.IsPayment;
 
                 totalBill = CalculateInvoiceTotalBill(invoice);
 
@@ -282,15 +280,6 @@ else
         }
     }
 
-    // private void HandleInvoiceCallBack(Invoice invoice)
-    // {
-    //     if(invoice is not null)
-    //     {
-    //         this.invoice = invoice;
-
-    //     }
-
-    // }
 
     private void HandleRemoveAddUserSection()
     {

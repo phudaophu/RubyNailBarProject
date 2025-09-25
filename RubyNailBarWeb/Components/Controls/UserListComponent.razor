@@ -89,7 +89,7 @@
                         {
                             foreach (var group in user.UserGroups)
                             {
-                                    <span class="badge border  @(group.GroupName == "Manager" ? "text-primary border-primary" : "text-black border-dark")">@group.GroupName</span>
+                                    <span class="badge border border-secondary text-secondary">@group.GroupName</span>
 @*                                     <span class="badge bg-primary-subtle text-primary-emphasis border border  py-0 small lh-sm rounded-pil">@group.GroupName</span>
  *@                               <br />
                             }
@@ -105,7 +105,7 @@
                         {
                             foreach (var group in user.UserGroups)
                             {
-                                    <span class="badge border  @(group.RoleName == "Admin" ? "text-primary border-primary" : "text-black border-dark")">@group.RoleName</span>
+                                    <span class="badge border  @(group.RoleName == "Admin" ? "text-black border-dark" : "border-secondary text-secondary")">@group.RoleName</span>
                                 <br />
                             }
                         }
@@ -144,7 +144,7 @@
                     <button type="button" title="Edit UserGroup" class="bg-transparent border-2 border-light p-0" @onclick="(e) => HandleEditGroupButton(user.UserId)">👥</button>
                     </td>
                     <td>
-                    <button type="button" title="Delete User" class="bg-transparent border-2 border-light p-0" @onclick="(e) => HandleDeleteUserButton(user)">❌</button>
+                    <button type="button" title="Delete User" class="bg-transparent border-2 border-light p-0" @onclick="async (e) => {await HandleDeleteUserButton(user);}">❌</button>
                     </td>
                 </tr>
             }
@@ -617,31 +617,48 @@
     }
 
 
-    private void HandleDeleteUserButton(User user)
+    private async Task HandleDeleteUserButton(User user)
     {
         if(user is not null && user.UserId > 0)
         {
-            user.IsDeleted = true;
 
-            if (user.ImageUrl is not null && !String.IsNullOrWhiteSpace(user.ImageUrl))
+            if (selectedUserId != user.UserId)
             {
-                try
-                {
-                    var isDeletedSuccessful = FileUploadService.DeleteFileByPathAsync(user.ImageUrl);
-                    if (isDeletedSuccessful) 
-                            user.ImageUrl = string.Empty;
-                }
-                catch (Exception ex)
-                {
-                    throw new Exception($"Loi: Fail to detele the user's image with this URL: {user.ImageUrl} \n {ex.Message}");
-                }
+                selectedUserId = user.UserId;
+                ContainerStorage.SetSelectedRecordId(CurrentPath, user.UserId);
             }
 
-            ContainerStorage.SetSelectedRecordId(CurrentPath, 0);
-            UsersService.UpdateUserService(user.UserId, user);
+            var isConfirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"Click OK to delete user: {user.FirstName +" "+ user.LastName} ?");
+            if (isConfirmed)
+            {
+                user.IsDeleted = true;
 
-            OnParametersSet();
-  
+                if (user.ImageUrl is not null && !String.IsNullOrWhiteSpace(user.ImageUrl))
+                {
+                    try
+                    {
+                        var isDeletedSuccessful = FileUploadService.DeleteFileByPathAsync(user.ImageUrl);
+                        if (isDeletedSuccessful)
+                            user.ImageUrl = string.Empty;
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new Exception($"Loi: Fail to detele the user's image with this URL: {user.ImageUrl} \n {ex.Message}");
+                    }
+                }
+
+                
+                UsersService.UpdateUserService(user.UserId, user);
+                selectedUserId = 0;
+                ContainerStorage.SetSelectedRecordId(CurrentPath, 0);
+
+                OnParametersSet();
+            }
+            else
+            {
+                return;
+            }
+
         }
     }
 

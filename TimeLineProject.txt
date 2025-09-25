@@ -180,7 +180,10 @@ require: create a table to save DISCOUNT
 complete: Not Designate a staff and validate Start time
 process: change invoice detail status => accumulate service fee to invoice
 
-
+12:53 AM 9/26/2025
+process: validate if total bill do not equal to the sum of invoice detail
+	 add col staff name  to invoice list 
+         conditional customer birthday 
 
 
 

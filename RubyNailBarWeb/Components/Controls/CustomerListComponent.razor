@@ -224,36 +224,49 @@
     private Customer? selectedCustomer;
 
 
-    private void HandleDeleteCustomerButton(Customer customer)
+    private async Task HandleDeleteCustomerButton(Customer customer)
     {
+
         if (customer is not null && customer.CustomerId > 0)
         {
-            customer.IsDeleted = true;
-
-            
-
-            if (customer.ImageUrl is not null && !String.IsNullOrWhiteSpace(customer.ImageUrl))
+            if (selectedCustomerId != customer.CustomerId)
             {
-                try
-                {
-                    var isDeletedSuccessful = FileUploadService.DeleteFileByPathAsync(customer.ImageUrl);
-                    if (isDeletedSuccessful)
-                        customer.ImageUrl = string.Empty;
-
-                }
-                catch (Exception ex)
-                {
-                    throw new Exception($"Loi: Fail to detele the user 's image with this URL: {customer.ImageUrl} \n {ex.Message}");
-                }
+                selectedCustomerId = customer.CustomerId;
+                ContainerStorage.SetSelectedRecordId(CurrentPath, customer.CustomerId);
             }
 
-            ContainerStorage.SetSelectedRecordId(CurrentPath, 0);
-            CustomersService.UpdateCustomerService(customer.CustomerId, customer);
+            var isConfirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"Click OK to delete customer: {customer.Name} ?");
+            if (isConfirmed)
+            {
+                customer.IsDeleted = true;
 
-            // update list customer 
-            //listCustomers = CustomersService.GetValidCustomersOrderByModifiedDatetimeDescService();
-            OnParametersSet();
-            //StateHasChanged();
+                if (customer.ImageUrl is not null && !String.IsNullOrWhiteSpace(customer.ImageUrl))
+                {
+                    try
+                    {
+                        var isDeletedSuccessful = FileUploadService.DeleteFileByPathAsync(customer.ImageUrl);
+                        if (isDeletedSuccessful)
+                            customer.ImageUrl = string.Empty;
+
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new Exception($"Loi: Fail to detele the user 's image with this URL: {customer.ImageUrl} \n {ex.Message}");
+                    }
+                }
+
+                CustomersService.UpdateCustomerService(customer.CustomerId, customer);
+
+                selectedCustomerId = 0;
+                ContainerStorage.SetSelectedRecordId(CurrentPath, 0);
+
+                OnParametersSet();
+            }
+            else
+            {
+                return;
+            }
+
         }
     }
 

@@ -323,32 +323,36 @@
     {
         if (this.Invoice is not null && invoiceDetail is not null && !invoiceDetail.IsDeleted && listInvoiceDetails is not null)
         {
-            selectedInvoiceDetailId = 0;
-            ContainerStorage.SetSelectedRecordId(this.CurrentPath, 0);
+            selectedInvoiceDetailId = invoiceDetail.InvoiceDetailId;
+            ContainerStorage.SetSelectedRecordId(CurrentPath, invoiceDetail.InvoiceDetailId);
 
-            invoiceDetail.IsDeleted = true;
-            InvoiceDetailsService.UpdateInvoiceDetailService(invoiceDetail.InvoiceDetailId, invoiceDetail);
+            var isConfirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"Click OK to delete this {invoiceDetail.CustomerService?.Name} service.");
 
-
-
-            //await OnInvoiceDetailTimeChangedCallBack.InvokeAsync();
-            
-            await OnInvoiceDetailDeteletedCallBack.InvokeAsync(invoiceDetail.ServiceFee??0);
-
-            // re-load listInvoiceDetails
-            listInvoiceDetails = this.Invoice.InvoiceDetails.Where(id => !id.IsDeleted)
-                                                        .OrderBy(id => CheckInvoieDetailStatus(id).rank)
-                                                        .ThenByDescending(id => id.ModifiedDatetime)
-                                                         .ToList();
-
-            if (!listInvoiceDetails.Any())
+            if (isConfirmed)
             {
-                var isConfirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"ℹ️ Click OK to reset the time and change payment method to PENDING, Are you sure ?");
-                if (isConfirmed)
+                invoiceDetail.IsDeleted = true;
+                InvoiceDetailsService.UpdateInvoiceDetailService(invoiceDetail.InvoiceDetailId, invoiceDetail);
+
+                selectedInvoiceDetailId = 0;
+                ContainerStorage.SetSelectedRecordId(this.CurrentPath, 0);
+
+                await OnInvoiceDetailDeteletedCallBack.InvokeAsync(invoiceDetail.ServiceFee ?? 0);
+
+                // re-load listInvoiceDetails
+                listInvoiceDetails = this.Invoice.InvoiceDetails.Where(id => !id.IsDeleted)
+                                                            .OrderBy(id => CheckInvoieDetailStatus(id).rank)
+                                                            .ThenByDescending(id => id.ModifiedDatetime)
+                                                             .ToList();
+
+                if (!listInvoiceDetails.Any())
                 {
+                    await JSRuntime.InvokeVoidAsync("alert", $"ℹ️ No services run, Payment Method is changed to PENDING.");
                     await OnChangeInvoicePaymentStatusCallBack.InvokeAsync(false);
+
                 }
             }
+         
+
         }
     }
 

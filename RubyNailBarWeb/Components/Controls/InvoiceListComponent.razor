@@ -606,9 +606,9 @@
         this.selectedInvoiceId = ContainerStorage.GetLastSelectedRecordId(CurrentPath);
 
 
-         //UpdateInvoiceSorting(sortingByColumn);
-         UpdatePagedInvoices();
-         //StateHasChanged();
+        //UpdateInvoiceSorting(sortingByColumn);
+        UpdatePagedInvoices();
+        //StateHasChanged();
     }
 
     protected override void OnParametersSet()
@@ -1001,19 +1001,26 @@
         return ContainerStorage.CalculateInvoiceTotalBill(invoice);
     }
 
-    public void HandleDeleteButton(Invoice invoice)
+    public async Task  HandleDeleteButton(Invoice invoice)
     {
-        if (invoice is not null)
+        if (invoice is not null && invoice.InvoiceId > 0)
         {
-            invoice.IsDeleted = true;
-            selectedInvoiceId = 0;
-            ContainerStorage.SetSelectedRecordId(CurrentPath,0);
+            selectedInvoiceId = invoice.InvoiceId;
+            ContainerStorage.SetSelectedRecordId(CurrentPath, invoice.InvoiceId);
+            var isConfirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Click OK to delete this invoice.");
 
-
-
-            InvoicesService.UpdateInvoiceService(invoice.InvoiceId, invoice);
-            OnParametersSet();
-            //StateHasChanged();
+            if (isConfirmed)
+            {
+                invoice.IsDeleted = true;
+                InvoicesService.UpdateInvoiceService(invoice.InvoiceId, invoice);
+                selectedInvoiceId = 0;
+                ContainerStorage.SetSelectedRecordId(CurrentPath, 0);
+                OnParametersSet();
+            }
+            else
+            {
+                return;
+            }
         }
     }
 
