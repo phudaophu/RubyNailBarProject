@@ -78,7 +78,7 @@
                         {
                             @foreach (var manager in listManagers)
                             {
-                                <option value="@manager.UserId">@manager.FirstName @manager.LastName</option>
+                                <option value="@manager.UserId" disabled="@(manager.IsDeleted || @manager.IsActive)">@manager.FirstName @manager.LastName</option>
 
                             }
 
@@ -86,11 +86,11 @@
                     </InputSelect>
                 </td>
                 <td>
-                        <InputSelect class="form-select" TValue="int?"
+                    <InputSelect class="form-select" TValue="int?"
                                  Value="Invoice.PaymentMethodId"
                                      ValueChanged="@(async (int? e) => {await OnSelectPaymentMethodChanged(e);} )"
                                  ValueExpression="@(() => Invoice.PaymentMethodId)">
-
+                       
                         @if ((this.Invoice.InvoiceId <= 0) && listPendingPayment != null && listPendingPayment.Any())
                         {
 
@@ -117,7 +117,14 @@
 
                             @foreach (var customer in listFoundCustomers)
                             {
-                                <li class="list-group-item list-group-item-action" @onclick="() => HandleSelectCustomer(customer)"> @customer.Name - @customer.PhoneNo @($"{(customer.Birthday!=null? "- "+customer.Birthday?.ToString("MMM dd"): ""  )}")</li>
+                                <li style="@(customer.IsDeleted ? "pointer-events: none" : null)"
+                                    class="list-group-item list-group-item-action @(customer.IsDeleted ? "text-decoration-line-through text-danger" : "")"
+                                    aria-disabled="@(customer.IsDeleted ? "true" : null)"
+                                    @onclick="() => { if (!customer.IsDeleted) HandleSelectCustomer(customer); }">
+
+                                    @customer.Name - @customer.PhoneNo
+                                    @((customer.Birthday is DateOnly b) ? $" - {b:MMM dd}" : null)
+                                </li>
                             }
                         </ul>
                      }
@@ -162,11 +169,20 @@
                             <button type="button" title="Discard Customer" class="bg-transparent border-2 border-light p-0" @onclick="HandleClearCustomerSelectionButton" disabled="@(this.Invoice.InvoiceId > 0)">❌</button>
 
                         }
-                        else
+                        else 
                         {
-                            <button type="button" title="Search Customer" class="bg-transparent border-2 border-light p-0" @onclick="HandleSearchButton">🔍</button>
+                            if (listFoundCustomers is null || listFoundCustomers?.Count == 0)
+                            {
+                                <button type="button" title="Search Customer" class="bg-transparent border-2 border-light p-0" @onclick="HandleSearchButton">🔍</button>
+                            }
+                            else
+                            {
+                                <button type="button" title="Search Customer" class="bg-transparent border-2 border-light p-0" @onclick="HandleClearSearchButton">↩️</button>
+
+                            }
 
                         }
+
                     </td>
                     <td class="align-middle">
                         @if (activeAddCustomerSection)
@@ -490,10 +506,10 @@
                 invoicePaymentStatus = CheckInvoicePaymentStatus(Invoice.PaymentMethodId);
             }
 
-            if (Invoice.InvoiceId <= 0)
-            {
-                Invoice.PaymentMethodId = listPaymentMethod?.FirstOrDefault(p => p.IsPayment == false)?.PaymentMethodId;
-            }
+            // if (Invoice.InvoiceId <= 0)
+            // {
+            //     Invoice.PaymentMethodId = listPaymentMethod?.FirstOrDefault(p => p.IsPayment == false)?.PaymentMethodId;
+            // }
 
             if (Invoice.CustomerId > 0)
             {
@@ -532,7 +548,7 @@
             OnChangeInvoiceTotalBillCallBack.InvokeAsync();
 
             if (Invoice is not null && Invoice.InvoiceId > 0) 
-                        InvoiceInfoChangedButNotSaveCallBack.InvokeAsync(true);
+                InvoiceInfoChangedButNotSaveCallBack.InvokeAsync(true);
         }
     }
 
@@ -845,14 +861,27 @@
 
     private void HandleSearchButton( )
     {
-        if (string.IsNullOrWhiteSpace(searchText))
-        {
-            listFoundCustomers?.Clear();
-        }
-        else
+        // if (string.IsNullOrWhiteSpace(searchText))
+        // {
+        //     listFoundCustomers?.Clear();
+        // }
+        if (!string.IsNullOrWhiteSpace(searchText))
         {
             listFoundCustomers = CustomersService.SearchCustomerService(searchText);
         }
+
+    }
+
+
+    private void HandleClearSearchButton()
+    {
+
+        if (!string.IsNullOrWhiteSpace(searchText))
+        {
+             searchText = string.Empty;
+            listFoundCustomers = CustomersService.SearchCustomerService(searchText);
+        }
+
     }
 
     private void HandleAddNewCustomerButton()

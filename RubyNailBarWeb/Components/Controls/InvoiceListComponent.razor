@@ -74,9 +74,6 @@
                             @invoice.Customer?.PhoneNo
                         </td>
 
-
-
-
                         <td>
                             <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-0 text-nowrap" @onclick="(e) => HandleInvoiceDetailButton(invoice.InvoiceId)">Details</button>
                         </td>
@@ -133,10 +130,11 @@
 
                             <div class="row mt-1">
                                 <div class="col-md-6 border-1">
-                                    <div><strong>Customer Name:</strong> <a href=@($"/customer-back-from/{selectedInvoice.Customer?.CustomerId}")> @selectedInvoice.Customer?.Name</a> </div>
+                                    <div><strong>Customer:</strong> <a href=@($"/customer-back-from/{selectedInvoice.Customer?.CustomerId}")> @selectedInvoice.Customer?.Name</a> </div>
                                     <div><strong>PhoneNo:</strong> @selectedInvoice.Customer?.PhoneNo</div>
-                                    <div><strong>Birthday:</strong> @selectedInvoice.Customer?.Birthday?.ToString("MMM dd")</div>
                                     <div><strong>Last Visit</strong> @selectedInvoice.Customer?.LastVisitDatetime?.ToString("yyyy-MM-dd HH:mm")</div>
+                                    <div><strong>Birthday:</strong> @selectedInvoice.Customer?.Birthday?.ToString("MMM dd")</div>
+                                    
 
                                     <div class="mt-2"><strong>Points:</strong> @selectedInvoice.Customer?.Points</div>
                                     <div>
@@ -170,12 +168,13 @@
                                 <div class="col-md-6 border-1">
                                     <div><strong>Store:</strong> @selectedInvoice.Store?.Name</div>
                                     <div><strong>Manager:</strong> <a href=@($"/user-back-from/{selectedInvoice.Manager?.UserId}")> @selectedInvoice.Manager?.FirstName @selectedInvoice.Manager?.LastName</a> </div>
+                                    <div><strong>Invoice Date:</strong> @(selectedInvoice.CreatedDatetime?.ToString("yyyy-MM-dd HH:mm"))</div>
                                     <div><strong>Service Amount:</strong> @selectedInvoice.ServicesAmount</div>
-                                    <div><strong>Datetime:</strong> @(selectedInvoice.CreatedDatetime?.ToString("yyyy-MM-dd HH:mm"))</div>
 
-                                    <div class="mt-2"><strong>Discount:</strong> @selectedInvoice.Discount%</div>
+                                    <div class="mt-2"><strong>Tip Amount:</strong> @selectedInvoice.TipAmount</div>
                                     <div><strong>Tax Amount:</strong> @selectedInvoice.GSTax% + @selectedInvoice.PSTax%</div>
-                                    <div><strong>Tip Amount:</strong> @selectedInvoice.TipAmount</div>
+                                    <div><strong>Discount:</strong> @selectedInvoice.Discount%</div>
+                                    
 
 
                                 </div>
@@ -1009,6 +1008,8 @@
             invoice.IsDeleted = true;
             selectedInvoiceId = 0;
             ContainerStorage.SetSelectedRecordId(CurrentPath,0);
+
+
 
             InvoicesService.UpdateInvoiceService(invoice.InvoiceId, invoice);
             OnParametersSet();

@@ -153,7 +153,10 @@
     public EventCallback<bool> OnChangeInvoicePaymentStatusCallBack { get; set; }
 
     [Parameter]
-    public EventCallback OnInvoiceDetailTimeChangedCallBack { get; set; }
+    public EventCallback<int> OnInvoiceDetailTimeChangedCallBack { get; set; }
+
+    [Parameter]
+    public EventCallback<decimal?> OnInvoiceDetailDeteletedCallBack { get; set; }
 
     [Parameter]
     public bool ActiveAddAdvacedSettingsSection { get; set; } = false;
@@ -328,7 +331,9 @@
 
 
 
-            await OnInvoiceDetailTimeChangedCallBack.InvokeAsync();
+            //await OnInvoiceDetailTimeChangedCallBack.InvokeAsync();
+            
+            await OnInvoiceDetailDeteletedCallBack.InvokeAsync(invoiceDetail.ServiceFee??0);
 
             // re-load listInvoiceDetails
             listInvoiceDetails = this.Invoice.InvoiceDetails.Where(id => !id.IsDeleted)

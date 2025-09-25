@@ -77,10 +77,11 @@
                     </td>
 
                     <td style="cursor:pointer" @onclick="@(e => ShowUserDetails(user))">
-                        @($"{user.FirstName} {@user.LastName}")
+                            <span class="@(user.IsDeleted ? "text-decoration-line-through" : "")">@($"{user.FirstName} {@user.LastName}") </span>
                     </td>
+
                     <td style="cursor:pointer" @onclick="@(e => ShowUserDetails(user))">
-                        @user.Username
+                            <span class="@(user.IsDeleted ? "text-decoration-line-through" : "")">@(user.Username) </span>
                     </td>
 
                     <td style="cursor:pointer" @onclick="@(e => ShowUserDetails(user))">
@@ -114,7 +115,7 @@
                         }
                     </td>
                     <td style="cursor:pointer" @onclick="@(e => ShowUserDetails(user))">
-                            <span class="badge  border  @(user.IsActive ? "text-success border-success" : "text-danger border-danger")">@(user.IsActive ? "Active" : "InActive")</span>
+                            <span class="badge  border  @( user.IsDeleted ?"text-danger border-2 border-danger": (user.IsActive ? "text-success border-success" : "text-danger border-danger"))">@(user.IsDeleted ? "DELETED" : (user.IsActive ? "Active" : "InActive"))</span>
 
                     </td>
                     <td>
@@ -192,13 +193,13 @@
 
                             <div class="row mt-3">
                                 <div class="col-md-6">
-                                    <div><strong>Name:</strong> @selectedUser.FirstName @selectedUser.LastName</div>
-                                    <div><strong>Username:</strong> @selectedUser.Username</div>
-                                    <div><strong>Team:</strong> <a href="#">your team name</a></div>
+                                    <div><strong>Name:</strong> <span class="@(selectedUser.IsDeleted ? "text-decoration-line-through" :"")">@selectedUser.FirstName @selectedUser.LastName</span></div>
+                                    <div><strong>Username:</strong> <span class="@(selectedUser.IsDeleted ? "text-decoration-line-through" :"")">@selectedUser.Username</span></div>
+                                    <div><strong>Store:</strong> <a href="#"> store link</a></div>
                                     <div class="mt-2">
                                         <strong>Status:</strong>
-                                        <span class="text-@(selectedUser.IsActive ? "success" : "danger")">
-                                            @(selectedUser.IsActive ? "Active" : "Access Revoked")
+                                        <span class="@(selectedUser.IsDeleted ? "bagde border border-2 border-danger text-danger":(selectedUser.IsActive ? "text-success" : "text-danger"))">
+                                            @(selectedUser.IsDeleted ? "DELETED" : (selectedUser.IsActive ? "Active" : "Inactive"))
                                         </span>
                                     </div>
                                     <div><strong>Role:</strong> your role </div>
@@ -622,8 +623,22 @@
         {
             user.IsDeleted = true;
 
-            UsersService.UpdateUserService(user.UserId, user);
+            if (user.ImageUrl is not null && !String.IsNullOrWhiteSpace(user.ImageUrl))
+            {
+                try
+                {
+                    var isDeletedSuccessful = FileUploadService.DeleteFileByPathAsync(user.ImageUrl);
+                    if (isDeletedSuccessful) 
+                            user.ImageUrl = string.Empty;
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception($"Loi: Fail to detele the user's image with this URL: {user.ImageUrl} \n {ex.Message}");
+                }
+            }
+
             ContainerStorage.SetSelectedRecordId(CurrentPath, 0);
+            UsersService.UpdateUserService(user.UserId, user);
 
             OnParametersSet();
   

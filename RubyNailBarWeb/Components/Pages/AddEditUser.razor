@@ -98,7 +98,7 @@ else
                                                     <img src=@(FileUploadService.GetUserAvatarDefaultImage()) style="width: 30px; height:30px" />
                                                 }
 
-                                                <InputFile OnChange="@(e => HandleImageUpload(e, user))" disabled="@(!Id.HasValue)"/>
+                                                <InputFile OnChange="@(e => HandleImageUpload(e, user))" disabled="@(!Id.HasValue || user.IsDeleted)"/>
                                         </div>
 
                                     </Control>
@@ -303,9 +303,9 @@ else
     {
         var file = e.File;
 
-        if (file == null || user.UserId <= 0)
+        if (file == null || user.UserId <= 0 || user.IsDeleted)
         {
-            uploadImageError = "File is null or UserId is not set.";
+            uploadImageError = "File is null or UserId is deleted.";
             throw new InvalidOperationException("File is null or UserId is not set.");
         }
 
@@ -403,6 +403,25 @@ else
             if (this.Id.HasValue)   
             {
                 user.ModifiedDatetime = DateTime.Now;
+
+                if (user.IsDeleted && !user.IsActive) 
+                {
+                    if (user.ImageUrl is not null && !String.IsNullOrWhiteSpace(user.ImageUrl))
+                    {
+                        try
+                        {
+                            var isDeletedSuccessful =  FileUploadService.DeleteFileByPathAsync(user.ImageUrl);
+                            if (isDeletedSuccessful) 
+                                user.ImageUrl = string.Empty;
+                        }
+                        catch (Exception ex)
+                        {
+                            throw new Exception($"Loi: Fail to detele the user's image with this URL: {user.ImageUrl} \n {ex.Message}");
+                        }
+                    }
+                    
+                }
+
                 UsersService.UpdateUserService(user.UserId, user);
 
                 if (currentPath.Contains("back-from", StringComparison.OrdinalIgnoreCase))

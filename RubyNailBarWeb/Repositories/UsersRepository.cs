@@ -33,6 +33,29 @@ namespace RubyNailBarWeb.Repositories
             return new List<User>();
         }
 
+        public List<User> GetActiveManagerListByStoreId(int storeId)
+        {
+            using var db = this.contextFactory.CreateDbContext();
+
+            if (storeId <= 0) { throw new ArgumentException("Loi: Please input store id > 0"); }
+
+            IQueryable<User> userQuery = db.Users.AsNoTracking().Where(u => u.UserGroups.Any(ug => ug.StoreId == storeId));
+
+            userQuery = userQuery.Where(u => u.IsDeleted == false && u.IsActive == true);
+
+            userQuery = userQuery.Where(u => u.UserGroups.Any(ug => ug.GroupName != null && ug.GroupName == "Manager"));
+
+            userQuery = userQuery.Where(u => u.UserGroups.Any(ug => ug.RoleName != null && ug.RoleName == "Admin"));
+
+            if (userQuery.Count() > 0)
+            {
+                return userQuery.ToList();
+            }
+
+            return new List<User>();
+        }
+
+
         public List<User> GetManagerListByStoreId(int storeId)
         {
             using var db = this.contextFactory.CreateDbContext();

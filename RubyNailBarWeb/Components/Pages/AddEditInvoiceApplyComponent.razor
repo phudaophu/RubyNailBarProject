@@ -25,13 +25,13 @@ else
 
 
 <InvoiceComponent Invoice="@invoice" activeAddCustomerSection="@activeAddCustomerSection"
-                                    OnChangeInvoicePaymentStatusCallBack="HandleChangeInvoicePayment"
-                                    OnChangeInvoiceTotalBillCallBack="HandleUpdateInvoiceTotalBillChanged"
-                                      CurrentPath="@currentPath" 
-                                        AddCustomerSectionCallBack="HandleAddCustomerSectionCallBack"
-                                        AddAdvancedSettingsSectionCallBack="HandleAddAdvancedSettingsSectionCallBack"
-                                        InvoiceInfoChangedButNotSaveCallBack="HandleInvoiceChangeNotificationToUserCallBack"
-                                        @ref="invoiceComponent">
+                                     OnChangeInvoicePaymentStatusCallBack="HandleChangeInvoicePayment"
+                                     OnChangeInvoiceTotalBillCallBack="HandleUpdateInvoiceTotalBillChanged"
+                                     CurrentPath="@currentPath" 
+                                     AddCustomerSectionCallBack="HandleAddCustomerSectionCallBack"
+                                     AddAdvancedSettingsSectionCallBack="HandleAddAdvancedSettingsSectionCallBack"
+                                     InvoiceInfoChangedButNotSaveCallBack="HandleInvoiceChangeNotificationToUserCallBack"
+                                     @ref="invoiceComponent">
 </InvoiceComponent>
 
  @if(activeAddCustomerSection)
@@ -52,7 +52,8 @@ else
     <InvoiceDetailComponent CurrentPath="@currentPath" Invoice="@invoice"
                             OnChangeInvoicePaymentStatusCallBack="HandleChangeInvoicePayment"
                             ActiveAddAdvacedSettingsSection="@activeAddAdvancedSettingsSection"
-                            OnInvoiceDetailTimeChangedCallBack="HandleUpdateInvoiceDetailTimeChanged">
+                            OnInvoiceDetailTimeChangedCallBack="HandleUpdateInvoiceDetailTimeChanged"
+                            OnInvoiceDetailDeteletedCallBack="HandleInvoiceDetailDeteled">
     </InvoiceDetailComponent>
 
 }
@@ -103,6 +104,28 @@ else
     private bool IsInvoiceChangedButNotSave = false;
 
     private InvoiceComponent? invoiceComponent;
+
+
+    private void HandleInvoiceDetailDeteled(decimal? invoiceDetailServiceFee)
+    {
+        if (invoice is not null)
+        {
+            totalTime = CalculateTotalInvoiceTime(invoice);
+            if (invoiceDetailServiceFee >= 0)
+            {
+                invoice.ServicesAmount -= invoiceDetailServiceFee;
+
+                if (invoice.ServicesAmount < 0) 
+                        invoice.ServicesAmount = 0;
+
+                invoice.ModifiedDatetime = DateTime.Now;
+
+                InvoicesService.UpdateInvoiceService(invoice.InvoiceId, invoice);
+
+                totalBill = CalculateInvoiceTotalBill(invoice);
+            }
+        }
+    }
 
     private void HandleInvoiceChangeNotificationToUserCallBack(bool isChanged)
     {
@@ -159,10 +182,11 @@ else
                 InvoiceDate = DateOnly.FromDateTime(DateTime.Now),
                 StoreId = 0,
                 ServicesAmount = 0,
+                TipAmount = 0,
                 GSTax = InvoicesService.GetGoodsAndServicesTaxValue(),
                 PSTax = InvoicesService.GetProvincialSalesTaxValue(),
                 Discount = InvoicesService.GetAppliedDiscount(),
-                TipAmount = 0,
+                PaymentMethodId = listPaymentMethod?.FirstOrDefault(p => p.IsPayment == false)?.PaymentMethodId,
                 CreatedDatetime = DateTime.Now,
 
             };
@@ -234,7 +258,7 @@ else
                     invoice.PaymentMethodId = listPaymentMethod?.Where(p => p.IsPayment == false).FirstOrDefault()?.PaymentMethodId;
                     invoice.ModifiedDatetime = DateTime.Now;
                     InvoicesService.UpdateInvoiceService(invoice.InvoiceId, invoice);
-                    StateHasChanged();
+                    //StateHasChanged();
                 }
             }
 
@@ -258,15 +282,15 @@ else
         }
     }
 
-    private void HandleInvoiceCallBack(Invoice invoice)
-    {
-        if(invoice is not null)
-        {
-            this.invoice = invoice;
+    // private void HandleInvoiceCallBack(Invoice invoice)
+    // {
+    //     if(invoice is not null)
+    //     {
+    //         this.invoice = invoice;
 
-        }
+    //     }
 
-    }
+    // }
 
     private void HandleRemoveAddUserSection()
     {

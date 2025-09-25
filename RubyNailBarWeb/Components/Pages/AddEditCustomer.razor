@@ -106,7 +106,7 @@ else
                                                     <img src=@(FileUploadService.GetUserAvatarDefaultImage()) style="width: 30px; height:30px" />
                                                 }
 
-                                                <InputFile OnChange="@(e => HandleImageUpload(e, customer))" disabled="@(!Id.HasValue)" />
+                                                <InputFile OnChange="@(e => HandleImageUpload(e, customer))" disabled="@(!Id.HasValue || customer.IsDeleted)" />
                                             </div>
 
                                         </Control>
@@ -161,7 +161,7 @@ else
 
                                     <FieldComponent Label="Is Deleted">
                                         <Control>
-                                            <InputCheckbox @bind-Value="customer.IsDeleted"></InputCheckbox>
+                                            <InputCheckbox  @bind-Value="customer.IsDeleted"></InputCheckbox>
                                             
                                         </Control>
                                     </FieldComponent>
@@ -271,6 +271,24 @@ else
             if (this.Id.HasValue)
             {
                 customer.ModifiedDatetime = DateTime.Now;
+
+                if (customer.IsDeleted)
+                {
+                    if (customer.ImageUrl is not null && !String.IsNullOrWhiteSpace(customer.ImageUrl))
+                    {
+                        try
+                        {
+                            var isDeletedSuccessful = FileUploadService.DeleteFileByPathAsync(customer.ImageUrl);
+                            if (isDeletedSuccessful)
+                                customer.ImageUrl = string.Empty;
+                        }
+                        catch (Exception ex)
+                        {
+                            throw new Exception($"Loi: Fail to detele the customer's image with this URL: {customer.ImageUrl} \n {ex.Message}");
+                        }
+                    }
+                }
+
                 CustomerService.UpdateCustomerService(customer.CustomerId,customer);    
 
             }
@@ -305,9 +323,9 @@ else
     {
         var file = e.File;
 
-        if (file == null || customer.CustomerId <= 0)
+        if (file == null || customer.CustomerId <= 0 || customer.IsDeleted)
         {
-            uploadImageError = "File is null or CustomerId is not set.";
+            uploadImageError = "File is null or CustomerId is set to delete.";
             throw new InvalidOperationException("File is null or CustomerId is not set.");
         }
 

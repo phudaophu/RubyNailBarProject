@@ -21,6 +21,7 @@ namespace RubyNailBarWeb.Repositories
         }
 
 
+
         public int AddCustomer(Customer customer)
         {
             using var db = this.contextFactory.CreateDbContext();
@@ -103,7 +104,7 @@ namespace RubyNailBarWeb.Repositories
             if (string.IsNullOrEmpty(keyString)) return new List<Customer>();
 
             IQueryable<Customer> customerQuery = db.Customers.AsNoTracking()
-                                                                .Where(c=> c.IsDeleted==false)
+                                                                //.Where(c=> c.IsDeleted==false)
                                                                 .Where(c =>
                                                                             (c.Name != null && c.Name.ToLower().IndexOf(keyString.ToLower()) >= 0) ||
                                                                             (c.Email != null && c.Email.ToLower().IndexOf(keyString.ToLower()) >= 0) ||

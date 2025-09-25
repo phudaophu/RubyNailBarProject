@@ -55,12 +55,13 @@
                     <td style="cursor:pointer" @onclick="@(e => ShowCustomerDetails(customer))">
                         @(listCustomers.FindIndex(c => c.CustomerId == customer.CustomerId) + 1)
                     </td>
+
                     <td style="cursor:pointer" @onclick="@(e => ShowCustomerDetails(customer))">
-                        @customer.Name
+                            <span class="@( customer.IsDeleted? "text-decoration-line-through text-danger":"")">@customer.Name</span>
                     </td>
 
                     <td style="cursor:pointer" @onclick="@(e => ShowCustomerDetails(customer))">
-                        @customer.PhoneNo
+                            <span class="@( customer.IsDeleted? "text-decoration-line-through text-danger":"")">@customer.PhoneNo</span>
                     </td>
 
                     <td style="cursor:pointer" @onclick="@(e => ShowCustomerDetails(customer))">
@@ -93,7 +94,7 @@
 
                     </td>
                     <td>
-                        <button type="button" title="Delete Customer" class="btn btn-outline-secondary btn-sm px-2 py-0 text-nowrap" @onclick="(e) => HandleDeleteCustomerButton(customer)">Delete</button>
+                            <button type="button" title="Delete Customer" class="btn btn-sm px-2 py-0 text-nowrap @(@customer.IsDeleted ? "border-2 btn-outline-danger text-danger" : "btn-outline-secondary")" @onclick="(e) => HandleDeleteCustomerButton(customer)" disabled="@customer.IsDeleted">Delete</button>
                     </td>
                 </tr>
             }
@@ -142,8 +143,8 @@
                             <div class="row mt-3">
                                 <div class="col-md-6">
                                     <div><strong>Customer Id:</strong> @selectedCustomer.CustomerId</div>
-                                    <div><strong>Name:</strong> @selectedCustomer.Name</div>
-                                    <div><strong>Mobile:</strong> @selectedCustomer.PhoneNo</div>
+                                    <div><strong>Name:</strong><span class="@( selectedCustomer.IsDeleted? "text-decoration-line-through text-danger":"")">@selectedCustomer.Name</span> </div>
+                                    <div><strong>Mobile:</strong>  <span class="@( selectedCustomer.IsDeleted? "text-decoration-line-through text-danger":"")">@selectedCustomer.PhoneNo</span> </div>
                                     <div><strong>Birthday:</strong> @selectedCustomer.Birthday?.ToString("MMMM dd,yyyy")</div>
 
                                     <div class="mt-2"><strong>Email:</strong> <a href="mailto:@selectedCustomer.Email">@selectedCustomer.Email</a></div>
@@ -159,13 +160,7 @@
                                                                             : string.Join(" ", selectedCustomer.Description.Split((char[])null!, StringSplitOptions.RemoveEmptyEntries).Take(10)) + $"<a class=\"fst-italic\" href=\"/customer-back-from/{selectedCustomer?.CustomerId}\"> &.more</a>")
                                                                             ))
                                      </div>
-                                    @*                                  <div class="mt-2">
-                                        <strong>Status:</strong>
-                                        <span class="text-@(selectedUser.IsActive ? "success" : "danger")">
-                                            @(selectedUser.IsActive ? "Active" : "Access Revoked")
-                                        </span>
-                                    </div> 
-                                    <div><strong>Role:</strong> your role </div>*@
+
                                 </div>
 
                                 <div class="col-md-6">
@@ -184,13 +179,7 @@
                                     <div class="mt-2"><strong>First Visit:</strong> @selectedCustomer?.CreatedDatetime?.ToString("yyyy-MM-dd HH:mm:ss")</div>
                                     <div><strong>Last Visit:</strong> @selectedCustomer?.LastVisitDatetime?.ToString("yyyy-MM-dd HH:mm:ss")</div>
 
-                                   @* <div class="mt-2"><strong>Role Permissions:</strong> All</div> *@
-                                   @*<div>
-                                        <strong>User Access:</strong>
-                                        <div class="small text-muted">
-                                            Configuration, Users, History, Reports, Helpdesk, Supplier Portal Administrator, Employee Portal Administrator, Workflow Administrator
-                                        </div>
-                                    </div> *@
+
                                 </div>
                             </div>
 
@@ -241,8 +230,26 @@
         {
             customer.IsDeleted = true;
 
-            CustomersService.UpdateCustomerService(customer.CustomerId, customer);
+            
+
+            if (customer.ImageUrl is not null && !String.IsNullOrWhiteSpace(customer.ImageUrl))
+            {
+                try
+                {
+                    var isDeletedSuccessful = FileUploadService.DeleteFileByPathAsync(customer.ImageUrl);
+                    if (isDeletedSuccessful)
+                        customer.ImageUrl = string.Empty;
+
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception($"Loi: Fail to detele the user 's image with this URL: {customer.ImageUrl} \n {ex.Message}");
+                }
+            }
+
             ContainerStorage.SetSelectedRecordId(CurrentPath, 0);
+            CustomersService.UpdateCustomerService(customer.CustomerId, customer);
+
             // update list customer 
             //listCustomers = CustomersService.GetValidCustomersOrderByModifiedDatetimeDescService();
             OnParametersSet();
