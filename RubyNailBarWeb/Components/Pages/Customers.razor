@@ -4,13 +4,14 @@
 @inject ContainerStorage ContainerStorage
 @rendermode InteractiveServer
 @inject NavigationManager NavigationManager
+@attribute [StreamRendering]
 
 <h3>Customers</h3>
 
 
 <SearchBarComponent CurrentPath="@currentPath" SearchBarInfo="@searchLabel" SearchUsersCallBack="HandleSearchCustomer" OnClearSearchBarCallBack="HandleClearSearchBar" @ref="searchBarComponent">
     <SelectControl>
-        <InputSelect @bind-Value="selectedBirthdayMonth" class="@(selectedBirthdayMonth == 0 ? "text-secondary" : "text-danger border-danger")">
+        <InputSelect @bind-Value="selectedBirthdayMonth" class="@(selectedBirthdayMonth == 0 ? "text-secondary border-secondary" : "text-black border-2 border-dark")">
             <option value="0">-- All Months --</option>
             @for (int i = 1; i <= 12; i++)
             {

@@ -259,34 +259,55 @@
                             <Control>
                                 <InputSelect class="form-select" @bind-Value="invoiceDetail.UserId">
                                     <option value="" disabled selected>- Not Designated -</option>
-
-
-                                <optgroup label="Active">
-                                    @foreach (var staff in listStaffsByStoreId.Where(s => s.IsActive && !s.IsDeleted))
+                                    @if(invoiceDetail.InvoiceId > 0)
                                     {
-                                        <option value="@staff.UserId" class="text-success">
-                                            🔔 @staff.FirstName @staff.LastName ┃ @staff.Username
-                                        </option>
-                                    }
-                                </optgroup>
+                                        <optgroup label="Active">
+                                            @foreach (var staff in listStaffsByStoreId.Where(s => s.IsActive && !s.IsDeleted))
+                                            {
+                                                <option value="@staff.UserId" class="text-success">
+                                                    🔔 @staff.FirstName @staff.LastName ┃ @staff.Username
+                                                </option>
+                                            }
+                                        </optgroup>
 
-                                <optgroup label="Inactive">
-                                    @foreach (var staff in listStaffsByStoreId.Where(s => !s.IsActive && !s.IsDeleted))
-                                    {
-                                        <option value="@staff.UserId" class="text-danger" disabled>
-                                            🔕  @staff.FirstName @staff.LastName ┃ @staff.Username
-                                        </option>
-                                    }
-                                </optgroup>
+                                        <optgroup label="Inactive">
+                                            @foreach (var staff in listStaffsByStoreId.Where(s => !s.IsActive && !s.IsDeleted))
+                                            {
+                                                <option value="@staff.UserId" class="text-danger" disabled>
+                                                    🔕  @staff.FirstName @staff.LastName ┃ @staff.Username
+                                                </option>
+                                            }
+                                        </optgroup>
 
-                                <optgroup label="Deleted">
-                                    @foreach (var staff in listStaffsByStoreId.Where(s => s.IsDeleted))
+                                        <optgroup label="Deleted">
+                                            @foreach (var staff in listStaffsByStoreId.Where(s => s.IsDeleted))
+                                            {
+                                                <option value="@staff.UserId" class="text-muted" disabled>
+                                                    ❌ @staff.FirstName @staff.LastName ┃ @staff.Username
+                                                </option>
+                                            }
+                                    </optgroup>
+                                }
+                                else
+                                {
+                                    @if (listStaffsByStoreId.Where(s => s.IsActive && !s.IsDeleted).Any())
                                     {
-                                        <option value="@staff.UserId" class="text-muted" disabled>
-                                            ❌ @staff.FirstName @staff.LastName ┃ @staff.Username
-                                        </option>
+                                        @foreach (var staff in listStaffsByStoreId.Where(s => s.IsActive && !s.IsDeleted))
+                                        {
+                                            <option value="@staff.UserId" class="text-success">
+                                                🔔 @staff.FirstName @staff.LastName ┃ @staff.Username
+                                            </option>
+                                        }
+
                                     }
-                                </optgroup>
+                                    else
+                                    {
+                                        <option disabled>No Data Available</option>
+                                    }
+                                }
+
+
+
 
                                 </InputSelect>
                                 
@@ -307,10 +328,11 @@
 
                         <HorizonListComponent Label="Finished">
                             <Control>
-                                <InputCheckbox TValue="bool" ValueExpression="@(() => invoiceDetail.IsFinished)"
+@*                                 <InputCheckbox TValue="bool" ValueExpression="@(() => invoiceDetail.IsFinished)"
                                                Value="@invoiceDetail.IsFinished"
                                                ValueChanged="(bool e) => {OnIsFinishedCheckBoxChanged(e); }" 
-                                               disabled="@(!invoiceDetail.StartDatetime.HasValue)"></InputCheckbox>
+                                               disabled="@(!invoiceDetail.StartDatetime.HasValue)"></InputCheckbox> *@
+                            <InputCheckbox @bind-Value="invoiceDetail.IsFinished" disabled="true"> </InputCheckbox>
                             </Control>
                         </HorizonListComponent>
 
@@ -326,10 +348,11 @@
 
                         <HorizonListComponent Label="Started">
                             <ElementControl>
-                                <button type="button" class="bg-transparent border-2 border-light p-0" @onclick="async ()=> {await HandleUpdateStartTime();}">@GetEmojiStartTime()</button>
+                                <button type="button" class="bg-transparent border-2 border-light p-0" 
+                                                        @onclick="async ()=> {await HandleUpdateStartTime();}">@GetEmojiStartTime()</button>
                             </ElementControl>
                             <Control>
-                                <input type="datetime" value="@invoiceDetail.StartDatetime?.ToString("yyyy-MM-dd HH:mm:ss")" class="form-control">
+                                <input type="datetime-local" class="form-control" step="1" @bind-value="invoiceDetail.StartDatetime">
                             </Control>
                         </HorizonListComponent>
 
@@ -339,7 +362,7 @@
                                                         @onclick="HandleUpdateEndTime" disabled="@(!invoiceDetail.StartDatetime.HasValue)">@GetEmojiEndTime()</button>
                             </ElementControl>
                             <Control>
-                                <input type="datetime" value="@invoiceDetail.EndDatetime?.ToString("yyyy-MM-dd HH:mm:ss")" class="form-control">
+                                <input type="datetime-local" class="form-control" step="1" @bind-value="invoiceDetail.EndDatetime">
                             </Control>
                         </HorizonListComponent>
 
@@ -488,21 +511,21 @@
      };
 
 
-    private void OnIsFinishedCheckBoxChanged(bool changedValue)
-    {
-        if(invoiceDetail is not null)
-        {
-            invoiceDetail.IsFinished = changedValue;
-            if(invoiceDetail.IsFinished)
-            {
-                invoiceDetail.EndDatetime = DateTime.Now;
-            }
-            else
-            {
-                invoiceDetail.EndDatetime = null;
-            }
-        }
-    }
+    // private void OnIsFinishedCheckBoxChanged(bool changedValue)
+    // {
+    //     if(invoiceDetail is not null)
+    //     {
+    //         invoiceDetail.IsFinished = changedValue;
+    //         if(invoiceDetail.IsFinished)
+    //         {
+    //             invoiceDetail.EndDatetime = DateTime.Now;
+    //         }
+    //         else
+    //         {
+    //             invoiceDetail.EndDatetime = null;
+    //         }
+    //     }
+    // }
 
     private void OnCustomerServiceChanged(int? changedValue)
     {
@@ -752,18 +775,30 @@
         // Validate data in form before submit 
         if (invoice is null || invoiceDetail is null)
         {
-            await JSRuntime.InvokeVoidAsync("alert", $"⛔ No Information About Invoice and Service, please back to Invoices page ❗");
+            await JSRuntime.InvokeVoidAsync("alert", $"⛔ No Information About INVOICE and SERVICE, please back to Invoices page ❗");
             NavigationManager.NavigateTo("/invoices");
         }
         else if (invoiceDetail?.CustomerServiceId is null || invoiceDetail?.CustomerServiceId <= 0) // || invoiceDetail?.UserId is null || invoiceDetail?.UserId <= 0)
         {
-            await JSRuntime.InvokeVoidAsync("alert", $"ℹ️ Please select Service Type, Service Name and Staff ❗");
+            await JSRuntime.InvokeVoidAsync("alert", $"ℹ️ Please select SERVICE TYPE, SERVICE NAME and STAFF ❗");
             return;
         }
+        // else if (invoiceDetail is not null && invoiceDetail.StartDatetime.HasValue && invoiceDetail.EndDatetime is null
+        //                                 && invoiceDetail.IsFinished)
+        // {
+        //     await JSRuntime.InvokeVoidAsync("alert", $"⛔ The invoice is set to FINISH but have no END TIME ❗");
+        //     return;
+        // }
+        // else if (invoiceDetail is not null && invoiceDetail.StartDatetime.HasValue && invoiceDetail.EndDatetime.HasValue
+        //                         && !invoiceDetail.IsFinished)
+        // {
+        //     await JSRuntime.InvokeVoidAsync("alert", $"⛔ The invoice have both START TIME and END TIME but not to FINISH❗");
+        //     return;
+        // }
         else if (invoiceDetail is not null && invoiceDetail.StartDatetime.HasValue && invoiceDetail.EndDatetime.HasValue 
                                         && invoiceDetail.StartDatetime >  invoiceDetail.EndDatetime)
         {
-            await JSRuntime.InvokeVoidAsync("alert", $"⛔ Start time cannot be later than end time ❗");
+            await JSRuntime.InvokeVoidAsync("alert", $"⛔ START TIME cannot be later than END TIME ❗");
             return;
         }
         // 

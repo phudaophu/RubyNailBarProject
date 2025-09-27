@@ -109,14 +109,14 @@
                                 </td>
                                 <td class="align-middle">
 
-                                    <button type="button" title="Switch Status" class="bg-transparent border-2 border-light p-0" @onclick="async () => { await HandleChangeInvoiceDetailStatusButton(invoiceDetail); }"> @CheckInvoieDetailStatus(invoiceDetail).emoji </button>
+                                    <button type="button" title="Switch Status" class="bg-transparent border-2 border-light p-0" @onclick="async () => { await HandleChangeInvoiceDetailStatusButton(invoiceDetail); }" disabled="@InvoicePaymentStatus"> @CheckInvoieDetailStatus(invoiceDetail).emoji </button>
 
                                 </td>
                                 <td class="align-middle">
-                                    <button type="button" class="bg-transparent border-2 border-light p-0" @onclick="() => { HandleEditInvoiceDetailButton(invoiceDetail); }">✏️</button>
+                                    <button type="button" class="bg-transparent border-2 border-light p-0" @onclick="() => { HandleEditInvoiceDetailButton(invoiceDetail); }" disabled="@InvoicePaymentStatus">✏️</button>
                                 </td>
                                 <td class="align-middle">
-                                    <button type="button" class="bg-transparent border-2 border-light p-0" @onclick=" async()=>{ await HandleDeleteInvoiceDetailButton(invoiceDetail);}">❌</button>
+                                    <button type="button" class="bg-transparent border-2 border-light p-0" @onclick=" async()=>{ await HandleDeleteInvoiceDetailButton(invoiceDetail);}" disabled="@InvoicePaymentStatus">❌</button>
                                 </td>
                             </tr>
                         }
@@ -163,7 +163,10 @@
 
     private int selectedInvoiceDetailId;
 
-    private int? snapshotPaymentMethodId;
+   //private int? snapshotPaymentMethodId;
+
+    [Parameter]
+    public bool InvoicePaymentStatus { get; set; } 
 
     [Parameter]
     public string CurrentPath  { get; set; } = string.Empty;
@@ -185,6 +188,9 @@
                                                             .ThenByDescending(id => id.ModifiedDatetime)
                                                              .ToList();
             }
+
+            // if(Invoice.PaymentMethod is not null)
+            //     this.PaymentStatus = Invoice.PaymentMethod.IsPayment;
 
             this.selectedInvoiceDetailId = ContainerStorage.GetLastSelectedRecordId(CurrentPath);
         }
@@ -247,6 +253,7 @@
                 {
                     await OnChangeInvoicePaymentStatusCallBack.InvokeAsync(false);
                     HandleUpdateStartTime(invoiceDetail);
+                    this.InvoicePaymentStatus = false;
                 }
 
             }
@@ -348,11 +355,9 @@
                 {
                     await JSRuntime.InvokeVoidAsync("alert", $"ℹ️ No services run, Payment Method is changed to PENDING.");
                     await OnChangeInvoicePaymentStatusCallBack.InvokeAsync(false);
-
+                    this.InvoicePaymentStatus = false;
                 }
             }
-         
-
         }
     }
 

@@ -47,20 +47,56 @@
                         {
                             @if (this.Invoice.InvoiceId > 0)
                             {
-                                @foreach (var store in listStores)
-                                {
-                                    <option value="@store.StoreId" disabled="@(Invoice.InvoiceId > 0)">@store.Name</option>
+                                <optgroup label="Active">
+                                    @if (listStores.Where(s => s.IsActive).Any())
+                                    {
+                                        @foreach (var store in listStores.Where(s => s.IsActive))
+                                        {
+                                            <option value="@store.StoreId" class="text-success" disabled>
+                                                🔔 @store.Name
+                                            </option>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <option disabled>No Data Availble</option>
+                                    }
 
-                                }
+                                </optgroup>
+                                <optgroup label="Inactive">
+                                    @if (listStores.Where(s => !s.IsActive).Any())
+                                    {
+                                        @foreach (var store in listStores.Where(s => !s.IsActive))
+                                        {
+                                            <option value="@store.StoreId" class="text-danger" disabled>
+                                                🔕 @store.Name
+                                            </option>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <option disabled>No Data Availble</option>
+                                    }
 
+                                </optgroup>
                             }
                             @if (this.Invoice.InvoiceId <= 0)
                             {
-                                @foreach (var store in listStores.Where(s => s.IsActive == true).ToList())
+                                
+                                @if (listStores.Where(s => s.IsActive).Any())
                                 {
-                                    <option value="@store.StoreId" disabled="@(Invoice.InvoiceId > 0)">@store.Name</option>
-
+                                    @foreach (var store in listStores.Where(s => s.IsActive))
+                                    {
+                                        <option value="@store.StoreId" class="text-success">
+                                            🔔 @store.Name
+                                        </option>
+                                    }
                                 }
+                                else
+                                {
+                                    <option disabled>No Data Availble</option>
+                                }
+
                             }
                         }
 
@@ -76,11 +112,59 @@
                         <option value="0" disabled selected>--Select Manager--</option>
                         @if (listManagers != null && listManagers.Any())
                         {
-                            @foreach (var manager in listManagers)
+                            @if(Invoice.InvoiceId > 0)
                             {
-                                <option value="@manager.UserId" disabled="@(manager.IsDeleted || @manager.IsActive)">@manager.FirstName @manager.LastName</option>
+
+                                <optgroup label="Available">
+                                    @if (listManagers.Where(m => !m.IsDeleted).Any())
+                                    {
+                                        @foreach (var manager in listManagers.Where(m => !m.IsDeleted))
+                                        {
+                                            <option value="@manager.UserId" class="text-success">
+                                                🔔 @manager.FirstName @manager.LastName ┃ @manager.Username
+                                            </option>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <option disabled>No Data Availble</option>
+                                    }
+
+                                </optgroup>
+                                <optgroup label="Deleted">
+                                    @if (listManagers.Where(m => m.IsDeleted).Any())
+                                    {
+                                        @foreach (var manager in listManagers.Where(m => m.IsDeleted))
+                                        {
+                                            <option value="@manager.UserId" class="text-muted">
+                                                ❌ @manager.FirstName @manager.LastName ┃ @manager.Username
+                                            </option>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <option disabled>No Data Availble</option>
+                                    }
+                                </optgroup>
+                            }
+                            else
+                            {
+                                @if (listManagers.Where(m => !m.IsDeleted).Any())
+                                {
+                                    @foreach (var manager in listManagers.Where(m => !m.IsDeleted))
+                                    {
+                                        <option value="@manager.UserId" class="text-success">
+                                            🔔 @manager.FirstName @manager.LastName ┃ @manager.Username
+                                        </option>
+                                    }
+                                }
+                                else
+                                {
+                                    <option disabled>No Data Availble</option>
+                                }
 
                             }
+
 
                         }
                     </InputSelect>
@@ -717,8 +801,21 @@
                     isPaymentMethodChanged = true;
                     await InvoiceInfoChangedButNotSaveCallBack.InvokeAsync(true);
                     //ContainerStorage.SetOptionalData(this.CurrentPath, "Invoice", Invoice);
+                    if (Invoice.ServicesAmount != Invoice.InvoiceDetails.Where(id => id.IsDeleted == false).Sum(id => id.ServiceFee))
+                    {
+                        var isConfirmed = await JSRuntime.InvokeAsync<bool>("confirm", "⚠️ The services amount does not equal to the sum of services fee. Click OK to change it or CANCEL to keep it different.");
+                        if (isConfirmed)
+                        {
+                            Invoice.ServicesAmount = Invoice.InvoiceDetails.Where(id => id.IsDeleted == false).Sum(id => id.ServiceFee);
+                            await OnChangeInvoiceTotalBillCallBack.InvokeAsync();
+                        }
+                        else
+                        {
+                            return;
+                        }
 
-                    return;
+                    }
+
                 }
             }
             // Payment => Pending

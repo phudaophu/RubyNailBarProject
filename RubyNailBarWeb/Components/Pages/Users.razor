@@ -5,21 +5,47 @@
 @inject IUsersService UsersService
 @rendermode InteractiveServer
 @inject NavigationManager NavigationManager
-
+@attribute [StreamRendering]
 
 <h3>Users</h3>
 
 <SearchBarComponent CurrentPath="@currentPath" SearchBarInfo="@searchLabel" SearchUsersCallBack="HandleSearchUser" OnClearSearchBarCallBack="HandleClearSearchBar" @ref="searchBarComponent">
     <SelectControl>
-        <InputSelect @bind-Value="selectedStoreId" class="@(selectedStoreId == 0? "text-secondary":"text-danger border-danger")">
+        <InputSelect @bind-Value="selectedStoreId" class="@(selectedStoreId == 0 ? "text-secondary border-secondary" : "text-black border-2 border-dark")">
 
             <option value="0">-- All Stores --</option>
 
-            @foreach (var store in listStore)
-            {
-                <option value="@store.StoreId" class="text-dark">@store.Name</option>
-            }
+              <optgroup label="Active">
+                @if (listStores.Where(s => s.IsActive).Any())
+                {
+                    @foreach (var store in listStores.Where(s => s.IsActive))
+                    {
+                        <option value="@store.StoreId" class="text-success">
+                            🔔 @store.Name
+                        </option>
+                    }
+                }
+                else
+                {
+                    <option disabled>No Data Availble</option>
+                }
 
+            </optgroup>
+            <optgroup label="Inactive">
+                @if (listStores.Where(s => !s.IsActive).Any())
+                {
+                    @foreach (var store in listStores.Where(s => !s.IsActive))
+                    {
+                        <option value="@store.StoreId" class="text-danger">
+                            🔕 @store.Name
+                        </option>
+                    }
+                }
+                else
+                {
+                    <option disabled>No Data Availble</option>
+                }
+            </optgroup>
         </InputSelect>
     </SelectControl>
     <ElementControl>
@@ -54,7 +80,7 @@
         }
     }
 
-    private List<Store> listStore = new List<Store>();
+    private List<Store> listStores = new List<Store>();
 
     private string searchLabel = "Enter Users Info";    
 
@@ -74,7 +100,7 @@
 
     private PaginationComponent? paginationComponent;
 
-   // private IDisposable? _locationChangingHandler;
+    // private IDisposable? _locationChangingHandler;
 
     protected override void OnAfterRender(bool firstRender)
     {
@@ -83,7 +109,7 @@
             currentPath = NavigationManager.ToBaseRelativePath(NavigationManager.Uri).Split('?', '#')[0];
             ContainerStorage.ResetPaginationData(currentPath);
 
-            listStore = StoresService.GetStoresService().Where(s => s.IsActive == true).ToList();
+            listStores = StoresService.GetStoresService();
 
             if (ContainerStorage.CheckElementOptionalDataExist(currentPath, "SelectedStoreId"))
             {

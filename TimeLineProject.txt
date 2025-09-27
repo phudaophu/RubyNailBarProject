@@ -181,9 +181,14 @@ complete: Not Designate a staff and validate Start time
 process: change invoice detail status => accumulate service fee to invoice
 
 12:53 AM 9/26/2025
-process: validate if total bill do not equal to the sum of invoice detail
-	 add col staff name  to invoice list 
+completed: validate if total bill do not equal to the sum of invoice detail
+ 
+process: add col staff name  to invoice list 
          conditional customer birthday 
+
+10:40 AM 9/27/2025
+completed: modify the list of staff in create invoice detail page, showing only active staff
+	   Add col staff name  to invoice list 
 
 
 

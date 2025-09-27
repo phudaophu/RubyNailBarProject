@@ -1,6 +1,6 @@
 ﻿@page "/usergroups/{id:int?}"
 @page "/usergroups-back-from/{id:int?}"
-
+@attribute [StreamRendering]
 
 @inject IStoresService StoresService
 @inject IUserGroupService UserGroupService
@@ -49,10 +49,18 @@
                         {
 
                             <InputSelect @bind-Value="userGroup.StoreId" class="form-select">
-
-                                @foreach (var store in listStores)
+                                @if (listStores.Where(s => s.IsActive).Any())
                                 {
-                                    <option value="@store.StoreId">@store.Name</option>
+                                    @foreach (var store in listStores.Where(s => s.IsActive))
+                                    {
+                                        <option value="@store.StoreId" class="text-success">
+                                            🔔 @store.Name
+                                        </option>
+                                    }
+                                }
+                                else
+                                {
+                                    <option disabled>No Data Availble</option>
                                 }
                             </InputSelect>
 

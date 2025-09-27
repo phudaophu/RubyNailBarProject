@@ -1,10 +1,11 @@
 ﻿@page "/invoices"
 
-
+@attribute [StreamRendering]
 @inject IStoresService StoresService
 @inject IUsersService UsersService
 @inject ContainerStorage ContainerStorage
 @inject NavigationManager NavigationManager
+
 
 @rendermode InteractiveServer
 
@@ -13,14 +14,43 @@
 
 <SearchBarComponent CurrentPath="@currentPath" SearchBarInfo="@searchLabel" SearchUsersCallBack="HandleSearchInvoice" OnClearSearchBarCallBack="HandleClearSearchBar" @ref="searchBarComponent">
     <SelectControl>
-        <InputSelect class=@($"form-control {(selectedStoreId == 0 ? "text-secondary border-secondary" : "text-danger border-danger")}")
+        <InputSelect class=@($"form-control {(selectedStoreId == 0 ? "text-secondary border-secondary" : "text-black border-2 border-dark")}")
                      @bind-Value="selectedStoreId">
             <option value="0">-- All Store --</option>
 
-            @foreach (var store in listStore)
-            {
-                <option value="@store.StoreId" class="text-dark">@store.Name</option>
-            }
+
+            <optgroup label="Active">
+                @if (listStores.Where(s => s.IsActive).Any())
+                {
+                    @foreach (var store in listStores.Where(s => s.IsActive))
+                    {
+                        <option value="@store.StoreId" class="text-success">
+                            🔔 @store.Name
+                        </option>
+                    }
+                }
+                else
+                {
+                    <option disabled>No Data Availble</option>
+                }
+
+            </optgroup>
+            <optgroup label="Inactive">
+                @if (listStores.Where(s => !s.IsActive).Any())
+                {
+                    @foreach (var store in listStores.Where(s => !s.IsActive))
+                    {
+                        <option value="@store.StoreId" class="text-danger">
+                            🔕 @store.Name
+                        </option>
+                    }
+                }
+                else
+                {
+                    <option disabled>No Data Availble</option>
+                }
+
+            </optgroup>
 
         </InputSelect>
         <InputDate  class=@($"form-control {(!selectedStartDate.HasValue ? "text-secondary border-secondary" : "text-danger border-danger")}")  
@@ -101,7 +131,7 @@
         }
     } 
 
-    private List<Store> listStore = new List<Store>();
+    private List<Store> listStores = new List<Store>();
 
 
 
@@ -204,7 +234,7 @@
 
         ContainerStorage.ResetPaginationData(currentPath);
 
-        listStore = StoresService.GetStoresService();
+        listStores = StoresService.GetStoresService();
     }
 
 

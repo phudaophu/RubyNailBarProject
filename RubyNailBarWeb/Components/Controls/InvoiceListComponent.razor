@@ -24,6 +24,9 @@
                 <th>
                     <button type="button" class="btn border-0 btn-sm text-nowrap px-3" @onclick="@(() => ToggleSort("Status"))">Status  @GetSortIcon("Status")</button>
                 </th>
+                 <th>
+                    <button type="button" class="btn border-0 btn-sm text-nowrap px-3" @onclick="@(() => ToggleSort("Staff"))">Staff  @GetSortIcon("Staff")</button>
+                </th>
                 <th>
                     <button type="button" class="btn border-0 btn-sm text-nowrap px-3" @onclick="@(() => ToggleSort("Bill Total"))">Bill Total  @GetSortIcon("Bill Total")</button>
                 </th>
@@ -32,6 +35,9 @@
                 </th>
                 <th>
                     <button type="button" class="btn border-0 btn-sm text-nowrap px-3" @onclick="@(() => ToggleSort("Phone No"))"> Phone No  @GetSortIcon("Phone No")</button>
+                </th>
+                <th>
+                    <button type="button" class="btn border-0 btn-sm text-nowrap px-3" @onclick="@(() => ToggleSort("Birthday"))">Birthday @GetSortIcon("Birthday")</button>
                 </th>
                 <th>
                 </th>
@@ -56,7 +62,7 @@
                         </td>
 
                         <td style="cursor:pointer" @onclick="@(e => ShowInvoiceDetails(invoice))">
-                            @invoice.InvoiceDate?.ToString("yyyy-MM-dd")
+                            <span>@(invoice.InvoiceDate?.ToString("yyyy-MM-dd"))</span>
                         </td>
 
                         <td style="cursor:pointer" @onclick="@(e => ShowInvoiceDetails(invoice))">
@@ -64,6 +70,35 @@
                                 @(invoice.PaymentMethod?.IsPayment == false ? "Unpaid" : "Paid")
                             </span>
                         </td>
+                        @* staff *@
+                        <td style="cursor:pointer" @onclick="@(e => ShowInvoiceDetails(invoice))">
+                            @{
+                                User? firstStaff = new();
+                                int staffNumber = 0;
+                                if (invoice.InvoiceDetails is not null && invoice.InvoiceDetails.Any())
+                                {
+                                    var listStaffs = invoice.InvoiceDetails.Where(id => !id.IsDeleted).OrderBy(id => id.InvoiceId).Select(id => id.User).Distinct();
+                                    staffNumber = listStaffs.Count();
+                                    firstStaff = listStaffs.FirstOrDefault();
+                                }
+
+                            }
+                            @if (staffNumber == 0)
+                            {
+                                <span>····</span>
+                            }
+                            else if (staffNumber == 1)
+                            {
+                                <span> @firstStaff?.FirstName @firstStaff?.LastName</span>
+                            }
+                            else
+                            {
+                                <span> @firstStaff?.FirstName @firstStaff?.LastName </span>
+
+                                <span class="text-success"> +</span>
+                            }
+                        </td>
+
                         <td style="cursor:pointer" @onclick="@(e => ShowInvoiceDetails(invoice))">
                             @(CalculateInvoiceTotalBill(invoice))
                         </td>
@@ -73,15 +108,24 @@
                         <td style="cursor:pointer" @onclick="@(e => ShowInvoiceDetails(invoice))">
                             @invoice.Customer?.PhoneNo
                         </td>
+                        @* birthday *@
+                        <td style="cursor:pointer" @onclick="@(e => ShowInvoiceDetails(invoice))">
+                            @if (invoice.Customer?.Birthday is not null)
+                            {
+                                <span>@invoice.Customer?.Birthday?.ToString("MMM dd")</span>
+                            }
+                            else
+                            {
+                                <span>····</span>
 
+                            }
+                        </td>
                         <td>
                             <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-0 text-nowrap" @onclick="(e) => HandleInvoiceDetailButton(invoice.InvoiceId)">Details</button>
                         </td>
-
                         <td>
                             <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-0 text-nowrap" @onclick="(e) => HandleDeleteButton(invoice)">Delete</button>
                         </td>
-                        
 
                     </tr>
                 }
@@ -454,7 +498,9 @@
         { "Customer Name",  0 },
         { "Phone No",       0 },
         { "Bill Total",     0 },
-        { "Status",         0 }
+        { "Status",         0 },
+        { "Staff",          0 },
+        { "Birthday",       0 }
     };
 
 
@@ -843,6 +889,21 @@
                 break;
             case "Status":
                 ApplyLogicSort(i => (i.PaymentMethod?.IsPayment), sortingByColumn);
+                break;
+            case "Staff":
+                ApplyLogicSort(
+                                  i => (i.InvoiceDetails ?? new List<InvoiceDetail>())
+                                          .Where(d => !d.IsDeleted && d.User != null && d.User.FirstName != null)
+                                          .Select(d => d.User!.FirstName!)
+                                          .FirstOrDefault() ?? string.Empty,
+                                           sortingByColumn);
+                break;
+            case "Birthday":
+                ApplyLogicSort(
+                                i => i.Customer?.Birthday is DateOnly b
+                                        ? (b.Month * 100) + b.Day     
+                                        : int.MaxValue,
+                                sortingByColumn);
                 break;
             default:
                 break;
