@@ -165,13 +165,28 @@
         var currentPath = NavigationManager.ToBaseRelativePath(NavigationManager.Uri).Split('?', '#')[0];
         if (currentPath.Contains("back-from", StringComparison.OrdinalIgnoreCase))
         {
-            NavigationManager.NavigateTo($"/user-back-from/{Id}");
+            // NavigationManager.NavigateTo($"/user-back-from/{Id}");
+            var previousPath = ContainerStorage.GetSavePaginaionPath();
+            NavigationManager.NavigateTo($"/{previousPath}");
         }
         else
         {
             NavigationManager.NavigateTo($"/user/{Id}");
         }
     }
+
+    // private void HandleBackUserGroupButton()
+    // {
+    //     if (currentPath.Contains("back-from", StringComparison.OrdinalIgnoreCase))
+    //     {
+    //         var previousPath = ContainerStorage.GetSavePaginaionPath();
+    //         NavigationManager.NavigateTo($"/{previousPath}");
+    //     }
+    //     else
+    //     {
+    //         NavigationManager.NavigateTo("/users");
+    //     }
+    // }
 
     protected override void OnParametersSet()
     {

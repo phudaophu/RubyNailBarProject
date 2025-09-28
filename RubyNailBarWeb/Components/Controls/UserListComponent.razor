@@ -24,25 +24,38 @@
             <th>
                 <button type="button" class="btn border-0 btn-sm text-nowrap px-3" @onclick="@(() => ToggleSort("Store"))">Store @GetSortIcon("Store")</button>
             </th>
+                <th></th>
+                <th></th>
             <th>
                 <button type="button" class="btn border-0 btn-sm text-nowrap px-3" @onclick="@(() => ToggleSort("Firstname"))">Fullname @GetSortIcon("Firstname")</button>
             </th>
+                <th></th>
+                <th></th>
             <th> 
                 <button type="button" class="btn border-0 btn-sm text-nowrap px-3" @onclick="@(() => ToggleSort("Username"))">Username @GetSortIcon("Username")</button>
             </th>
+                <th></th>
+                <th></th>
             <th>
                 <button type="button" class="btn border-0 btn-sm text-nowrap px-3" @onclick="@(() => ToggleSort("Group"))">Group @GetSortIcon("Group")</button>
             </th>
+                <th></th>
+                <th></th>
             <th>
                 <button type="button" class="btn border-0 btn-sm text-nowrap px-3" @onclick="@(() => ToggleSort("Role"))">Role @GetSortIcon("Role")</button>
             </th>
+                <th></th>
+                <th></th>
             <th>
                 <button type="button" class="btn border-0 btn-sm text-nowrap px-3" @onclick="@(() => ToggleSort("Status"))">Status @GetSortIcon("Status")</button>
             </th>
+                <th></th>
+                <th></th>
             <th></th>
             <th></th>
             <th></th>
             <th></th>
+
         </tr>
 
     </thead>
@@ -56,7 +69,7 @@
                     <td style="cursor:pointer" @onclick="@(e => ShowUserDetails(user))">
                         @(listUsers.FindIndex(u => u.UserId == user.UserId) + 1)
                     </td>
-                    <td style="cursor:pointer" @onclick="@(e => ShowUserDetails(user))">
+                    <td style="cursor:pointer" @onclick="@(e => ShowUserDetails(user))" colspan="3">
                         @if (user.UserGroups.Any())
                         {
                             var listStoreId = user.UserGroups
@@ -76,15 +89,15 @@
                         }
                     </td>
 
-                    <td style="cursor:pointer" @onclick="@(e => ShowUserDetails(user))">
+                        <td style="cursor:pointer" @onclick="@(e => ShowUserDetails(user))" colspan="3">
                             <span class="@(user.IsDeleted ? "text-decoration-line-through" : "")">@($"{user.FirstName} {@user.LastName}") </span>
                     </td>
 
-                    <td style="cursor:pointer" @onclick="@(e => ShowUserDetails(user))">
+                        <td style="cursor:pointer" @onclick="@(e => ShowUserDetails(user))" colspan="3">
                             <span class="@(user.IsDeleted ? "text-decoration-line-through" : "")">@(user.Username) </span>
                     </td>
 
-                    <td style="cursor:pointer" @onclick="@(e => ShowUserDetails(user))">
+                        <td style="cursor:pointer" @onclick="@(e => ShowUserDetails(user))" colspan="3">
                         @if (user.UserGroups.Any())
                         {
                             foreach (var group in user.UserGroups)
@@ -100,8 +113,8 @@
                         }
                     </td>
 
-                    <td style="cursor:pointer" @onclick="@(e => ShowUserDetails(user))">
-                        @if (user.UserGroups.Any())
+                        <td style="cursor:pointer" @onclick="@(e => ShowUserDetails(user))" colspan="3">
+                            @if (user.UserGroups.Any())
                         {
                             foreach (var group in user.UserGroups)
                             {
@@ -114,38 +127,78 @@
                             <text>N/A</text>
                         }
                     </td>
-                    <td style="cursor:pointer" @onclick="@(e => ShowUserDetails(user))">
+                        <td style="cursor:pointer" @onclick="@(e => ShowUserDetails(user))" colspan="3">
                             <span class="badge  border  @( user.IsDeleted ?"text-danger border-2 border-danger": (user.IsActive ? "text-success border-success" : "text-danger border-danger"))">@(user.IsDeleted ? "DELETED" : (user.IsActive ? "Active" : "InActive"))</span>
 
                     </td>
                     <td>
                         @if (user.IsActive == true)
                         {
-                                <button type="button" title="Set Inactive" class="bg-transparent border-2 border-light p-0"
+                             @*    <button type="button" title="Set Inactive" class="bg-transparent border-2 border-light p-0"
                                     @onclick="@(() => {
                                                         SetUserStatus(user.UserId,false);
-                                                                                             })">🔕</button>
-                    }
-                                else
-                    {
-                            <button type="button" title="Set Active" class="bg-transparent border-2 border-light p-0"
+                                                                                             })">🔕</button> *@
+
+                                <button type="button"
+                                        class="btn p-1 border-0 bg-transparent"
+                                        aria-label="Set Inactive"
+                                        title="Set Inactive"
+                                        @onclick="(e) => SetUserStatus(user.UserId, false)">
+                                    <img src="/assets/icon/inactive-status.png" alt="Set Inactive" width="23" height="23">
+                                </button>
+                        }
+                        else
+                        {
+                           @*  <button type="button" title="Set Active" class="bg-transparent border-2 border-light p-0"
                                     @onclick="@(() => { 
                                                          SetUserStatus(user.UserId,true);
-                                                                                            })">🔔</button>
-                    }
+                                                                                            })">🔔</button> *@
+                                <button type="button"
+                                        class="btn p-1 border-0 bg-transparent"
+                                        aria-label="Set Active"
+                                        title="Set Active"
+                                        @onclick="(e) => SetUserStatus(user.UserId, true)">
+                                    <img src="/assets/icon/active-status.png" alt="Set Active" width="23" height="23">
+                                </button>
+                        }
+
                     &nbsp;
                     </td>
                     <td>
  
-                    <button type="button" title="Edit User" class="bg-transparent border-2 border-light p-0" @onclick="(e) => HandleEditButton(user.UserId)">✏️</button>
+@*                     <button type="button" title="Edit User" class="bg-transparent border-2 border-light p-0" @onclick="(e) => HandleEditButton(user.UserId)">✏️</button>
+ *@                    
+                        <button type="button"
+                            class="btn p-1 border-0 bg-transparent"
+                            aria-label="Edit User"
+                            title="Edit User"
+                                @onclick="(e) => HandleEditButton(user.UserId)">
+                        <img src="/assets/icon/edit.png" alt="Edit User" width="23" height="23">
+                        </button>
                     </td>
                     <td>
-
-                    <button type="button" title="Edit UserGroup" class="bg-transparent border-2 border-light p-0" @onclick="(e) => HandleEditGroupButton(user.UserId)">👥</button>
-                    </td>
+@*                     <button type="button" title="Edit UserGroup" class="bg-transparent border-2 border-light p-0" @onclick="(e) => HandleEditGroupButton(user.UserId)">👥</button>
+ *@          
+                         <button type="button"
+                            class="btn p-1 border-0 bg-transparent"
+                            aria-label="Edit Usergroup"
+                            title="Edit Usergroup"
+                            @onclick="(e) => HandleEditGroupButton(user.UserId)">
+                        <img src="/assets/icon/usergroup.png" alt="Edit Usergroup" width="23" height="23">
+                        </button>
+                </td>
+  
                     <td>
-                    <button type="button" title="Delete User" class="bg-transparent border-2 border-light p-0" @onclick="async (e) => {await HandleDeleteUserButton(user);}">❌</button>
-                    </td>
+@*                     <button type="button" title="Delete User" class="bg-transparent border-2 border-light p-0" @onclick="async (e) => {await HandleDeleteUserButton(user);}">❌</button>
+ *@                    
+                        <button type="button"
+                                class="btn p-1 border-0 bg-transparent"
+                                aria-label="Delete User"
+                                title="Delete User"
+                            @onclick="async (e) => { await HandleDeleteUserButton(user); }">
+                            <img src="/assets/icon/delete.png" alt="Delete User" width="23" height="23">
+                        </button>
+                     </td>
                 </tr>
             }
 
@@ -704,8 +757,9 @@
             selectedUserId = userId;
             ContainerStorage.SetSelectedRecordId(CurrentPath, userId);
         }
-
-        NavigationManager.NavigateTo($"/usergroups/{userId}");
+        
+        // NavigationManager.NavigateTo($"/usergroups/{userId}");
+        NavigationManager.NavigateTo($"/usergroups-back-from/{userId}");
     }
 
 }
